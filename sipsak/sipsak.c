@@ -1,5 +1,5 @@
 /*
- * $Id: sipsak.c,v 1.63 2004/06/15 10:46:52 calrissian Exp $
+ * $Id: sipsak.c,v 1.64 2004/06/17 14:54:03 calrissian Exp $
  *
  * Copyright (C) 2002-2004 Fhg Fokus
  * Copyright (C) 2004 Nils Ohlmeier
@@ -103,6 +103,7 @@ void print_help() {
 		"   -N           returns exit codes Nagios compliant\n"
 		"   -W number    return Nagios warning if retrans > number\n"
 		"   -B string    send a message with string as body\n"
+		"   -O string    Content-Disposition value\n"
 		);
 		exit(0);
 };
@@ -121,6 +122,7 @@ int main(int argc, char *argv[])
 	namebeg=nameend=maxforw= -1;
 	via_ins=redirects = 1;
 	username=password=replace_str=hostname=contact_uri=mes_body = NULL;
+	con_dis = NULL;
 	address = 0;
 	rport = 5060;
 	expires_t = USRLOC_EXP_DEF;
@@ -133,7 +135,7 @@ int main(int argc, char *argv[])
 	if (argc==1) print_help();
 
 	/* lots of command line switches to handle*/
-	while ((c=getopt(argc,argv,"a:B:b:C:c:de:f:Fg:GhH:iIl:m:MnNo:p:r:Rs:t:TUvVwW:x:z")) != EOF){
+	while ((c=getopt(argc,argv,"a:B:b:C:c:de:f:Fg:GhH:iIl:m:MnNo:O:p:r:Rs:t:TUvVwW:x:z")) != EOF){
 		switch(c){
 			case 'a':
 				password=malloc(strlen(optarg));
@@ -279,6 +281,11 @@ int main(int argc, char *argv[])
 						exit_code(2);
 					}
 				}
+				break;
+			case 'O':
+				con_dis=malloc(strlen(optarg));
+				strncpy(con_dis, optarg, strlen(optarg));
+				*(con_dis+strlen(optarg)) = '\0';
 				break;
 			case 'p':
 				address = getaddress(optarg);

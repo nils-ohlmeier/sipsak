@@ -1,5 +1,5 @@
 /*
- * $Id: sipsak.h,v 1.11 2004/06/15 10:46:52 calrissian Exp $
+ * $Id: sipsak.h,v 1.12 2004/06/17 14:54:03 calrissian Exp $
  *
  * Copyright (C) 2002-2004 Fhg Fokus
  *
@@ -63,6 +63,8 @@
 #define CONT_STR_LEN 9
 #define CON_TYP_STR "Content-Type: "
 #define CON_TYP_STR_LEN 14
+#define CON_DIS_STR "Content-Disposition: "
+#define CON_DIS_STR_LEN 21
 #define TXT_PLA_STR "text/plain"
 #define TXT_PLA_STR_LEN 10
 #define ACP_STR "Accept: "
@@ -114,7 +116,7 @@ int maxforw, lport, rport, randtrash, trashchar, numeric, nonce_count;
 int file_b, uri_b, trace, via_ins, usrloc, redirects, rand_rem, replace_b;
 int empty_contact, nagios_warn;
 char *username, *domainname, *password, *replace_str, *hostname, *contact_uri;
-char *mes_body;
+char *mes_body, *con_dis;
 char fqdn[FQDN_SIZE], messusern[FQDN_SIZE];
 char confirm[BUFSIZE], ack[BUFSIZE];
 
