@@ -1,5 +1,5 @@
 /*
- * $Id: sipsak.c,v 1.8 2002/08/27 17:00:04 calrissian Exp $
+ * $Id: sipsak.c,v 1.9 2002/08/27 22:20:58 calrissian Exp $
  *
  * Copyright (C) 2002-2003 Fhg Fokus
  *
@@ -721,6 +721,9 @@ void shoot(char *buff)
 				(void)gettimeofday(&recvtime, &tz);
 				if (ret == 0)
 				{
+					/* store the time of our first send */
+					if (i==0)
+						memcpy(&firstsendt, &sendtime, sizeof(struct timeval));
 					/* lets see if we at least received an icmp error */
 					sockerr.fd=sock;
 					sockerr.events=POLLERR;
