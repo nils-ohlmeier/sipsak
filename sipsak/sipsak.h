@@ -1,5 +1,5 @@
 /*
- * $Id: sipsak.h,v 1.6 2004/01/09 23:33:59 calrissian Exp $
+ * $Id: sipsak.h,v 1.7 2004/02/16 23:34:07 calrissian Exp $
  *
  * Copyright (C) 2002-2003 Fhg Fokus
  *
@@ -96,7 +96,7 @@
 #define RESPONSE_STR_LEN 9
 #define QOP_STR "qop="
 #define QOP_STR_LEN 4
-#define QOPAUTH_STR "\"auth\""
+#define QOPAUTH_STR "auth"
 #define NC_STR "nc="
 #define UA_STR "User-Agent: "
 #define SUB_STR "Subject: "
