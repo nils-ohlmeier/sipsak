@@ -11,6 +11,8 @@ sipsak \- a utility for various tests on sip server
 .I number 
 .B ] [-c 
 .I number 
+.B ] [-C
+.I sip-uri
 .B ] [-e 
 .I number 
 .B ] [-f 
@@ -88,6 +90,11 @@ parameter. If omitted the starting number will be one.
 .IP "-c number"
 This is the maximum CSeq number in the flood mode. If omitted the maximum
 will be 2^31 (2147483647).
+.IP "-C sip:uri"
+This is the content of the Contact header in the usrloc mode. This allows
+to insert forwards like for mail. For example you can insert the uri of
+your first SIP account at a second account, thus all calls to the second
+account will be forwarded to the first account.
 .IP -d
 If this option is set all redirects will be ignored. By default without this 
 option received redirects will be respected. This option is automaticly 
@@ -286,9 +293,10 @@ Multiple removing of bindings is possible, and cannot be prevented.
 .SH RETURN VALUES
 The return value 0 means that a 200 was received. 1 means something else 
 then 1xx or 2xx was received.
-2 will be returned on local errors like non resolvable names, socket errors or
-wrong options combination. 3 will be returned on remote errors like icmp error
-messages, redirects without a contact header or simply no answer (timeout).
+2 will be returned on local errors like non resolvable names or
+wrong options combination. 3 will be returned on remote errors like socket 
+errors (e.g. icmp error), redirects without a contact header or simply 
+no answer (timeout).
 
 .SH CAUTION
 Use
