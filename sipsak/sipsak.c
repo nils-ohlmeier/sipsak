@@ -1,5 +1,5 @@
 /*
- * $Id: sipsak.c,v 1.40 2003/02/28 04:28:58 calrissian Exp $
+ * $Id: sipsak.c,v 1.41 2003/03/13 03:53:50 calrissian Exp $
  *
  * Copyright (C) 2002 Fhg Fokus
  *
@@ -728,8 +728,12 @@ void insert_auth(char *message, char *authreq)
 		/* search for the realm, copy it to request and extract it for hash*/
 		if ((begin=strstr(auth, REALM_STR))!=NULL) {
 			end=strchr(begin, ',');
+			if (!end)
+				end=strchr(begin, '\r');
 			strncpy(insert, begin, end-begin+1);
 			insert=insert+(end-begin+1);
+			if (*(insert-1) == '\r')
+				*(insert-1)=',';
 			sprintf(insert, " ");
 			insert++;
 			begin+=REALM_STR_LEN+1;
@@ -762,8 +766,12 @@ void insert_auth(char *message, char *authreq)
 		/* search, copy and extract the nonce */
 		if ((begin=strstr(auth, NONCE_STR))!=NULL) {
 			end=strchr(begin, ',');
+			if (!end)
+				end=strchr(begin, '\r');
 			strncpy(insert, begin, end-begin+1);
 			insert=insert+(end-begin+1);
+			if (*(insert-1) == '\r')
+				*(insert-1)=',';
 			sprintf(insert, " ");
 			insert++;
 			begin+=NONCE_STR_LEN+1;
