@@ -1,5 +1,5 @@
 /*
- * $Id: sipsak.h,v 1.23 2005/01/06 10:33:00 calrissian Exp $
+ * $Id: sipsak.h,v 1.24 2005/03/01 11:38:05 calrissian Exp $
  *
  * Copyright (C) 2002-2004 Fhg Fokus
  *
@@ -59,7 +59,7 @@
 #define REQ_RAND 7
 
 #define VIA_SIP_STR "Via: SIP/2.0/UDP "
-#define VIA_SIP_STR_LEN (sizeof(VIA_STR) - 1)
+#define VIA_SIP_STR_LEN (sizeof(VIA_SIP_STR) - 1)
 
 #define MAX_FRW_STR "Max-Forwards: "
 #define MAX_FRW_STR_LEN (sizeof(MAX_FRW_STR) - 1)
@@ -88,17 +88,17 @@
 #define FROM_STR "From: "
 #define FROM_STR_LEN (sizeof(FROM_STR) - 1)
 #define FROM_SHORT_STR "f: "
-#define FROM_SHORT_STR_LEN (sizeof(FROM_SHORT_STR_LEN) - 1)
+#define FROM_SHORT_STR_LEN (sizeof(FROM_SHORT_STR) - 1)
 
 #define TO_STR "To: "
 #define TO_STR_LEN (sizeof(TO_STR) - 1)
 #define TO_SHORT_STR "t: "
-#define TO_SHORT_STR_LEN (sizeof(TO_SHORT_STR_LEN) - 1)
+#define TO_SHORT_STR_LEN (sizeof(TO_SHORT_STR) - 1)
 
 #define VIA_STR "Via: "
 #define VIA_STR_LEN (sizeof(VIA_STR) - 1)
 #define VIA_SHORT_STR "v: "
-#define VIA_SHORT_STR_LEN (sizeof(VIA_SHORT_STR_LEN) - 1)
+#define VIA_SHORT_STR_LEN (sizeof(VIA_SHORT_STR) - 1)
 
 #define CALL_STR "Call-ID: "
 #define CALL_STR_LEN (sizeof(CALL_STR) - 1)
@@ -109,7 +109,7 @@
 #define CONT_STR "Contact: "
 #define CONT_STR_LEN (sizeof(CONT_STR) - 1)
 #define CONT_SHORT_STR "m: "
-#define CONT_SHORT_STR_LEN (sizeof(CONT_SHORT_STR_LEN) - 1)
+#define CONT_SHORT_STR_LEN (sizeof(CONT_SHORT_STR) - 1)
 
 #define CON_TYP_STR "Content-Type: "
 #define CON_TYP_STR_LEN (sizeof(CON_TYP_STR) - 1)
@@ -141,7 +141,7 @@
 #define EXP_STR_LEN (sizeof(EXP_STR) - 1)
 
 #define CON_EXP_STR "expires="
-#define CON_EXP_STR_LEN (sizeof(CON_EXP_STR_LEN) - 1)
+#define CON_EXP_STR_LEN (sizeof(CON_EXP_STR) - 1)
 
 #define USRLOC_EXP_DEF 15
 #define FLOOD_METH "OPTIONS"
