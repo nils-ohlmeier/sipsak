@@ -1,5 +1,5 @@
 /*
- * $Id: shoot.c,v 1.15 2004/04/26 15:37:00 calrissian Exp $
+ * $Id: shoot.c,v 1.16 2004/05/06 15:40:12 calrissian Exp $
  *
  * Copyright (C) 2002-2003 Fhg Fokus
  *
@@ -612,18 +612,18 @@ void shoot(char *buff)
 						}
 					} /* if trace ... */
 					else if (usrloc||invite||message) {
+						if (regexec(&proexp, reply, 0, 0, 0)==0) {
+							if (verbose > 2)
+								printf("\nignoring provisinal "
+									"response\n");
+							dontsend = 1;
+						}
+						else {
 						switch (usrlocstep) {
 							case 0:
 								/* we have sent a register and look 
 								   at the response now */
-								if (regexec(&proexp, reply, 0, 0, 0)==0) {
-									if (verbose > 2)
-										printf("\nignoring provisinal "
-											"response\n");
-									dontsend = 1;
-									break;
-								}
-								else if (regexec(&okexp, reply, 0, 0, 0)==0) {
+								if (regexec(&okexp, reply, 0, 0, 0)==0) {
 									if (verbose > 1)
 										printf ("\tOK\n");
 									if (verbose > 2)
@@ -699,13 +699,6 @@ void shoot(char *buff)
 								break;
 							case 1:
 								/* see if we received our invite */
-								if (strncmp(reply, SIP100_STR, 
-									SIP100_STR_LEN)==0) {
-									if (verbose > 2)
-										printf("ignoring 100.. ");
-									dontsend=1;
-									continue;
-								}
 								if (!strncmp(reply, messusern, 
 									strlen(messusern))) {
 									if (verbose > 1)
@@ -837,13 +830,6 @@ void shoot(char *buff)
 							case 4:
 								/* we sent the message and look if its 
 								   forwarded to us */
-								if (strncmp(reply, SIP100_STR, 
-									SIP100_STR_LEN)==0) {
-									if (verbose > 2)
-										printf("ignoring 100.. ");
-									dontsend=1;
-									continue;
-								}
 								if (!strncmp(reply, messusern, 
 									strlen(messusern))) {
 									if (verbose > 1) {
@@ -988,6 +974,7 @@ void shoot(char *buff)
 								printf("error: unknown step in usrloc\n");
 								exit(2);
 								break;
+						}
 						}
 					}
 					else if (randtrash) {
