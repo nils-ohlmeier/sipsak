@@ -27,6 +27,11 @@ case "$host" in
 esac
 AC_SUBST([LIBS])
 
+AC_PROG_CC
+# Add -Wall if we are using GCC
+if test "x$GCC" = "xyes"; then
+	CFLAGS="$CFLAGS -Wall"
+fi
 
 # Checks for header files.
 AC_HEADER_STDC
