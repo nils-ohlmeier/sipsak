@@ -1,5 +1,5 @@
 /*
- * $Id: sipsak.c,v 1.59 2004/06/05 17:40:19 calrissian Exp $
+ * $Id: sipsak.c,v 1.60 2004/06/06 15:20:20 calrissian Exp $
  *
  * Copyright (C) 2002-2004 Fhg Fokus
  * Copyright (C) 2004 Nils Ohlmeier
@@ -447,11 +447,6 @@ int main(int argc, char *argv[])
 		}
 		if (via_ins) {
 			via_ins=0;
-		}
-		if (redirects) {
-			printf("warning: redirects are not expected in USRLOC. "
-				"disableing\n");
-			redirects=0;
 		}
 		if (nameend==-1)
 			nameend=0;
