@@ -1,5 +1,5 @@
 /*
- * $Id: sipsak.c,v 1.76 2004/10/08 18:07:14 calrissian Exp $
+ * $Id: sipsak.c,v 1.77 2004/10/12 10:25:01 calrissian Exp $
  *
  * Copyright (C) 2002-2004 Fhg Fokus
  * Copyright (C) 2004 Nils Ohlmeier
@@ -327,6 +327,11 @@ int main(int argc, char *argv[])
 						printf("error: missing ':' in REGISTER Contact uri\n");
 						exit_code(2);
 					}
+				}
+				else if ((strlen(optarg)==1) && (!strncmp(optarg, "*", 1))) {
+					contact_uri=malloc(strlen(optarg)+1);
+					memset(contact_uri, 0, strlen(optarg)+1);
+					strncpy(contact_uri, optarg, strlen(optarg));
 				}
 				else{
 					printf("error: REGISTER Contact uri doesn't not begin "
