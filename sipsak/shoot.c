@@ -1,5 +1,5 @@
 /*
- * $Id: shoot.c,v 1.19 2004/06/05 17:42:16 calrissian Exp $
+ * $Id: shoot.c,v 1.20 2004/06/06 18:13:52 calrissian Exp $
  *
  * Copyright (C) 2002-2004 Fhg Fokus
  * Copyright (C) 2004 Nils Ohlmeier
@@ -679,11 +679,13 @@ void shoot(char *buff)
 											printf("%i retransmission(s) "
 												"received from server.\n", 
 												retrans_r_c);
-										if (retrans_s_c && verbose)
+										if (retrans_s_c && verbose) {
 											printf("%i time(s) the timeout of "
 												"%i ms exceeded and request was"
 												" retransmitted.\n", 
 												retrans_s_c, retryAfter);
+											exit_code(4);
+										}
 										exit_code(0);
 									}
 									/* lets see if we deceid to remove a 
@@ -804,11 +806,13 @@ void shoot(char *buff)
 											printf("%i retransmission(s) "
 												"received from server.\n", 
 												retrans_r_c);
-										if (retrans_s_c)
+										if (retrans_s_c) {
 											printf("%i time(s) the timeout of "
 												"%i ms exceeded and request was"
 												" retransmitted.\n", 
 												retrans_s_c, retryAfter);
+											exit_code(4);
+										}
 										exit_code(0);
 									}
 									if (usrloc) {
@@ -912,11 +916,13 @@ void shoot(char *buff)
 											printf("%i retransmission(s) "
 												"received from server.\n", 
 												retrans_r_c);
-										if (retrans_s_c)
+										if (retrans_s_c) {
 											printf("%i time(s) the timeout of "
 												"%i ms exceeded and request was"
 												" retransmitted.\n", 
 												retrans_s_c, retryAfter);
+											exit_code(4);
+										}
 										exit_code(0);
 									}
 									if (usrloc) {
