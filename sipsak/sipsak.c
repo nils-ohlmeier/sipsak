@@ -1,5 +1,5 @@
 /*
- * $Id: sipsak.c,v 1.2 2002/08/19 05:06:50 calrissian Exp $
+ * $Id: sipsak.c,v 1.3 2002/08/21 01:26:59 calrissian Exp $
  *
  * Copyright (C) 2002-2003 Fhg Fokus
  *
@@ -341,23 +341,11 @@ void create_msg(char *buff, int action){
 				lport);
 			break;
 		case REQ_FLOOD:
-#ifdef REGISTER_HACK
-			usern=malloc(strlen(username)+10);
-			sprintf(usern, "%s%i", username, namebeg);
-			sprintf(buff, "%s sip:%s%s%s%s:%i\r\n%s<sip:%s@%s>\r\n"
-				"%s<sip:%s@%s>\r\n%s%u@%s\r\n%s%i %s\r\n%s<sip:%s@%s:%i>\r\n"
-				"%s%i\r\n\r\n", REG_STR, domainname, SIP20_STR, VIA_STR, fqdn, 
-				lport, FROM_STR, usern, domainname, TO_STR, usern, domainname, 
-				CALL_STR, c, fqdn, CSEQ_STR, namebeg, REG_STR, CONT_STR, 
-				usern, fqdn, lport, EXP_STR, expires_t);
-			free(usern);
-#else
 			sprintf(buff, "%s sip:%s%s%s%s:9\r\n%s<sip:sipsak@%s:9>\r\n"
 				"%s<sip:%s>\r\n%s%u@%s\r\n%s%i %s\r\n%s<sipsak@%s:9>\r\n\r\n", 
 				FLOOD_METH, domainname, SIP20_STR, VIA_STR, fqdn, FROM_STR, 
 				fqdn, TO_STR, domainname, CALL_STR, c, fqdn, CSEQ_STR, namebeg, 
 				FLOOD_METH, CONT_STR, fqdn);
-#endif
 			break;
 		case REQ_RAND:
 			sprintf(buff, "%s sip:%s%s%s%s:%i\r\n%s<sip:sipsak@%s:%i>\r\n"
