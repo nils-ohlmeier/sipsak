@@ -1,5 +1,5 @@
 /*
- * $Id: request.c,v 1.5 2004/01/09 23:33:59 calrissian Exp $
+ * $Id: request.c,v 1.6 2004/02/22 01:06:33 calrissian Exp $
  *
  * Copyright (C) 2002-2003 Fhg Fokus
  *
@@ -52,7 +52,29 @@ void create_msg(char *buff, int action){
 	switch (action){
 		case REQ_REG:
 			// not elegant but easier :)
-			if (contact_uri!=NULL) {
+			if (empty_contact) {
+				sprintf(buff, 
+					"%s sip:%s%s"
+					"%s%s:%i;rport\r\n"
+					"%s<sip:%s%s>\r\n"
+					"%s<sip:%s%s>\r\n"
+					"%s%u@%s\r\n"
+					"%s%i %s\r\n"
+					"%s0\r\n"
+					"%s70\r\n"
+					"%ssipsak %s\r\n"
+					"\r\n", 
+					REG_STR, domainname, SIP20_STR, 
+					VIA_STR, fqdn, lport, 
+					FROM_STR, usern, domainname, 
+					TO_STR, usern, domainname, 
+					CALL_STR, c, fqdn, 
+					CSEQ_STR, 3*namebeg+1, REG_STR, 
+					CON_LEN_STR, 
+					MAX_FRW_STR, 
+					UA_STR, SIPSAK_VERSION);
+			}
+			else if (contact_uri!=NULL) {
 				sprintf(buff, 
 					"%s sip:%s%s"
 					"%s%s:%i;rport\r\n"
@@ -77,7 +99,6 @@ void create_msg(char *buff, int action){
 					CON_LEN_STR, 
 					MAX_FRW_STR, 
 					UA_STR, SIPSAK_VERSION);
-	
 			}
 			else{
 				sprintf(buff, 

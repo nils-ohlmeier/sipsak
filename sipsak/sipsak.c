@@ -1,5 +1,5 @@
 /*
- * $Id: sipsak.c,v 1.55 2004/02/03 15:47:07 calrissian Exp $
+ * $Id: sipsak.c,v 1.56 2004/02/22 01:06:33 calrissian Exp $
  *
  * Copyright (C) 2002-2003 Fhg Fokus
  *
@@ -110,7 +110,7 @@ int main(int argc, char *argv[])
 	/* some initialisation to be shure */
 	file_b=uri_b=trace=lport=usrloc=flood=verbose=randtrash=trashchar = 0;
 	numeric=warning_ext=rand_rem=nonce_count=replace_b=invite=message = 0;
-	sleep_ms = 0;
+	sleep_ms, empty_contact = 0;
 	namebeg=nameend=maxforw= -1;
 	via_ins=redirects = 1;
 	username=password=replace_str=hostname=contact_uri = NULL;
@@ -141,7 +141,10 @@ int main(int argc, char *argv[])
 				}
 				break;
 			case 'C':
-				if (!strncmp(optarg,"sip",3)){
+				if (!strncmp(optarg, "empty", 5)) {
+					empty_contact = 1;
+				}
+				else if (!strncmp(optarg,"sip",3)){
 					if ((delim=strchr(optarg,':'))!=NULL){
 						delim++;
 						if ((delim2=strchr(delim,'@'))==NULL){
@@ -168,7 +171,7 @@ int main(int argc, char *argv[])
 				}
 				else{
 					printf("error: REGISTER Contact uri doesn't not begin "
-						"with sip\n");
+						"with sip or empty\n");
 					exit(2);
 				}
 				break;
