@@ -1,5 +1,5 @@
 /*
- * $Id: sipsak.h,v 1.4 2003/09/11 02:45:36 calrissian Exp $
+ * $Id: sipsak.h,v 1.5 2003/10/06 03:52:49 calrissian Exp $
  *
  * Copyright (C) 2002-2003 Fhg Fokus
  *
@@ -19,7 +19,11 @@
 #ifndef SIPSAK_H
 #define SIPSAK_H
 
-#define SIPSAK_VERSION "v0.8.2_pre"
+#if HAVE_CONFIG_H
+#include <config.h>
+#endif
+
+#define SIPSAK_VERSION PACKAGE_VERSION
 #define RESIZE		1024
 #define BUFSIZE		4096
 #define FQDN_SIZE   200

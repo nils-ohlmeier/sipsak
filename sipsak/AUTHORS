@@ -1,0 +1,14 @@
+# $Id: AUTHORS,v 1.1 2003/10/06 03:52:49 calrissian Exp $
+# The format of this file was inspired by the Linux kernel CREDITS file.
+# 
+# Authors and contributors are listed alphabetically (first name).
+# 
+# The fields are: name (N), email (E), web-address (W), CVS account login (C),
+# PGP key ID and fingerprint (P), description (D), and snail-mail address (S).
+
+N: Nils Ohlmeier
+C: calrissian
+E: calrissian@users.berlios.de
+W: http://www.ohlmeier.org
+P: BAD6CA40   B5E7 4FB0 800F 0A2C E3E9  4073 C7C3 F275 BAD6 CA40
+D: The one and only author and developer :)

@@ -1,5 +1,5 @@
 /*
- * $Id: sipsak.c,v 1.51 2003/09/11 02:46:24 calrissian Exp $
+ * $Id: sipsak.c,v 1.52 2003/10/06 03:52:49 calrissian Exp $
  *
  * Copyright (C) 2002-2003 Fhg Fokus
  *
@@ -41,8 +41,9 @@
 
 /* prints out some usage help and exits */
 void print_help() {
-	printf("sipsak %s   by Nils Ohlmeier\n", SIPSAK_VERSION);
-	printf(" Copyright (C) 2002-2003 FhG Fokus\n\n");
+	printf("%s %s by Nils Ohlmeier\n", PACKAGE_NAME, PACKAGE_VERSION);
+	printf(" Copyright (C) 2002-2003 FhG Fokus\n");
+	printf(" report bugs to %s\n\n", PACKAGE_BUGREPORT);
 	printf(
 		" shoot : sipsak [-f filename] -s sip:uri\n"
 		" trace : sipsak -T -s sip:uri\n"
@@ -62,7 +63,7 @@ void print_help() {
 		"   -T           activates the traceroute mode\n"
 		"   -U           activates the usrloc mode\n"
 		"   -I           simulates a successful calls with itself\n"
-		"   -M           sends messages ti itself\n"
+		"   -M           sends messages it itself\n"
 		"   -b number    the starting number appendix to the user name in "
 			"usrloc mode\n"
 		"                (default: 0)\n"

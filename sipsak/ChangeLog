@@ -1,0 +1,6 @@
+* version 0.8.2
+  - seperated code into several files
+  - introduced autoconf & automake
+  - added option -o for sleeping between requests
+  - added option -H to overwrite automatic hostname detection
+  - ignores provisional responses in usrloc mode
