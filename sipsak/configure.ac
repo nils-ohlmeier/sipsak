@@ -35,7 +35,7 @@ fi
 
 # Checks for header files.
 AC_HEADER_STDC
-AC_CHECK_HEADERS([arpa/inet.h getopt.h netdb.h netinet/in.h netinet/in_systm.h openssl/md5.h stdlib.h string.h sys/socket.h sys/time.h unistd.h])
+AC_CHECK_HEADERS([arpa/inet.h getopt.h netdb.h netinet/in.h netinet/in_systm.h openssl/md5.h stdlib.h string.h sys/param.h sys/socket.h sys/time.h unistd.h])
 AC_CHECK_HEADERS([netinet/ip.h netinet/udp.h],,,
 [[#ifdef HAVE_NETINET_IN_SYSTM_H
 #include <sys/types.h>
