@@ -1,4 +1,4 @@
-* version 0.8.10
+* version 0.8.11
   - try authentication with empty password instead of username if no
     password is given
   - support to read SIP message from standard input (-f -)
