@@ -1,5 +1,5 @@
 /*
- * $Id: auth.c,v 1.15 2004/12/22 22:11:29 calrissian Exp $
+ * $Id: auth.c,v 1.16 2005/01/05 23:37:24 calrissian Exp $
  *
  * Copyright (C) 2002-2004 Fhg Fokus
  *
@@ -18,12 +18,13 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-#include <string.h>
 
 #include "config.h"
 #include "auth.h"
 #include "sipsak.h"
 #include "exit_code.h"
+
+#include <string.h>
 
 #ifdef HAVE_OPENSSL_MD5_H
 #include <openssl/md5.h>
@@ -116,7 +117,11 @@ void insert_auth(char *message, char *authreq)
 				" RFC 3261 and not supported by sipsak\n", authreq);
 			exit_code(3);
 		}
+#ifdef HAVE_STRCASESTR
+		if ((begin=(char*)strcasestr(auth, "Digest"))==NULL) {
+#else
 		if ((begin=strstr(auth, "Digest"))==NULL) {
+#endif
 			printf("%s\nerror: couldn't find authentication method Digest in "
 				"the 40[1|7] response above\n", authreq);
 			exit_code(3);

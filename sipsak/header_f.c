@@ -1,5 +1,5 @@
 /*
- * $Id: header_f.c,v 1.8 2005/01/04 16:21:04 calrissian Exp $
+ * $Id: header_f.c,v 1.9 2005/01/05 23:37:24 calrissian Exp $
  *
  * Copyright (C) 2002-2004 Fhg Fokus
  *
@@ -18,12 +18,13 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-#include <string.h>
 
 #include "header_f.h"
 #include "sipsak.h"
 #include "exit_code.h"
 #include "helper.h"
+
+#include <string.h>
 
 /* add a Via Header Field in the message. */
 void add_via(char *mes)
@@ -31,12 +32,12 @@ void add_via(char *mes)
 	char *via_line, *via, *via2, *backup; 
 
 	/* first build our own Via-header-line */
-	via_line = malloc(VIA_STR_LEN+strlen(fqdn)+15);
+	via_line = malloc(VIA_SIP_STR_LEN+strlen(fqdn)+15);
 	if (!via_line) {
 		printf("failed to allocate memory\n");
 		exit_code(255);
 	}
-	snprintf(via_line, VIA_STR_LEN+strlen(fqdn)+5+10, "%s%s:%i;rport\r\n", VIA_STR, fqdn, lport);
+	snprintf(via_line, VIA_SIP_STR_LEN+strlen(fqdn)+5+10, "%s%s:%i;rport\r\n", VIA_SIP_STR, fqdn, lport);
 	if (verbose > 2)
 		printf("our Via-Line: %s\n", via_line);
 
@@ -44,12 +45,16 @@ void add_via(char *mes)
 		printf("can't add our Via Header Line because file is too big\n");
 		exit_code(2);
 	}
-	via=strstr(mes, "\nVia");
-	via2=strstr(mes, "\nv:");
+	via=strstr(mes, "\nVIA_STR");
+	via2=strstr(mes, "\nVIA_SHORT_STR");
 	if (via==NULL && via2==NULL ){
 		/* We doesn't find a Via so we insert our via
 		   direct after the first line. */
 		via=strchr(mes,'\n');
+		if(via == NULL) {
+			printf("failed to find new line to insert Via\n");
+			return;
+		}
 	}
 	else if (via!=NULL && via2!=NULL && via2<via){
 		/* the short via is above the long version */
@@ -87,16 +92,16 @@ void cpy_vias(char *reply, char *dest){
 	char *first_via, *middle_via, *last_via, *backup;
 
 	/* lets see if we find any via */
-	if ((first_via=strstr(reply, "Via:"))==NULL &&
-		(first_via=strstr(reply, "\nv:"))==NULL ){
+	if ((first_via=strstr(reply, "VIA_STR"))==NULL &&
+		(first_via=strstr(reply, "\nVIA_SHORT_STR"))==NULL ){
 		printf("error: the received message doesn't contain a Via header\n");
 		exit_code(3);
 	}
 	last_via=first_via+4;
 	middle_via=last_via;
 	/* proceed additional via lines */
-	while ((middle_via=strstr(last_via, "Via:"))!=NULL ||
-		   (middle_via=strstr(last_via, "\nv:"))!=NULL )
+	while ((middle_via=strstr(last_via, "VIA_STR"))!=NULL ||
+		   (middle_via=strstr(last_via, "\nVIA_SHORT_STR"))!=NULL )
 		last_via=middle_via+4;
 	last_via=strchr(last_via, '\n');
 	middle_via=strchr(dest, '\n')+1;
@@ -120,13 +125,14 @@ void cpy_to(char *reply, char *dest) {
 	char *src_to, *dst_to, *backup, *tmp;
 
 	/* find the position where we want to insert the To */
-	if ((dst_to=strstr(dest, "To:"))==NULL) {
-		printf("error: could not find To in our reply\n");
+	if ((dst_to=strstr(dest, "TO_STR"))==NULL &&
+		(dst_to=strstr(dest, "\nTO_SHORT_STR"))==NULL) {
+		printf("error: could not find To in the reply\n");
 		exit_code(2);
 	}
 	/* find the To we want to copy */
-	if ((src_to=strstr(reply, "To:"))==NULL && 
-		(src_to=strstr(reply, "\nt:"))==NULL) {
+	if ((src_to=strstr(reply, "TO_STR"))==NULL && 
+		(src_to=strstr(reply, "\nTO_SHORT_STR"))==NULL) {
 		if (verbose > 0)
 			printf("warning: could not find To in reply. "
 				"trying with original To\n");
@@ -155,7 +161,7 @@ void cpy_to(char *reply, char *dest) {
 void set_maxforw(char *mes){
 	char *max, *backup, *crlfi;
 
-	if ((max=strstr(mes, "Max-Forwards:"))==NULL){
+	if ((max=strstr(mes, "MAX_FRW_STR"))==NULL){
 		/* no max-forwards found so insert it after the first line*/
 		max=strchr(mes,'\n');
 		if (!max) {
@@ -232,33 +238,32 @@ void uri_replace(char *mes, char *uri)
 void set_cl(char* mes, int contentlen) {
 	char *cl, *cr, *backup;
 
-	cl = strstr(ack, CON_LEN_STR);
-	if (!cl) {
-		cl = strstr(ack, "l: ");
+	if ((cl=strstr(ack, CON_LEN_STR)) == NULL &&
+		(cl=strstr(ack, CON_LEN_SHORT_STR)) == NULL) {
+		printf("missing Content-Lenght in message\n");
+		return;
 	}
-	if (cl) {
-		cr = strchr(cl, '\n');
-		cr++;
-		backup=malloc(strlen(cr)+1);
-		if (!backup) {
-			printf("failed to allocate memory\n");
-			exit_code(255);
-		}
-		strncpy(backup, cr, strlen(cr)+1);
-		if (*cl == 'C')
-			cr=cl + CON_LEN_STR_LEN;
-		else
-			cr=cl + 3;
-		snprintf(cr, 6, "%i\r\n", contentlen);
-		cr=strchr(cr, '\n');
-		cr++;
-		strncpy(cr, backup, strlen(backup)+1);
-		free(backup);
-		if (verbose > 1)
-			printf("Content-Length set to %i\n", contentlen);
-		if (verbose > 2)
-			printf("New message with changed Content-Length:\n%s\n", mes);
+	cr = strchr(cl, '\n');
+	cr++;
+	backup=malloc(strlen(cr)+1);
+	if (!backup) {
+		printf("failed to allocate memory\n");
+		exit_code(255);
 	}
+	strncpy(backup, cr, strlen(cr)+1);
+	if (*cl == 'C')
+		cr=cl + CON_LEN_STR_LEN;
+	else
+		cr=cl + 3;
+	snprintf(cr, 6, "%i\r\n", contentlen);
+	cr=strchr(cr, '\n');
+	cr++;
+	strncpy(cr, backup, strlen(backup)+1);
+	free(backup);
+	if (verbose > 1)
+		printf("Content-Length set to %i\n", contentlen);
+	if (verbose > 2)
+		printf("New message with changed Content-Length:\n%s\n", mes);
 }
 
 /* build an ACK from the given invite and reply.
@@ -285,29 +290,27 @@ void warning_extract(char *message)
 	char *warning, *end, *mid, *server;
 	int srvsize;
 
-	warning=strstr(message, "Warning:");
-	if (warning) {
-		end=strchr(warning, '"');
-		end--;
-		warning=strchr(warning, '3');
-		warning=warning+4;
-		mid=strchr(warning, ':');
-		if (mid) end=mid;
-		srvsize=end - warning + 1;
-		server=malloc((size_t)srvsize);
-		if (!server) {
-			printf("failed to allocate memory\n");
-			exit_code(255);
-		}
-		memset(server, 0, (size_t)srvsize);
-		server=strncpy(server, warning, (size_t)(srvsize - 1));
-		printf("%s ", server);
-		free(server);
-	}
-	else {
+	if ((warning=strstr(message, "Warning:"))==NULL) {
 		if (verbose > 0) printf("'no Warning header found' ");
 		else printf("?? ");
+		return;
 	}
+	end=strchr(warning, '"');
+	end--;
+	warning=strchr(warning, '3');
+	warning=warning+4;
+	mid=strchr(warning, ':');
+	if (mid) end=mid;
+	srvsize=end - warning + 1;
+	server=malloc((size_t)srvsize);
+	if (!server) {
+		printf("failed to allocate memory\n");
+		exit_code(255);
+	}
+	memset(server, 0, (size_t)srvsize);
+	server=strncpy(server, warning, (size_t)(srvsize - 1));
+	printf("%s ", server);
+	free(server);
 }
 
 int cseq(char *message)
@@ -315,7 +318,7 @@ int cseq(char *message)
 	char *cseq;
 	int num=-1;
 
-	cseq=strstr(message, "CSeq");
+	cseq=strstr(message, CSEQ_STR);
 	if (cseq) {
 		cseq+=6;
 		num=atoi(cseq);
@@ -342,7 +345,7 @@ void increase_cseq(char *message)
 		return;
 	}
 	cs++;
-	cs_s=strstr(message, "CSeq");
+	cs_s=strstr(message, CSEQ_STR);
 	if (cs_s) {
 		cs_s+=6;
 		eol=strchr(cs_s, ' ');

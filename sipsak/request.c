@@ -1,5 +1,5 @@
 /*
- * $Id: request.c,v 1.18 2004/12/21 21:22:20 calrissian Exp $
+ * $Id: request.c,v 1.19 2005/01/05 23:37:24 calrissian Exp $
  *
  * Copyright (C) 2002-2004 Fhg Fokus
  *
@@ -71,7 +71,7 @@ void create_msg(char *buff, int action){
 					"%ssipsak %s\r\n"
 					"\r\n", 
 					REG_STR, domainname, SIP20_STR, 
-					VIA_STR, fqdn, lport, 
+					VIA_SIP_STR, fqdn, lport, 
 					FROM_STR, usern, domainname, c,
 					TO_STR, usern, domainname, 
 					CALL_STR, c, fqdn, 
@@ -95,7 +95,7 @@ void create_msg(char *buff, int action){
 					"%ssipsak %s\r\n"
 					"\r\n", 
 					REG_STR, domainname, SIP20_STR, 
-					VIA_STR, fqdn, lport, 
+					VIA_SIP_STR, fqdn, lport, 
 					FROM_STR, usern, domainname, c,
 					TO_STR, usern, domainname, 
 					CALL_STR, c, fqdn, 
@@ -121,7 +121,7 @@ void create_msg(char *buff, int action){
 					"%ssipsak %s\r\n"
 					"\r\n", 
 					REG_STR, domainname, SIP20_STR, 
-					VIA_STR, fqdn, lport, 
+					VIA_SIP_STR, fqdn, lport, 
 					FROM_STR, usern, domainname, c,
 					TO_STR, usern, domainname, 
 					CALL_STR, c, fqdn, 
@@ -148,7 +148,7 @@ void create_msg(char *buff, int action){
 				"%ssipsak %s\r\n"
 				"\r\n", 
 				REG_STR, domainname, SIP20_STR, 
-				VIA_STR, fqdn, lport, 
+				VIA_SIP_STR, fqdn, lport, 
 				FROM_STR, usern, domainname, c,
 				TO_STR, usern, domainname, 
 				CALL_STR, c, fqdn,
@@ -174,7 +174,7 @@ void create_msg(char *buff, int action){
 				"%ssipsak %s\r\n"
 				"\r\n", 
 				INV_STR, usern, domainname, SIP20_STR, 
-				VIA_STR, fqdn, lport, 
+				VIA_SIP_STR, fqdn, lport, 
 				FROM_STR, fqdn, lport, c,
 				TO_STR, usern, domainname, 
 				CALL_STR, c, fqdn, 
@@ -212,7 +212,7 @@ void create_msg(char *buff, int action){
 				"%ssipsak %s\r\n"
 				"\r\n", 
 				ACK_STR, usern, domainname, SIP20_STR, 
-				VIA_STR, fqdn, lport, 
+				VIA_SIP_STR, fqdn, lport, 
 				FROM_STR, fqdn, lport, c,
 				TO_STR, usern, domainname, c,
 				CALL_STR, c, fqdn, 
@@ -247,7 +247,7 @@ void create_msg(char *buff, int action){
 						"\r\n"
 						"%s", 
 						MES_STR, usern, domainname, SIP20_STR, 
-						VIA_STR, fqdn, lport, 
+						VIA_SIP_STR, fqdn, lport, 
 						FROM_STR, fqdn, lport, c,
 						TO_STR, usern, domainname, 
 						CALL_STR, c, fqdn, 
@@ -273,7 +273,7 @@ void create_msg(char *buff, int action){
 						"\r\n"
 						"%s", 
 						MES_STR, usern, domainname, SIP20_STR, 
-						VIA_STR, fqdn, lport, 
+						VIA_SIP_STR, fqdn, lport, 
 						FROM_STR, fqdn, lport, c,
 						TO_STR, usern, domainname, 
 						CALL_STR, c, fqdn, 
@@ -299,7 +299,7 @@ void create_msg(char *buff, int action){
 					"\r\n"
 					"%s%s%i.", 
 					MES_STR, usern, domainname, SIP20_STR, 
-					VIA_STR, fqdn, lport, 
+					VIA_SIP_STR, fqdn, lport, 
 					FROM_STR, fqdn, lport, c,
 					TO_STR, usern, domainname, 
 					CALL_STR, c, fqdn, 
@@ -373,7 +373,7 @@ void create_msg(char *buff, int action){
 				"%ssipsak %s\r\n"
 				"\r\n", 
 				FLOOD_METH, domainname, SIP20_STR, 
-				VIA_STR, fqdn, 
+				VIA_SIP_STR, fqdn, 
 				FROM_STR, fqdn, c,
 				TO_STR, domainname, 
 				CALL_STR, c, fqdn, 
@@ -397,7 +397,7 @@ void create_msg(char *buff, int action){
 				"%ssipsak %s\r\n"
 				"\r\n", 
 				OPT_STR, domainname, SIP20_STR, 
-				VIA_STR, fqdn, lport, 
+				VIA_SIP_STR, fqdn, lport, 
 				FROM_STR, fqdn, lport, c,
 				TO_STR, domainname,	
 				CALL_STR, c, fqdn, 

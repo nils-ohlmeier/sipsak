@@ -1,5 +1,5 @@
 /*
- * $Id: shoot.c,v 1.39 2005/01/04 16:21:04 calrissian Exp $
+ * $Id: shoot.c,v 1.40 2005/01/05 23:37:24 calrissian Exp $
  *
  * Copyright (C) 2002-2004 Fhg Fokus
  * Copyright (C) 2004 Nils Ohlmeier
@@ -21,7 +21,6 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-#include <string.h>
 #include <time.h>
 #include <limits.h>
 #include <sys/time.h>
@@ -53,6 +52,8 @@
 #include "header_f.h"
 #include "helper.h"
 #include "exit_code.h"
+
+#include <string.h>
 
 #ifndef DEFAULT_RETRYS
 #define DEFAULT_RETRYS 5
@@ -635,8 +636,8 @@ void shoot(char *buff)
 							REG_EXTENDED|REG_NOSUB|REG_ICASE);
 						if (regexec(&redexp, reply, 0, 0, 0)==0) {
 							/* try to find the contact in the redirect */
-							if ((foo=strstr(reply, "Contact"))==NULL &&
-								(foo=strstr(reply, "\nm:"))==NULL ) {
+							if ((foo=strstr(reply, CONT_STR))==NULL &&
+								(foo=strstr(reply, "\nCONT_SHORT_STR"))==NULL ) {
 								printf("error: cannot find Contact in this "
 									"redirect:\n%s\n", reply);
 								exit_code(3);
@@ -784,11 +785,11 @@ void shoot(char *buff)
 							}
 							*crlf='\0';
 							crlf++;
-							contact=strstr(crlf, "Contact");
-							if (!contact)
-								contact=strstr(crlf, "\nm:");
 							printf("(%.3f ms) %s\n", 
 								deltaT(&sendtime, &recvtime), reply);
+							contact=strstr(crlf, CONT_STR);
+							if (!contact)
+								contact=strstr(crlf, "\nCONT_SHORT_STR");
 							if (contact){
 								crlf=strchr(contact,'\n');
 								*crlf='\0';
