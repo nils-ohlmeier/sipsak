@@ -1,5 +1,5 @@
 /*
- * $Id: shoot.c,v 1.31 2004/07/09 17:57:20 calrissian Exp $
+ * $Id: shoot.c,v 1.32 2004/07/15 13:21:12 calrissian Exp $
  *
  * Copyright (C) 2002-2004 Fhg Fokus
  * Copyright (C) 2004 Nils Ohlmeier
@@ -473,8 +473,6 @@ void shoot(char *buff)
 						retryAfter = retryAfter * 2;
 					else
 						retryAfter = SIP_T2;
-					/* if (retryAfter > DEFAULT_TIMEOUT) 
-						retryAfter = DEFAULT_TIMEOUT; */
 					retrans_s_c++;
 					if (delaytime.tv_sec == 0)
 						memcpy(&delaytime, &sendtime, sizeof(struct timeval));
@@ -719,6 +717,7 @@ void shoot(char *buff)
 								printf("(%.3f ms) %s\n", 
 									deltaT(&sendtime, &recvtime), reply);
 							}
+							retryAfter = SIP_T2;
 							dontsend=1;
 							continue;
 						}
@@ -755,6 +754,7 @@ void shoot(char *buff)
 							if (verbose > 2)
 								printf("\nignoring provisinal "
 									"response\n");
+							retryAfter = SIP_T2;
 							dontsend = 1;
 						}
 						else {
@@ -1191,9 +1191,7 @@ void shoot(char *buff)
 								printf("   %s\n   provisional received; still"
 									" waiting for a final response\n", reply);
 							}
-							retryAfter = retryAfter * 2;
-							if (retryAfter > DEFAULT_TIMEOUT) 
-								retryAfter = DEFAULT_TIMEOUT;
+							retryAfter = SIP_T2;
 							dontsend = 1;
 							continue;
 						} else {
