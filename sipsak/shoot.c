@@ -1,5 +1,5 @@
 /*
- * $Id: shoot.c,v 1.30 2004/07/03 17:47:36 calrissian Exp $
+ * $Id: shoot.c,v 1.31 2004/07/09 17:57:20 calrissian Exp $
  *
  * Copyright (C) 2002-2004 Fhg Fokus
  * Copyright (C) 2004 Nils Ohlmeier
@@ -680,7 +680,7 @@ void shoot(char *buff)
 							REG_EXTENDED|REG_NOSUB|REG_ICASE);
 						insert_auth(buff, reply);
 						if (verbose > 2)
-							printf("\nreceived:\n%s\n", buff);
+							printf("\nreceived:\n%s\n", reply);
 						increase_cseq(buff);
 					} /* if auth...*/
 					else if (trace) {
