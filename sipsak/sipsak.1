@@ -178,9 +178,11 @@ per cent of the bindings will be removed, is determined by the
 USRLOC_REMOVE_PERCENT define within the code (set it before compilation).
 Multiple removing of bindings is possible, and can not be prevented.
 .SH RETURN VALUES
-The return value 0 means that no error occurred. 1 will be returned on remote
-errors like no response or unexpected answers. 2 will be returned on local
-errors like non resolvable names or errors on socket.
+The return value 0 means that no error occurred and received the expected 
+answer (a 200 in most cases). 1 will be returned on unexpected answers. 
+2 will be returned on local errors like non resolvable names, socket errors or
+wrong options combination. 3 will be returned on remote errors like icmp error
+messages or redirects without a contact header.
 
 .SH CAUTION
 Use

@@ -1,5 +1,5 @@
 /*
- * $Id: sipsak.c,v 1.16 2002/08/29 19:53:44 calrissian Exp $
+ * $Id: sipsak.c,v 1.17 2002/08/30 16:48:11 calrissian Exp $
  *
  * Copyright (C) 2002-2003 Fhg Fokus
  *
@@ -271,7 +271,7 @@ void cpy_vias(char *reply){
 	/* lets see if we find any via */
 	if ((first_via=strstr(reply, "Via:"))==NULL){
 		printf("error: the received message doesn't contain a Via header\n");
-		exit(1);
+		exit(3);
 	}
 	last_via=first_via+4;
 	middle_via=last_via;
@@ -689,7 +689,7 @@ void shoot(char *buff)
 				(void)gettimeofday(&sendtime, &tz);
 				if (ret==-1) {
 					perror("send failure");
-					exit( 1 );
+					exit(2);
 				}
 			}
 			else {
@@ -723,7 +723,7 @@ void shoot(char *buff)
 							if (randtrash) 
 								printf ("last message before send failure:"
 									"\n%s\n", buff);
-							exit(1);
+							exit(3);
 						}
 					}
 					/* printout that we did not received anything */
@@ -744,7 +744,7 @@ void shoot(char *buff)
 									"times without getting a response:\n%s\n"
 									"give up further retransmissions...\n", 
 									buff);
-								exit(1);
+								exit(3);
 							}
 							else {
 								printf("resending it without additional "
@@ -840,7 +840,7 @@ void shoot(char *buff)
 							if ((foo=strstr(reply, "Contact"))==NULL) {
 								printf("error: cannot find Contact in this "
 									"redirect:\n%s\n", reply);
-								exit(2);
+								exit(3);
 							}
 							crlf=strchr(foo, '\n');
 							if ((contact=strchr(foo, '\r'))!=NULL 
@@ -852,7 +852,7 @@ void shoot(char *buff)
 							if ((contact=strstr(bar, "sip"))==NULL) {
 								printf("error: cannot find sip in the Contact "
 									"of this redirect:\n%s\n", reply);
-								exit(2);
+								exit(3);
 							}
 							if ((foo=strchr(contact, ';'))!=NULL)
 								*foo='\0';
@@ -869,7 +869,7 @@ void shoot(char *buff)
 										printf("error: cannot handle the port "
 											"in the uri in Contact:\n%s\n", 
 											reply);
-										exit(2);
+										exit(3);
 									}
 								}
 								/* correct our request */
@@ -890,7 +890,7 @@ void shoot(char *buff)
 							else{
 								printf("error: missing : in Contact of this "
 									"redirect:\n%s\n", reply);
-								exit(2);
+								exit(3);
 							}
 							free(bar);
 							memset(&addr, 0, sizeof(addr));
@@ -1139,13 +1139,14 @@ void shoot(char *buff)
 							if (randretrys == 0) {
 								printf("random end reached. server survived "
 									":) respect!\n");
+								exit(0);
 							}
 							else {
 								printf("maximum sendings reached but did not "
 									"get a response on this request:\n%s\n", 
 									buff);
+								exit(3);
 							}
-							exit(0);
 						}
 						else trash_random(buff);
 					}
