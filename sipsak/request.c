@@ -1,5 +1,5 @@
 /*
- * $Id: request.c,v 1.10 2004/06/05 17:39:14 calrissian Exp $
+ * $Id: request.c,v 1.11 2004/06/06 15:19:52 calrissian Exp $
  *
  * Copyright (C) 2002-2004 Fhg Fokus
  *
@@ -57,8 +57,8 @@ void create_msg(char *buff, int action){
 				sprintf(buff, 
 					"%s sip:%s%s"
 					"%s%s:%i;rport\r\n"
-					"%s<sip:%s%s>\r\n"
-					"%s<sip:%s%s>\r\n"
+					"%ssip:%s%s;tag=%x\r\n"
+					"%ssip:%s%s\r\n"
 					"%s%u@%s\r\n"
 					"%s%i %s\r\n"
 					"%s0\r\n"
@@ -67,7 +67,7 @@ void create_msg(char *buff, int action){
 					"\r\n", 
 					REG_STR, domainname, SIP20_STR, 
 					VIA_STR, fqdn, lport, 
-					FROM_STR, usern, domainname, 
+					FROM_STR, usern, domainname, c,
 					TO_STR, usern, domainname, 
 					CALL_STR, c, fqdn, 
 					CSEQ_STR, 3*namebeg+1, REG_STR, 
@@ -79,8 +79,8 @@ void create_msg(char *buff, int action){
 				sprintf(buff, 
 					"%s sip:%s%s"
 					"%s%s:%i;rport\r\n"
-					"%s<sip:%s%s>\r\n"
-					"%s<sip:%s%s>\r\n"
+					"%ssip:%s%s;tag=%x\r\n"
+					"%ssip:%s%s\r\n"
 					"%s%u@%s\r\n"
 					"%s%i %s\r\n"
 					"%s%s\r\n"
@@ -91,7 +91,7 @@ void create_msg(char *buff, int action){
 					"\r\n", 
 					REG_STR, domainname, SIP20_STR, 
 					VIA_STR, fqdn, lport, 
-					FROM_STR, usern, domainname, 
+					FROM_STR, usern, domainname, c,
 					TO_STR, usern, domainname, 
 					CALL_STR, c, fqdn, 
 					CSEQ_STR, 3*namebeg+1, REG_STR, 
@@ -105,11 +105,11 @@ void create_msg(char *buff, int action){
 				sprintf(buff, 
 					"%s sip:%s%s"
 					"%s%s:%i;rport\r\n"
-					"%s<sip:%s%s>\r\n"
-					"%s<sip:%s%s>\r\n"
+					"%ssip:%s%s;tag=%x\r\n"
+					"%ssip:%s%s\r\n"
 					"%s%u@%s\r\n"
 					"%s%i %s\r\n"
-					"%s<sip:%s%s:%i>\r\n"
+					"%ssip:%s%s:%i\r\n"
 					"%s%i\r\n"
 					"%s0\r\n"
 					"%s70\r\n"
@@ -117,7 +117,7 @@ void create_msg(char *buff, int action){
 					"\r\n", 
 					REG_STR, domainname, SIP20_STR, 
 					VIA_STR, fqdn, lport, 
-					FROM_STR, usern, domainname, 
+					FROM_STR, usern, domainname, c,
 					TO_STR, usern, domainname, 
 					CALL_STR, c, fqdn, 
 					CSEQ_STR, 3*namebeg+1, REG_STR, 
@@ -132,11 +132,11 @@ void create_msg(char *buff, int action){
 			sprintf(buff, 
 				"%s sip:%s%s"
 				"%s%s:%i;rport\r\n"
-				"%s<sip:%s%s>\r\n"
-				"%s<sip:%s%s>\r\n"
+				"%ssip:%s%s;tag=%x\r\n"
+				"%ssip:%s%s\r\n"
 				"%s%u@%s\r\n"
 				"%s%i %s\r\n"
-				"%s<sip:%s%s:%i>;%s0\r\n"
+				"%ssip:%s%s:%i;%s0\r\n"
 				"%s%i\r\n"
 				"%s0\r\n"
 				"%s70\r\n"
@@ -144,7 +144,7 @@ void create_msg(char *buff, int action){
 				"\r\n", 
 				REG_STR, domainname, SIP20_STR, 
 				VIA_STR, fqdn, lport, 
-				FROM_STR, usern, domainname, 
+				FROM_STR, usern, domainname, c,
 				TO_STR, usern, domainname, 
 				CALL_STR, c, fqdn,
 				CSEQ_STR, trashchar, REG_STR, 
@@ -158,39 +158,39 @@ void create_msg(char *buff, int action){
 			sprintf(buff, 
 				"%s sip:%s%s%s"
 				"%s%s:%i;rport\r\n"
-				"%s<sip:sipsak@%s:%i>\r\n"
-				"%s<sip:%s%s>\r\n"
+				"%ssip:sipsak@%s:%i;tag=%x\r\n"
+				"%ssip:%s%s\r\n"
 				"%s%u@%s\r\n"
 				"%s%i %s\r\n"
 				"%s0\r\n"
-				"%s<sip:sipsak@%s:%i>\r\n"
+				"%ssip:sipsak@%s:%i\r\n"
 				"%sDONT ANSWER this test call!\r\n"
 				"%s70\r\n"
 				"%ssipsak %s\r\n"
 				"\r\n", 
 				INV_STR, usern, domainname, SIP20_STR, 
 				VIA_STR, fqdn, lport, 
-				FROM_STR, fqdn, lport, 
+				FROM_STR, fqdn, lport, c,
 				TO_STR, usern, domainname, 
 				CALL_STR, c, fqdn, 
 				CSEQ_STR, 3*namebeg+2, INV_STR, 
 				CON_LEN_STR, 
-        CONT_STR, fqdn, lport,
+				CONT_STR, fqdn, lport,
 				SUB_STR, 
 				MAX_FRW_STR, 
 				UA_STR, SIPSAK_VERSION);
 			sprintf(confirm, 
 				"%s"
-				"%s<sip:sipsak@%s:%i>\r\n"
-				"%s<sip:%s%s>\r\n"
+				"%ssip:sipsak@%s:%i;tag=%x\r\n"
+				"%ssip:%s%s;tag=%o\r\n"
 				"%s%u@%s\r\n"
 				"%s%i %s\r\n"
 				"%s0\r\n"
 				"%ssipsak %s\r\n"
 				"\r\n", 
 				SIP200_STR, 
-				FROM_STR, fqdn, lport, 
-				TO_STR, usern, domainname, 
+				FROM_STR, fqdn, lport, c,
+				TO_STR, usern, domainname, c,
 				CALL_STR, c, fqdn, 
 				CSEQ_STR, 3*namebeg+2, INV_STR, 
 				CON_LEN_STR,
@@ -198,8 +198,8 @@ void create_msg(char *buff, int action){
 			sprintf(ack, 
 				"%s sip:%s%s%s"
 				"%s%s:%i;rport\r\n"
-				"%s<sip:sipsak@%s:%i>\r\n"
-				"%s<sip:%s%s>\r\n"
+				"%ssip:sipsak@%s:%i;tag=%x\r\n"
+				"%ssip:%s%s;tag=%o\r\n"
 				"%s%u@%s\r\n"
 				"%s%i %s\r\n"
 				"%s0\r\n"
@@ -208,8 +208,8 @@ void create_msg(char *buff, int action){
 				"\r\n", 
 				ACK_STR, usern, domainname, SIP20_STR, 
 				VIA_STR, fqdn, lport, 
-				FROM_STR, fqdn, lport, 
-				TO_STR, usern, domainname, 
+				FROM_STR, fqdn, lport, c,
+				TO_STR, usern, domainname, c,
 				CALL_STR, c, fqdn, 
 				CSEQ_STR, 3*namebeg+2, ACK_STR, 
 				CON_LEN_STR, 
@@ -226,8 +226,8 @@ void create_msg(char *buff, int action){
 			sprintf(buff, 
 				"%s sip:%s%s%s"
 				"%s%s:%i;rport\r\n"
-				"%s<sip:sipsak@%s:%i>\r\n"
-				"%s<sip:%s%s>\r\n"
+				"%ssip:sipsak@%s:%i;tag=%x\r\n"
+				"%ssip:%s%s\r\n"
 				"%s%u@%s\r\n"
 				"%s%i %s\r\n"
 				"%s%s\r\n"
@@ -238,7 +238,7 @@ void create_msg(char *buff, int action){
 				"%s%s%i.", 
 				MES_STR, usern, domainname, SIP20_STR, 
 				VIA_STR, fqdn, lport, 
-				FROM_STR, fqdn, lport, 
+				FROM_STR, fqdn, lport, c,
 				TO_STR, usern, domainname, 
 				CALL_STR, c, fqdn, 
 				CSEQ_STR, 3*namebeg+2, MES_STR, 
@@ -249,16 +249,16 @@ void create_msg(char *buff, int action){
 				SIPSAK_MES_STR, username, namebeg);
 			sprintf(confirm, 
 				"%s"
-				"%s<sip:sipsak@%s:%i>\r\n"
-				"%s<sip:%s%s>\r\n"
+				"%ssip:sipsak@%s:%i;tag=%x\r\n"
+				"%ssip:%s%s;tag=%o\r\n"
 				"%s%u@%s\r\n"
 				"%s%i %s\r\n"
 				"%s0\r\n"
 				"%ssipsak %s\r\n"
 				"\r\n", 
 				SIP200_STR, 
-				FROM_STR, fqdn, lport, 
-				TO_STR, usern, domainname, 
+				FROM_STR, fqdn, lport, c,
+				TO_STR, usern, domainname, c,
 				CALL_STR, c, fqdn, 
 				CSEQ_STR, 3*namebeg+2, MES_STR, 
 				CON_LEN_STR,
@@ -273,19 +273,19 @@ void create_msg(char *buff, int action){
 		case REQ_OPT:
 			sprintf(buff, 
 				"%s sip:%s%s%s"
-				"%s<sip:sipsak@%s:%i>\r\n"
-				"%s<sip:%s%s>\r\n"
+				"%ssip:sipsak@%s:%i;tag=%x\r\n"
+				"%ssip:%s%s\r\n"
 				"%s%u@%s\r\n"
 				"%s%i %s\r\n"
-				"%s<sip:sipsak@%s:%i>\r\n"
+				"%ssip:sipsak@%s:%i\r\n"
 				"%s0\r\n"
 				"%s70\r\n"
 				"%ssipsak %s\r\n"
 				"%s%s\r\n"
 				"\r\n", 
 				OPT_STR, usern, domainname, SIP20_STR, 
-				FROM_STR, fqdn, lport, 
-				TO_STR, usern, domainname, 
+				FROM_STR, fqdn, lport, c,
+				TO_STR, usern, domainname,
 				CALL_STR, c, fqdn, 
 				CSEQ_STR, namebeg, OPT_STR, 
 				CONT_STR, fqdn, lport, 
@@ -298,18 +298,18 @@ void create_msg(char *buff, int action){
 			sprintf(buff, 
 				"%s sip:%s%s"
 				"%s%s:9\r\n"
-				"%s<sip:sipsak@%s:9>\r\n"
-				"%s<sip:%s>\r\n"
+				"%ssip:sipsak@%s:9;tag=%x\r\n"
+				"%ssip:%s\r\n"
 				"%s%u@%s\r\n"
 				"%s%i %s\r\n"
-				"%s<sipsak@%s:9>\r\n"
+				"%ssipsak@%s:9\r\n"
 				"%s0\r\n"
 				"%s70\r\n"
 				"%ssipsak %s\r\n"
 				"\r\n", 
 				FLOOD_METH, domainname, SIP20_STR, 
 				VIA_STR, fqdn, 
-				FROM_STR, fqdn, 
+				FROM_STR, fqdn, c,
 				TO_STR, domainname, 
 				CALL_STR, c, fqdn, 
 				CSEQ_STR, namebeg, FLOOD_METH, 
@@ -322,18 +322,18 @@ void create_msg(char *buff, int action){
 			sprintf(buff, 
 				"%s sip:%s%s"
 				"%s%s:%i;rport\r\n"
-				"%s<sip:sipsak@%s:%i>\r\n"
-				"%s<sip:%s>\r\n"
+				"%ssip:sipsak@%s:%i;tag=%x\r\n"
+				"%ssip:%s\r\n"
 				"%s%u@%s\r\n"
 				"%s%i %s\r\n"
-				"%s<sipsak@%s:%i>\r\n"
+				"%ssipsak@%s:%i\r\n"
 				"%s0\r\n"
 				"%s70\r\n"
 				"%ssipsak %s\r\n"
 				"\r\n", 
 				OPT_STR, domainname, SIP20_STR, 
 				VIA_STR, fqdn, lport, 
-				FROM_STR, fqdn, lport, 
+				FROM_STR, fqdn, lport, c,
 				TO_STR, domainname,	
 				CALL_STR, c, fqdn, 
 				CSEQ_STR, namebeg, OPT_STR, 
@@ -347,7 +347,6 @@ void create_msg(char *buff, int action){
 			exit_code(2);
 			break;
 	}
-//	if (usern)
 	free(usern);
 	if (verbose > 2)
 		printf("request:\n%s", buff);
