@@ -1,5 +1,5 @@
 /*
- * $Id: sipsak.c,v 1.17 2002/08/30 16:48:11 calrissian Exp $
+ * $Id: sipsak.c,v 1.18 2002/08/30 16:55:28 calrissian Exp $
  *
  * Copyright (C) 2002-2003 Fhg Fokus
  *
@@ -1209,7 +1209,7 @@ void shoot(char *buff)
 		printf("%i retransmissions received during test\n", retrans_r_c);
 	if (retrans_s_c)
 		printf("sent %i retransmissions during test\n", retrans_s_c);
-	exit(1);
+	exit(3);
 }
 
 /* prints out some usage help and exits */
