@@ -3,7 +3,6 @@ ToDo List (no order):
  - endless randtrash mode with logfile
  - support for IPv6
  - DNS SRV support
- - use one port for sending and receiving (NAT support :)
  - timeouts for usrloc
  - case in-sensitive
  - TCP support
