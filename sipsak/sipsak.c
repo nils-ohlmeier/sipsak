@@ -1,5 +1,5 @@
 /*
- * $Id: sipsak.c,v 1.28 2002/11/20 10:06:50 calrissian Exp $
+ * $Id: sipsak.c,v 1.29 2002/12/11 02:10:47 calrissian Exp $
  *
  * Copyright (C) 2002 Fhg Fokus
  *
@@ -40,8 +40,6 @@ bouquets and brickbats to farhan@hotfoon.com
    - support for short notation
    - support for IPv6
 */
-
-//set ts=4
 
 #include <stdlib.h>
 #include <stdio.h>
@@ -126,7 +124,7 @@ bouquets and brickbats to farhan@hotfoon.com
 #define QOP_STR_LEN 4
 #define QOPAUTH_STR "\"auth\""
 #define NC_STR "nc="
-#define UA_STR "User-Agnet: "
+#define UA_STR "User-Agent: "
 
 #define HASHHEXLEN 2*MD5_DIGEST_LENGTH
 
@@ -206,13 +204,20 @@ void get_fqdn(){
 	char hname[100], dname[100], hlp[18];
 	size_t namelen=100;
 	struct hostent* he;
+	struct utsname un;
 	int i;
 	unsigned char *addrp;
 	char *fqdnp;
 
-	if (gethostname(&hname[0], namelen) < 0) {
-		printf("error: cannot determine hostname\n");
-		exit(2);
+	if ((uname(&un))==0) {
+		strcpy(hname, un.nodename);
+		printf("%s\n", hname);
+	}
+	else {
+		if (gethostname(&hname[0], namelen) < 0) {
+			printf("error: cannot determine hostname\n");
+			exit(2);
+		}
 	}
 	/* a hostname with dots should be a domainname */
 	if ((strchr(hname, '.'))==NULL) {
@@ -228,23 +233,21 @@ void get_fqdn(){
 		strcpy(fqdn, hname);
 	}
 
-	if (numeric) {
-		he=gethostbyname(fqdn);
-		if (he) {
-			addrp = he->h_addr_list[0];
-			hlp[0]=fqdn[0]='\0';
-			fqdnp = &fqdn[0];
-			for (i = 0; i < 3; i++) {
-				sprintf(hlp, "%i.", addrp[i]);
-				fqdnp = strcat(fqdn, hlp);
-			}
-			sprintf(hlp, "%i", addrp[3]);
+	he=gethostbyname(hname);
+	if (he && numeric) {
+		addrp = he->h_addr_list[0];
+		hlp[0]=fqdn[0]='\0';
+		fqdnp = &fqdn[0];
+		for (i = 0; i < 3; i++) {
+			sprintf(hlp, "%i.", addrp[i]);
 			fqdnp = strcat(fqdn, hlp);
 		}
-		else {
-			printf("error: can not resolve hostname\n");
-			exit(2);
-		}
+		sprintf(hlp, "%i", addrp[3]);
+		fqdnp = strcat(fqdn, hlp);
+	}
+	else if (!he) {
+		printf("error: can not resolve hostname: %s\n", fqdn);
+		exit(2);
 	}
 
 	if (verbose > 2)
@@ -1868,3 +1871,4 @@ int main(int argc, char *argv[])
 	return 0;
 }
 
+// vim:ts=4
