@@ -1,5 +1,5 @@
 /*
- * $Id: shoot.c,v 1.3 2003/05/07 13:41:54 calrissian Exp $
+ * $Id: shoot.c,v 1.4 2003/07/03 20:12:07 calrissian Exp $
  *
  * Copyright (C) 2002-2003 Fhg Fokus
  *
@@ -621,7 +621,7 @@ void shoot(char *buff)
 								}
 								else {
 									printf("\nreceived:\n%s\nerror: didn't "
-										"received '200 OK' on regsiter (see "
+										"received '200 OK' on register (see "
 										"above). aborting\n", reply);
 									exit(1);
 								}
