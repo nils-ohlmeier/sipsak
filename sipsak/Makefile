@@ -25,10 +25,14 @@ DEFS =
 
 FLAGS = $(WARNING) $(DEFS)
 
+ifeq ($(DEFS),-DAUTH)
+  LFLAGS = -lssl
+endif
+
 all:: $(PROGS)
 
 %: %.o
-	$(CC) -lssl -o $@ $^
+	$(CC) $(LFLAGS) -o $@ $^
 %.o: %.c
 	$(CC) $(FLAGS) -c $<
 
