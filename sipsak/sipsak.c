@@ -1,5 +1,5 @@
 /*
- * $Id: sipsak.c,v 1.1 2002/08/17 15:44:25 calrissian Exp $
+ * $Id: sipsak.c,v 1.2 2002/08/19 05:06:50 calrissian Exp $
  *
  * Copyright (C) 2002-2003 Fhg Fokus
  *
@@ -681,7 +681,8 @@ void shoot(char *buff)
 				printf("request:\n%s\n", buff);
 #endif
 			}
-			else if (!trace && !usrloc && !flood && !randtrash && verbose){
+			else if (!trace && !usrloc && !flood && !randtrash && verbose &&
+						!dontsend){
 				printf("** request **\n%s\n", buff);
 			}
 
@@ -1072,9 +1073,11 @@ void shoot(char *buff)
 						}
 						if (regexec(&proexp, reply, 0, 0, 0)==0) {
 							printf("   provisional received; still waiting "
-								"for a final response\n ");
+								"for a final response\n");
 							retryAfter = retryAfter * 2;
 							if (retryAfter > 5000) retryAfter = 5000;
+							dontsend = 1;
+							i--;
 							continue;
 						} else {
 							printf("   final received\n ");
