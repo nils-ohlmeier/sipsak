@@ -151,6 +151,13 @@ This parameter increases the output verbosity.
 Prints out only the name and version number of sipsak.
 .IP -w
 Activates the extraction of the IP or hostname from the Warning header field.
+.IP "-x number"
+Sets the value of the Expires header to the given number.
+.IP -z
+Activates the randomly removing of old bindings in the USRLOC mode. How many 
+per cent of the bindings will be removed, is determined by the 
+USRLOC_REMOVE_PERCENT define within the code (set it before compilation).
+Multiple removing of bindings is possible, and can not be prevented.
 .SH RETURN VALUES
 The return value 0 means that no error occurred. 1 will be returned on remote
 errors like no response or unexpected answers. 2 will be returned on local

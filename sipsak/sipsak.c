@@ -1,5 +1,5 @@
 /*
- * $Id: sipsak.c,v 1.3 2002/08/21 01:26:59 calrissian Exp $
+ * $Id: sipsak.c,v 1.4 2002/08/25 16:06:27 calrissian Exp $
  *
  * Copyright (C) 2002-2003 Fhg Fokus
  *
@@ -70,6 +70,7 @@ bouquets and brickbats to farhan@hotfoon.com
 #define REQ_OPT 3
 #define REQ_FLOOD 4
 #define REQ_RAND 5
+#define REQ_REM 6
 #define VIA_STR "Via: SIP/2.0/UDP "
 #define VIA_STR_LEN 17
 #define MAX_FRW_STR "Max-Forwards: "
@@ -104,12 +105,13 @@ bouquets and brickbats to farhan@hotfoon.com
 #define EXP_STR_LEN 9
 #define USRLOC_EXP_DEF 15
 #define FLOOD_METH "OPTIONS"
+#define USRLOC_REMOVE_PERCENT 0.1
 
 /* lots of global variables. ugly but makes life easier. */
 long address;
 int verbose, nameend, namebeg, expires_t, flood, warning_ext;
 int maxforw, lport, rport, randtrash, trashchar, numeric;
-int file_b, uri_b, trace, via_ins, usrloc, redirects;
+int file_b, uri_b, trace, via_ins, usrloc, redirects, rand_rem;
 char *username, *domainname;
 char fqdn[FQDN_SIZE], messusern[FQDN_SIZE];
 char message[BUFSIZE], mes_reply[BUFSIZE];
@@ -354,6 +356,16 @@ void create_msg(char *buff, int action){
 				fqdn, lport, TO_STR, domainname, CALL_STR, c, fqdn, CSEQ_STR, 
 				namebeg, OPT_STR, CONT_STR, fqdn, lport);
 			break;
+		case REQ_REM:
+			usern=malloc(strlen(username)+10);
+			sprintf(usern, "%s%i", username, namebeg);
+			sprintf(buff, "%s sip:%s%s%s%s:%i\r\n%s<sip:%s@%s>\r\n"
+				"%s<sip:%s@%s>\r\n%s%u@%s\r\n%s%i %s\r\n%s<sip:%s@%s:%i>\r\n"
+				"%s%i\r\n\r\n", REG_STR, domainname, SIP20_STR, VIA_STR, fqdn, 
+				lport, FROM_STR, usern, domainname, TO_STR, usern, domainname, 
+				CALL_STR, c, fqdn, CSEQ_STR, 3*namebeg+3, REG_STR, CONT_STR, 
+				usern, fqdn, lport, EXP_STR, expires_t);
+			break;
 		default:
 			printf("error: unknown request type to create\n");
 			exit(2);
@@ -514,6 +526,7 @@ void shoot(char *buff)
 	int ssock, redirected, retryAfter, nretries;
 	int sock, i, len, ret, usrlocstep, randretrys;
 	int dontsend, cseqcmp, cseqtmp;
+	int rem_rand, rem_namebeg, rem_t;
 	char *contact, *crlf, *foo, *bar;
 	char reply[BUFSIZE];
 	fd_set	fd;
@@ -658,6 +671,9 @@ void shoot(char *buff)
 					case 2:
 						printf("sending message reply... ");
 						break;
+					case 3:
+						printf("remove binding for %s%i...", username, namebeg);
+						break;
 				}
 			}
 			else if (flood && verbose) {
@@ -774,6 +790,15 @@ void shoot(char *buff)
 							case 1:
 							case 2:
 								cseqcmp = 3*namebeg+2;
+								break;
+							case 3:
+								cseqcmp = 3*namebeg+3;
+								break;
+							default:
+								printf("error: unknown usrloc step on cseq"
+									" compare\n");
+								exit(2);
+								break;
 						}
 					}
 					else
@@ -980,6 +1005,13 @@ void shoot(char *buff)
 							case 2:
 								/* finnaly we sended our reply on the message 
 								   and look if this is also forwarded to us*/
+								if (strncmp(reply, MES_STR, MES_STR_LEN)==0) {
+									printf("ignoring MESSAGE "
+										"retransmission\n");
+									i--;
+									dontsend=1;
+									continue;
+								}
 								if (regexec(&okexp, reply, 0, 0, 0)==0) {
 									if (verbose)
 										printf("   reply received\n\n");
@@ -991,9 +1023,28 @@ void shoot(char *buff)
 											"successful.\n");
 										exit(0);
 									}
-									namebeg++;
-									create_msg(buff, REQ_REG);
-									usrlocstep=0;
+									/* lets see if we deceid to remove a 
+									   binding (case 3)*/
+									rem_rand=rand();
+									if (!rand_rem ||
+										((float)rem_rand/RAND_MAX) 
+											> USRLOC_REMOVE_PERCENT) {
+										namebeg++;
+										create_msg(buff, REQ_REG);
+										usrlocstep=0;
+									}
+									else {
+										/* to prevent only removing of low
+										   user numbers new random number*/
+										rem_rand = rand();
+										rem_namebeg = namebeg;
+										namebeg = ((float)rem_rand/RAND_MAX)
+													* namebeg;
+										rem_t = expires_t;
+										expires_t = 0;
+										create_msg(buff, REQ_REM);
+										usrlocstep=3;
+									}
 								}
 								else {
 									if (verbose)
@@ -1003,7 +1054,30 @@ void shoot(char *buff)
 										"the message\n");
 									exit(1);
 								}
-							break;
+								break;
+							case 3:
+								if (regexec(&okexp, reply, 0, 0, 0)==0) {
+									printf("   OK\n\n");
+									namebeg = rem_namebeg;
+									expires_t = rem_t;
+									namebeg++;
+									create_msg(buff, REQ_REG);
+									usrlocstep = 0;
+									i--;
+								}
+								else {
+									if (verbose)
+										printf("\nreceived:\n%s\n", reply);
+									printf("error: didn't received the "
+										"expected 200 on the remove bindings "
+										"request\n");
+									exit(1);
+								}
+								break;
+							default:
+								printf("error: unknown step in usrloc\n");
+								exit(2);
+								break;
 						}
 					}
 					else if (randtrash) {
@@ -1107,7 +1181,7 @@ void print_help() {
 	printf("\n\n"
 		" shoot : sipsak [-f filename] -s sip:uri\n"
 		" trace : sipsak -T -s sip:uri\n"
-		" USRLOC: sipsak -U [-b number] -e number [-x number] -s sip:uri\n"
+		" USRLOC: sipsak -U [-b number] -e number [-x number] [-z] -s sip:uri\n"
 		" flood : sipsak -F [-c number] -s sip:uri\n"
 		" random: sipsak -R [-t number] -s sip:uri\n\n"
 		" additional parameter in every mode:\n"
@@ -1127,6 +1201,7 @@ void print_help() {
 			"USRLOC\n"
 		"                mode\n"
 		"   -x number    the expires header field value (default: 15)\n"
+		"   -z           activates randomly removing of user bindings\n"
 		"   -F           activates the flood mode\n"
 		"   -c number    the maximum CSeq number for flood mode "
 			"(default: 2^31)\n"
@@ -1157,7 +1232,7 @@ int main(int argc, char *argv[])
 
 	/* some initialisation to be shure */
 	file_b=uri_b=trace=lport=usrloc=flood=verbose=randtrash=trashchar = 0;
-	numeric=warning_ext = 0;
+	numeric=warning_ext=rand_rem = 0;
 	namebeg=nameend=maxforw = -1;
 	via_ins=redirects = 1;
 	username = NULL;
@@ -1173,7 +1248,7 @@ int main(int argc, char *argv[])
 	if (argc==1) print_help();
 
 	/* lots of command line switches to handle*/
-	while ((c=getopt(argc,argv,"b:c:de:f:Fhil:m:nr:Rs:t:TUvVwx:")) != EOF){
+	while ((c=getopt(argc,argv,"b:c:de:f:Fhil:m:nr:Rs:t:TUvVwx:z")) != EOF){
 		switch(c){
 			case 'b':
 				if ((namebeg=atoi(optarg))==-1) {
@@ -1325,6 +1400,9 @@ int main(int argc, char *argv[])
 				break;
 			case 'x':
 				expires_t=atoi(optarg);
+				break;
+			case 'z':
+				rand_rem=1;
 				break;
 			default:
 				printf("error: unknown parameter %c\n", c);
