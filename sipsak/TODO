@@ -7,5 +7,6 @@ ToDo List (no order):
  - timeouts for usrloc
  - case in-sensitive
  - TCP support
+ - RR support
 
 Feel free to send me patches for this (or other) features!
