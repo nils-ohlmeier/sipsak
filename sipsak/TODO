@@ -1,4 +1,7 @@
 ToDo List (no order):
+ - use given Contacts in REGISTER
+   (Note: i do not plan a config file for
+    multiple accounts currently)
  - increase hostname detection for the Via line
  - multiple contacts in usrloc mode
  - endless randtrash mode with logfile
