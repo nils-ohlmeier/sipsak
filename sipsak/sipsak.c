@@ -1,5 +1,5 @@
 /*
- * $Id: sipsak.c,v 1.39 2003/02/10 17:50:35 calrissian Exp $
+ * $Id: sipsak.c,v 1.40 2003/02/28 04:28:58 calrissian Exp $
  *
  * Copyright (C) 2002 Fhg Fokus
  *
@@ -930,6 +930,8 @@ void shoot(char *buff)
 		sprintf(lport_str, "%i", lport);
 		replace_string(buff, "$port$", lport_str);
 		free(lport_str);
+		if (username)
+			replace_string(buff, "$user$", username);
 	}
 	if (replace_str)
 		replace_string(buff, "$replace$", replace_str);
