@@ -1,5 +1,5 @@
 /*
- * $Id: header_f.c,v 1.2 2003/12/30 21:42:07 calrissian Exp $
+ * $Id: header_f.c,v 1.3 2004/02/23 00:08:05 calrissian Exp $
  *
  * Copyright (C) 2002-2003 Fhg Fokus
  *
@@ -233,4 +233,27 @@ int cseq(char *message)
 	return 0;
 }
 
+void increase_cseq(char *message)
+{
+	int cs;
+	char *cs_s, *eol, *backup;
 
+	cs = cseq(message);
+	if ((cs < 1) && (verbose > 1))
+		printf("CSeq increase failed because unable to extract CSeq number\n");
+	cs++;
+	cs_s=strstr(message, "CSeq");
+	if (cs_s) {
+		cs_s+=6;
+		eol=strchr(cs_s, ' ');
+		eol++;
+		backup=malloc(strlen(eol)+1);
+		strncpy(backup, eol, strlen(eol)+1);
+		sprintf(cs_s, "%i ", cs);
+		cs_s+=strlen(cs_s);
+		strncpy(cs_s, backup, strlen(backup));
+		free(backup);
+	}
+	else if (verbose > 1)
+		printf("'CSeq' not found in message\n");
+}

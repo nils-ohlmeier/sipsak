@@ -1,5 +1,5 @@
 /*
- * $Id: shoot.c,v 1.13 2004/02/07 01:31:39 calrissian Exp $
+ * $Id: shoot.c,v 1.14 2004/02/23 00:08:05 calrissian Exp $
  *
  * Copyright (C) 2002-2003 Fhg Fokus
  *
@@ -153,7 +153,7 @@ void shoot(char *buff)
 			else if (message)
 				nretries=3*(nameend-namebeg)+3;
 			else
-				nretries=nameend-namebeg+1;
+				nretries=2*(nameend-namebeg)+2;
 			create_msg(buff, REQ_REG);
 			usrlocstep=0;
 		}
@@ -541,7 +541,8 @@ void shoot(char *buff)
 						regcomp(&authexp, "^SIP/[0-9]\\.[0-9] 401 ", 
 							REG_EXTENDED|REG_NOSUB|REG_ICASE);
 						insert_auth(buff, reply);
-						i--;
+						increase_cseq(buff);
+						//i--;
 					} /* if auth...*/
 					else if (trace) {
 						if (regexec(&tmhexp, reply, 0, 0, 0)==0) {

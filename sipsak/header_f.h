@@ -1,5 +1,5 @@
 /*
- * $Id: header_f.h,v 1.1 2003/04/04 02:12:18 calrissian Exp $
+ * $Id: header_f.h,v 1.2 2004/02/23 00:08:05 calrissian Exp $
  *
  * Copyright (C) 2002-2003 Fhg Fokus
  *
@@ -33,4 +33,5 @@ void warning_extract(char *message);
 
 int cseq(char *message);
 
+void increase_cseq(char *message);
 #endif
