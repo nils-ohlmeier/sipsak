@@ -46,6 +46,9 @@ all:: $(PROGS)
 
 sipsak: sipsak.o
 
+auth:
+	@make DEFS=-DAUTH
+
 # So crude but so effective ;-)
 # Less crude thanks to many contributions ;-)
 install::
