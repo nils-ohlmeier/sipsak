@@ -2,7 +2,7 @@
 # Process this file with autoconf to produce a configure script.
 
 AC_PREREQ(2.59)
-AC_INIT([sipsak],[0.8.pre_10],[develop@ohlmeier.org])
+AC_INIT([sipsak],[0.8.10],[develop@ohlmeier.org])
 AM_INIT_AUTOMAKE
 AM_MAINTAINER_MODE
 AC_CONFIG_SRCDIR([sipsak.c])
@@ -77,12 +77,12 @@ if test "$def_retrys" = no; then
 fi
 AC_DEFINE_UNQUOTED(DEFAULT_RETRYS, $def_retrys, [Default number of retrys in default mode.])
 
-# Check for default timeout
-def_timeout=5000
-AC_ARG_ENABLE([timeout],AS_HELP_STRING(--enable-timeout=SEC,maximum timeout in SEC milliseconds (default 5000)),[def_timeout=$enableval])
+# Check for T1 timer value
+def_timeout=500
+AC_ARG_ENABLE([timeout],AS_HELP_STRING(--enable-timeout=SEC,SIP timer T1 in SEC milliseconds (default 500)),[def_timeout=$enableval])
 if test "$def_timeout" = no; then
   # no timeout makes no sense
-  def_timeout=1000
+  def_timeout=500
 fi
 AC_DEFINE_UNQUOTED(DEFAULT_TIMEOUT, $def_timeout, [Default maximum timeout on waiting for response.])
 
