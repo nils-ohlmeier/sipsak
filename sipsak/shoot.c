@@ -1,5 +1,5 @@
 /*
- * $Id: shoot.c,v 1.9 2003/12/30 21:44:27 calrissian Exp $
+ * $Id: shoot.c,v 1.10 2004/01/29 23:34:44 calrissian Exp $
  *
  * Copyright (C) 2002-2003 Fhg Fokus
  *
@@ -637,7 +637,7 @@ void shoot(char *buff)
 									exit(1);
 								}
 								if (!invite && !message) {
-									if (namebeg==nameend) {
+									if (namebeg==nameend && verbose) {
 										printf("\nAll usrloc tests completed "
 											"successful.\nreceived last message"
 											" %.3f ms after first request (test"
