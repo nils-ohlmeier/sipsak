@@ -1,5 +1,5 @@
 /*
- * $Id: sipsak.c,v 1.67 2004/06/26 22:51:13 calrissian Exp $
+ * $Id: sipsak.c,v 1.68 2004/06/26 23:42:39 calrissian Exp $
  *
  * Copyright (C) 2002-2004 Fhg Fokus
  * Copyright (C) 2004 Nils Ohlmeier
@@ -53,68 +53,173 @@ void print_help() {
 	printf(" Copyright (C) 2002-2004 FhG Fokus, 2004 Nils Ohlmeier\n");
 	printf(" report bugs to %s\n\n", PACKAGE_BUGREPORT);
 	printf(
-		" shoot : sipsak [-f filename] -s sip:uri\n"
-		" trace : sipsak -T -s sip:uri\n"
-		" usrloc: sipsak -U [-I|M] [-b number] [-e number] [-x number] [-z] -s "
-			"sip:uri\n"
-		" usrloc: sipsak -I|M [-b number] [-e number] -s sip:uri\n"
-		" usrloc: sipsak -U [-C sip:uri] [-x number] -s sip:uri\n"
-		" flood : sipsak -F [-c number] -s sip:uri\n"
-		" random: sipsak -R [-t number] -s sip:uri\n\n"
+		" shoot : sipsak [-f FILE] -s SIPURI\n"
+		" trace : sipsak -T -s SIPURI\n"
+		" usrloc: sipsak -U [-I|M] [-b NUMBER] [-e NUMBER] [-x NUMBER] [-z] -s "
+			"SIPURI\n"
+		" usrloc: sipsak -I|M [-b NUMBER] [-e NUMBER] -s SIPURI\n"
+		" usrloc: sipsak -U [-C SIPURI] [-x NUMBER] -s SIPURI\n"
+		" flood : sipsak -F [-c NUMBER] -s SIPURI\n"
+		" random: sipsak -R [-t NUMBER] -s SIPURI\n\n"
 		" additional parameter in every mode:\n"
-		"   [-a password] [-d] [-i] [-H hostname] [-l port] [-m number] [-n] "
-		"[-N] [-r port]\n"
-		"   [-v] [-V] [-w]\n\n");
+		"   [-a PASSWORD] [-d] [-i] [-H HOSTNAME] [-l PORT] [-m NUMBER] [-n] "
+			"[-N]\n"
+		"   [-r PORT] [-v] [-V] [-w]\n\n");
 	printf(
-		"   -h           displays this help message\n"
-		"   -V           prints version string only\n"
-		"   -f filename  the file which contains the SIP message to send\n"
-		"   -s sip:uri   the destination server uri in form "
-			"sip:[user@]servername[:port]\n"
-		"   -T           activates the traceroute mode\n"
-		"   -U           activates the usrloc mode\n"
-		"   -I           simulates a successful calls with itself\n"
-		"   -M           sends messages to itself\n");
+		"  -h                displays this help message\n"
+#ifdef HAVE_GETOPT_LONG
+		"  --help\n"
+#endif
+		"  -V                prints version string only\n"
+#ifdef HAVE_GETOPT_LONG
+		"  --version\n"
+#endif
+		"  -f FILE           the file which contains the SIP message to send\n"
+#ifdef HAVE_GETOPT_LONG
+		"  --filename=FILE\n"
+#endif
+		"  -s SIPURI         the destination server uri in form\n"
+#ifdef HAVE_GETOPT_LONG
+		"  --sip-uri=SIPURI  sip:[user@]servername[:port]\n"
+#else
+		"                    sip:[user@]servername[:port]\n"
+#endif
+		"  -T                activates the traceroute mode\n"
+#ifdef HAVE_GETOPT_LONG
+		"  --traceroute-mode\n"
+#endif
+		"  -U                activates the usrloc mode\n"
+#ifdef HAVE_GETOPT_LONG
+		"  --usrloc-mode\n"
+#endif
+		"  -I                simulates a successful calls with itself\n"
+#ifdef HAVE_GETOPT_LONG
+		"  --invite-mode\n"
+#endif
+		"  -M                sends messages to itself\n"
+#ifdef HAVE_GETOPT_LONG
+		"  --message-mode\n"
+#endif
+		);
 	printf(
-		"   -C sip:uri   use the given uri as Contact in REGISTER\n"
-		"   -b number    the starting number appendix to the user name in "
-			"usrloc mode\n"
-		"                (default: 0)\n"
-		"   -e number    the ending numer of the appendix to the user name in "
-			"usrloc\n"
-		"                mode\n"
-		"   -o number    sleep number ms before sending next request\n"
-		"   -x number    the expires header field value (default: 15)\n"
-		"   -z           activates randomly removing of user bindings\n"
-		"   -F           activates the flood mode\n");
+		"  -C SIPURI         use the given uri as Contact in REGISTER\n"
+#ifdef HAVE_GETOPT_LONG
+		"  --contact=SIPURI\n"
+#endif
+		"  -b NUMBER         the starting number appendix to the user name (default: 0)\n"
+#ifdef HAVE_GETOPT_LONG
+		"  --appendix-begin=NUMBER\n"
+#endif
+		"  -e NUMBER         the ending numer of the appendix to the user name\n"
+#ifdef HAVE_GETOPT_LONG
+		"  --appendix-end=NUMBER\n"
+#endif
+		"  -o NUMBER         sleep number ms before sending next request\n"
+#ifdef HAVE_GETOPT_LONG
+		"  --sleep=NUMBER\n"
+#endif
+		"  -x NUMBER         the expires header field value (default: 15)\n"
+#ifdef HAVE_GETOPT_LONG
+		"  --expires=NUMBER\n"
+#endif
+		"  -z                activates randomly removing of user bindings\n"
+#ifdef HAVE_GETOPT_LONG
+		"  --remove-bindings\n"
+#endif
+		"  -F                activates the flood mode\n"
+#ifdef HAVE_GETOPT_LONG
+		"  --flood-mode\n"
+#endif
+		);
 	printf(
-		"   -c number    the maximum CSeq number for flood mode "
+		"  -c NUMBER         the maximum CSeq number for flood mode "
 			"(default: 2^31)\n"
-		"   -R           activates the random modues (dangerous)\n"
-		"   -t number    the maximum number of trashed character in random "
+#ifdef HAVE_GETOPT_LONG
+		"  --cseq-max=NUMBER\n"
+#endif
+		"  -R                activates the random modues (dangerous)\n"
+#ifdef HAVE_GETOPT_LONG
+		"  --random-mode\n"
+#endif
+		"  -t NUMBER         the maximum number of trashed character in random "
 			"mode\n"
-		"                (default: request length)\n"
-		"   -l port      the local port to use (default: any)\n"
-		"   -r port      the remote port to use (default: 5060)\n"
-		"   -p hostname  request target (outbound proxy)\n");
+		"                    (default: request length)\n"
+#ifdef HAVE_GETOPT_LONG
+		"  --trash-chars=NUMBER\n"
+#endif
+		"  -l PORT           the local port to use (default: any)\n"
+#ifdef HAVE_GETOPT_LONG
+		"  --local-port=PORT\n"
+#endif
+		"  -r PORT           the remote port to use (default: 5060)\n"
+#ifdef HAVE_GETOPT_LONG
+		"  --remote-port=PORT\n"
+#endif
+		"  -p HOSTNAME       request target (outbound proxy)\n"
+#ifdef HAVE_GETOPT_LONG
+		"  --outbound-proxy=HOSTNAME\n"
+#endif
+		);
 	printf(
-		"   -H hostname  overwrites the hostname in all headers\n"
-		"                (usefull if the detection of the hostname fails)\n"
-		"   -m number    the value for the max-forwards header field\n"
-		"   -n           use IPs instead of fqdn in the Via-Line\n"
-		"   -i           deactivate the insertion of a Via-Line\n"
-		"   -a password  password for authentication\n"
-		"                (if omitted password=username)\n");
+		"  -H HOSTNAME       overwrites the local hostname in all headers\n"
+#ifdef HAVE_GETOPT_LONG
+		"  --hostname=HOSTNAME\n"
+#endif
+		"  -m NUMBER         the value for the max-forwards header field\n"
+#ifdef HAVE_GETOPT_LONG
+		"  --max-forwards=NUMBER\n"
+#endif
+		"  -n                use IPs instead of FQDN in the Via-Line\n"
+#ifdef HAVE_GETOPT_LONG
+		"  --numeric\n"
+#endif
+		"  -i                deactivate the insertion of a Via-Line\n"
+#ifdef HAVE_GETOPT_LONG
+		"  --no-via\n"
+#endif
+		"  -a PASSWORD       password for authentication\n"
+		"                    (if omitted password=username)\n"
+#ifdef HAVE_GETOPT_LONG
+		"  --password=PASSWORD\n"
+#endif
+		);
 	printf(
-		"   -d           ignore redirects\n"
-		"   -v           each v's produces more verbosity (max. 3)\n"
-		"   -w           extract IP from the warning in reply\n"
-		"   -g string    replacement for a special mark in the message\n"
-		"   -G           activates replacement of variables\n"
-		"   -N           returns exit codes Nagios compliant\n"
-		"   -W number    return Nagios warning if retrans > number\n"
-		"   -B string    send a message with string as body\n"
-		"   -O string    Content-Disposition value\n"
+		"  -d                ignore redirects\n"
+#ifdef HAVE_GETOPT_LONG
+		"  --ignore-redirects\n"
+#endif
+		"  -v                each v produces more verbosity (max. 3)\n"
+#ifdef HAVE_GETOPT_LONG
+		"  --verbose\n"
+#endif
+		"  -w                extract IP from the warning in reply\n"
+#ifdef HAVE_GETOPT_LONG
+		"  --extract-ip\n"
+#endif
+		"  -g STRING         replacement for a special mark in the message\n"
+#ifdef HAVE_GETOPT_LONG
+		"  --replace-string=STRING\n"
+#endif
+		"  -G                activates replacement of variables\n"
+#ifdef HAVE_GETOPT_LONG
+		"  --replace\n"
+#endif
+		"  -N                returns exit codes Nagios compliant\n"
+#ifdef HAVE_GETOPT_LONG
+		"  --nagios-code\n"
+#endif
+		"  -W NUMBER         return Nagios warning if retrans > number\n"
+#ifdef HAVE_GETOPT_LONG
+		"  --nagios-warn=NUMBER\n"
+#endif
+		"  -B STRING         send a message with string as body\n"
+#ifdef HAVE_GETOPT_LONG
+		"  --message-body=STRING\n"
+#endif
+		"  -O STRING         Content-Disposition value\n"
+#ifdef HAVE_GETOPT_LONG
+		"  --disposition=STRING\n"
+#endif
 		);
 		exit(0);
 }
@@ -137,8 +242,8 @@ int main(int argc, char *argv[])
 		{"invite-mode", 0, 0, 'I'},
 		{"message-mode", 0, 0, 'M'},
 		{"contact", 1, 0, 'C'},
-		{"appendix-begin-number", 1, 0, 'b'},
-		{"appendix-end-number", 1, 0, 'e'},
+		{"appendix-begin", 1, 0, 'b'},
+		{"appendix-end", 1, 0, 'e'},
 		{"sleep", 1, 0, 'o'},
 		{"expires", 1, 0, 'x'},
 		{"remove-bindings", 0, 0, 'z'},
@@ -155,7 +260,9 @@ int main(int argc, char *argv[])
 		{"no-via", 0, 0, 'i'},
 		{"password", 1, 0, 'a'},
 		{"ignore-redirects", 0, 0, 'd'},
+		{"verbose", 0, 0, 'v'},
 		{"extract-ip", 0, 0, 'w'},
+		{"replace-string", 0, 0, 'g'},
 		{"replace", 0, 0, 'G'},
 		{"nagios-code", 0, 0, 'N'},
 		{"nagios-warn", 1, 0, 'W'},
