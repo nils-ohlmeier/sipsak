@@ -1,5 +1,6 @@
 ToDo List (no order):
  - outbound host/proxy (different from ruri; network destination host)
+ - Nagios compliance
  - increase CSeq number when retrying for authentication
  - add RFC-conform From tag
  - check all parameters with is[alpha|number]
