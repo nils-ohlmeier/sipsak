@@ -1,5 +1,5 @@
 /*
- * $Id: request.c,v 1.1 2003/04/04 02:12:18 calrissian Exp $
+ * $Id: request.c,v 1.2 2003/09/11 02:52:30 calrissian Exp $
  *
  * Copyright (C) 2002-2003 Fhg Fokus
  *
@@ -27,59 +27,142 @@
 void create_msg(char *buff, int action){
 	unsigned int c;
 	char *usern=NULL;
+	int usern_len;
 
+	if (username)
+		usern_len=strlen(username)+11;
+	else
+		usern_len=1;
+	usern=malloc(usern_len);
+	if (usern)
+		memset(usern, 0, usern_len);
+	else {
+		printf("error: create_msg(): out of mem\n");
+		exit(2);
+	}
 	if (action <= 4) {
 		if (verbose > 2)
 			printf("username: %s\ndomainname: %s\n", username, domainname);
-		usern=malloc(strlen(username)+10);
 		if (nameend>0) 
-			sprintf(usern, "%s%i", username, namebeg);
+			sprintf(usern, "%s%i@", username, namebeg);
 		else
-			sprintf(usern, "%s", username);
+			sprintf(usern, "%s@", username);
 	}
 	c=rand();
 	switch (action){
 		case REQ_REG:
 			/* build the register, message and the 200 we need in for 
 			   USRLOC on one function call*/
-			sprintf(buff, "%s sip:%s%s%s%s:%i\r\n%s<sip:%s@%s>\r\n"
-				"%s<sip:%s@%s>\r\n%s%u@%s\r\n%s%i %s\r\n%s<sip:%s@%s:%i>\r\n"
-				"%s%i\r\n%s0\r\n%s70\r\n%ssipsak %s\r\n\r\n", REG_STR, 
-				domainname, SIP20_STR, VIA_STR, fqdn, lport, FROM_STR, usern, 
-				domainname, TO_STR, usern, domainname, CALL_STR, c, fqdn, 
-				CSEQ_STR, 3*namebeg+1, REG_STR, CONT_STR, usern, fqdn, lport, 
-				EXP_STR, expires_t, CON_LEN_STR, MAX_FRW_STR, UA_STR, 
-				SIPSAK_VERSION);
+			sprintf(buff, 
+				"%s sip:%s%s"
+				"%s%s:%i\r\n"
+				"%s<sip:%s%s>\r\n"
+				"%s<sip:%s%s>\r\n"
+				"%s%u@%s\r\n"
+				"%s%i %s\r\n"
+				"%s<sip:%s%s:%i>\r\n"
+				"%s%i\r\n"
+				"%s0\r\n"
+				"%s70\r\n"
+				"%ssipsak %s\r\n"
+				"\r\n", 
+				REG_STR, domainname, SIP20_STR, 
+				VIA_STR, fqdn, lport, 
+				FROM_STR, usern, domainname, 
+				TO_STR, usern, domainname, 
+				CALL_STR, c, fqdn, 
+				CSEQ_STR, 3*namebeg+1, REG_STR, 
+				CONT_STR, usern, fqdn, lport, 
+				EXP_STR, expires_t, 
+				CON_LEN_STR, 
+				MAX_FRW_STR, 
+				UA_STR, SIPSAK_VERSION);
 			break;
 		case REQ_REM:
-			sprintf(buff, "%s sip:%s%s%s%s:%i\r\n%s<sip:%s@%s>\r\n"
-				"%s<sip:%s@%s>\r\n%s%u@%s\r\n%s%i %s\r\n%s<sip:%s@%s:%i>;%s0"
-				"\r\n%s%i\r\n%s0\r\n%s70\r\n%ssipsak %s\r\n\r\n", REG_STR, 
-				domainname,	SIP20_STR, VIA_STR, fqdn, lport, FROM_STR, usern, 
-				domainname,	TO_STR, usern, domainname, CALL_STR, c, fqdn, 
-				CSEQ_STR, trashchar, REG_STR, CONT_STR, usern, fqdn, lport, 
-				CON_EXP_STR, EXP_STR, expires_t, CON_LEN_STR, MAX_FRW_STR, 
+			sprintf(buff, 
+				"%s sip:%s%s"
+				"%s%s:%i\r\n"
+				"%s<sip:%s%s>\r\n"
+				"%s<sip:%s%s>\r\n"
+				"%s%u@%s\r\n"
+				"%s%i %s\r\n"
+				"%s<sip:%s%s:%i>;%s0\r\n"
+				"%s%i\r\n"
+				"%s0\r\n"
+				"%s70\r\n"
+				"%ssipsak %s\r\n"
+				"\r\n", 
+				REG_STR, domainname, SIP20_STR, 
+				VIA_STR, fqdn, lport, 
+				FROM_STR, usern, domainname, 
+				TO_STR, usern, domainname, 
+				CALL_STR, c, fqdn,
+				CSEQ_STR, trashchar, REG_STR, 
+				CONT_STR, usern, fqdn, lport, CON_EXP_STR, 
+				EXP_STR, expires_t, 
+				CON_LEN_STR, 
+				MAX_FRW_STR, 
 				UA_STR, SIPSAK_VERSION);
 			break;
 		case REQ_INV:
-			sprintf(buff, "%s sip:%s@%s%s%s%s:%i\r\n%s<sip:sipsak@%s:%i>\r\n"
-				"%s<sip:%s@%s>\r\n%s%u@%s\r\n%s%i %s\r\n%s0\r\n%sDONT ANSWER"
-				" this test call!\r\n%s70\r\n%ssipsak %s\r\n\r\n", 
-				INV_STR, usern, domainname, SIP20_STR, VIA_STR, fqdn, lport, 
-				FROM_STR, fqdn, lport, TO_STR, usern, domainname, CALL_STR, c, 
-				fqdn, CSEQ_STR, 3*namebeg+2, INV_STR, CON_LEN_STR, SUB_STR, 
-				MAX_FRW_STR, UA_STR, SIPSAK_VERSION);
-			sprintf(confirm, "%s%s<sip:sipsak@%s:%i>\r\n%s<sip:%s@%s>\r\n"
-				"%s%u@%s\r\n%s%i %s\r\n%s0\r\n%ssipsak %s\r\n\r\n", 
-				SIP200_STR, FROM_STR, fqdn, lport, TO_STR, usern, domainname, 
-				CALL_STR, c, fqdn, CSEQ_STR, 3*namebeg+2, INV_STR, CON_LEN_STR,
+			sprintf(buff, 
+				"%s sip:%s%s%s"
+				"%s%s:%i\r\n"
+				"%s<sip:sipsak@%s:%i>\r\n"
+				"%s<sip:%s%s>\r\n"
+				"%s%u@%s\r\n"
+				"%s%i %s\r\n"
+				"%s0\r\n"
+				"%sDONT ANSWER this test call!\r\n"
+				"%s70\r\n"
+				"%ssipsak %s\r\n"
+				"\r\n", 
+				INV_STR, usern, domainname, SIP20_STR, 
+				VIA_STR, fqdn, lport, 
+				FROM_STR, fqdn, lport, 
+				TO_STR, usern, domainname, 
+				CALL_STR, c, fqdn, 
+				CSEQ_STR, 3*namebeg+2, INV_STR, 
+				CON_LEN_STR, 
+				SUB_STR, 
+				MAX_FRW_STR, 
 				UA_STR, SIPSAK_VERSION);
-			sprintf(ack, "%s sip:%s@%s%s%s%s:%i\r\n%s<sip:sipsak@%s:%i>\r\n"
-				"%s<sip:%s@%s>\r\n%s%u@%s\r\n%s%i %s\r\n%s0\r\n%s70\r\n"
-				"%ssipsak %s\r\n\r\n", ACK_STR, usern, domainname, SIP20_STR, 
-				VIA_STR, fqdn, lport, FROM_STR, fqdn, lport, TO_STR, usern, 
-				domainname, CALL_STR, c, fqdn, CSEQ_STR, 3*namebeg+2, ACK_STR, 
-				CON_LEN_STR, MAX_FRW_STR, UA_STR, SIPSAK_VERSION);
+			sprintf(confirm, 
+				"%s"
+				"%s<sip:sipsak@%s:%i>\r\n"
+				"%s<sip:%s%s>\r\n"
+				"%s%u@%s\r\n"
+				"%s%i %s\r\n"
+				"%s0\r\n"
+				"%ssipsak %s\r\n"
+				"\r\n", 
+				SIP200_STR, 
+				FROM_STR, fqdn, lport, 
+				TO_STR, usern, domainname, 
+				CALL_STR, c, fqdn, 
+				CSEQ_STR, 3*namebeg+2, INV_STR, 
+				CON_LEN_STR,
+				UA_STR, SIPSAK_VERSION);
+			sprintf(ack, 
+				"%s sip:%s%s%s"
+				"%s%s:%i\r\n"
+				"%s<sip:sipsak@%s:%i>\r\n"
+				"%s<sip:%s%s>\r\n"
+				"%s%u@%s\r\n"
+				"%s%i %s\r\n"
+				"%s0\r\n"
+				"%s70\r\n"
+				"%ssipsak %s\r\n"
+				"\r\n", 
+				ACK_STR, usern, domainname, SIP20_STR, 
+				VIA_STR, fqdn, lport, 
+				FROM_STR, fqdn, lport, 
+				TO_STR, usern, domainname, 
+				CALL_STR, c, fqdn, 
+				CSEQ_STR, 3*namebeg+2, ACK_STR, 
+				CON_LEN_STR, 
+				MAX_FRW_STR, 
+				UA_STR, SIPSAK_VERSION);
 			if (verbose > 2)
 				printf("ack:\n%s\nreply:\n%s\n", ack, confirm);
 			if (nameend>0)
@@ -88,18 +171,45 @@ void create_msg(char *buff, int action){
 				sprintf(messusern, "%s sip:%s", INV_STR, username);
 			break;
 		case REQ_MES:
-			sprintf(buff, "%s sip:%s@%s%s%s%s:%i\r\n%s<sip:sipsak@%s:%i>\r\n"
-				"%s<sip:%s@%s>\r\n%s%u@%s\r\n%s%i %s\r\n%s%s%i\r\n%s70\r\n"
-				"%ssipsak %s\r\n\r\n%s%s%i.", MES_STR, usern, domainname, 
-				SIP20_STR, VIA_STR, fqdn, lport, FROM_STR, fqdn, lport, TO_STR,
-				usern, domainname, CALL_STR, c, fqdn, CSEQ_STR, 3*namebeg+2, 
-				MES_STR, CON_TXT_STR, CON_LEN_STR, 
-				SIPSAK_MES_STR_LEN+strlen(usern), MAX_FRW_STR, UA_STR, 
-				SIPSAK_VERSION,	SIPSAK_MES_STR, username, namebeg);
-			sprintf(confirm, "%s%s<sip:sipsak@%s:%i>\r\n%s<sip:%s@%s>\r\n"
-				"%s%u@%s\r\n%s%i %s\r\n%s0\r\n%ssipsak %s\r\n\r\n", 
-				SIP200_STR, FROM_STR, fqdn, lport, TO_STR, usern, domainname, 
-				CALL_STR, c, fqdn, CSEQ_STR, 3*namebeg+2, MES_STR, CON_LEN_STR,
+			sprintf(buff, 
+				"%s sip:%s%s%s"
+				"%s%s:%i\r\n"
+				"%s<sip:sipsak@%s:%i>\r\n"
+				"%s<sip:%s%s>\r\n"
+				"%s%u@%s\r\n"
+				"%s%i %s\r\n"
+				"%s%s\r\n"
+				"%s%i\r\n"
+				"%s70\r\n"
+				"%ssipsak %s\r\n"
+				"\r\n"
+				"%s%s%i.", 
+				MES_STR, usern, domainname, SIP20_STR, 
+				VIA_STR, fqdn, lport, 
+				FROM_STR, fqdn, lport, 
+				TO_STR, usern, domainname, 
+				CALL_STR, c, fqdn, 
+				CSEQ_STR, 3*namebeg+2, MES_STR, 
+				CON_TYP_STR, TXT_PLA_STR, 
+				CON_LEN_STR, SIPSAK_MES_STR_LEN+strlen(usern)-1, 
+				MAX_FRW_STR, 
+				UA_STR, SIPSAK_VERSION,	
+				SIPSAK_MES_STR, username, namebeg);
+			sprintf(confirm, 
+				"%s"
+				"%s<sip:sipsak@%s:%i>\r\n"
+				"%s<sip:%s%s>\r\n"
+				"%s%u@%s\r\n"
+				"%s%i %s\r\n"
+				"%s0\r\n"
+				"%ssipsak %s\r\n"
+				"\r\n", 
+				SIP200_STR, 
+				FROM_STR, fqdn, lport, 
+				TO_STR, usern, domainname, 
+				CALL_STR, c, fqdn, 
+				CSEQ_STR, 3*namebeg+2, MES_STR, 
+				CON_LEN_STR,
 				UA_STR, SIPSAK_VERSION);
 			if (nameend>0)
 				sprintf(messusern, "%s sip:%s%i", MES_STR, username, namebeg);
@@ -109,38 +219,84 @@ void create_msg(char *buff, int action){
 				printf("reply:\n%s\n", confirm);
 			break;
 		case REQ_OPT:
-			sprintf(buff, "%s sip:%s@%s%s%s<sip:sipsak@%s:%i>\r\n"
-				"%s<sip:%s@%s>\r\n%s%u@%s\r\n%s%i %s\r\n"
-				"%s<sip:sipsak@%s:%i>\r\n%s0\r\n%s70\r\n%ssipsak %s\r\n\r\n", 
-				OPT_STR, username, domainname, SIP20_STR, FROM_STR, fqdn, lport,
-				TO_STR,	username, domainname, CALL_STR, c, fqdn, CSEQ_STR, 
-				namebeg, OPT_STR, CONT_STR, fqdn, lport, CON_LEN_STR, 
-				MAX_FRW_STR, UA_STR, SIPSAK_VERSION);
+			sprintf(buff, 
+				"%s sip:%s%s%s"
+				"%s<sip:sipsak@%s:%i>\r\n"
+				"%s<sip:%s%s>\r\n"
+				"%s%u@%s\r\n"
+				"%s%i %s\r\n"
+				"%s<sip:sipsak@%s:%i>\r\n"
+				"%s0\r\n"
+				"%s70\r\n"
+				"%ssipsak %s\r\n"
+				"%s%s\r\n"
+				"\r\n", 
+				OPT_STR, usern, domainname, SIP20_STR, 
+				FROM_STR, fqdn, lport, 
+				TO_STR, usern, domainname, 
+				CALL_STR, c, fqdn, 
+				CSEQ_STR, namebeg, OPT_STR, 
+				CONT_STR, fqdn, lport, 
+				CON_LEN_STR, 
+				MAX_FRW_STR, 
+				UA_STR, SIPSAK_VERSION, 
+				ACP_STR, TXT_PLA_STR);
 			break;
 		case REQ_FLOOD:
-			sprintf(buff, "%s sip:%s%s%s%s:9\r\n%s<sip:sipsak@%s:9>\r\n"
-				"%s<sip:%s>\r\n%s%u@%s\r\n%s%i %s\r\n%s<sipsak@%s:9>\r\n"
-				"%s0\r\n%s70\r\n%ssipsak %s\r\n\r\n", FLOOD_METH, domainname, 
-				SIP20_STR, VIA_STR, fqdn, FROM_STR, fqdn, TO_STR, domainname, 
-				CALL_STR, c, fqdn, CSEQ_STR, namebeg, FLOOD_METH, CONT_STR, 
-				fqdn, CON_LEN_STR, MAX_FRW_STR, UA_STR, SIPSAK_VERSION);
+			sprintf(buff, 
+				"%s sip:%s%s"
+				"%s%s:9\r\n"
+				"%s<sip:sipsak@%s:9>\r\n"
+				"%s<sip:%s>\r\n"
+				"%s%u@%s\r\n"
+				"%s%i %s\r\n"
+				"%s<sipsak@%s:9>\r\n"
+				"%s0\r\n"
+				"%s70\r\n"
+				"%ssipsak %s\r\n"
+				"\r\n", 
+				FLOOD_METH, domainname, SIP20_STR, 
+				VIA_STR, fqdn, 
+				FROM_STR, fqdn, 
+				TO_STR, domainname, 
+				CALL_STR, c, fqdn, 
+				CSEQ_STR, namebeg, FLOOD_METH, 
+				CONT_STR, fqdn, 
+				CON_LEN_STR, 
+				MAX_FRW_STR, 
+				UA_STR, SIPSAK_VERSION);
 			break;
 		case REQ_RAND:
-			sprintf(buff, "%s sip:%s%s%s%s:%i\r\n%s<sip:sipsak@%s:%i>\r\n"
-				"%s<sip:%s>\r\n%s%u@%s\r\n%s%i %s\r\n%s<sipsak@%s:%i>\r\n"
-				"%s0\r\n%s70\r\n%ssipsak %s\r\n\r\n", OPT_STR, domainname, 
-				SIP20_STR, VIA_STR, fqdn, lport, FROM_STR, fqdn, lport, TO_STR, 
-				domainname,	CALL_STR, c, fqdn, CSEQ_STR, namebeg, OPT_STR, 
-				CONT_STR, fqdn,	lport, CON_LEN_STR, MAX_FRW_STR, UA_STR, 
-				SIPSAK_VERSION);
+			sprintf(buff, 
+				"%s sip:%s%s"
+				"%s%s:%i\r\n"
+				"%s<sip:sipsak@%s:%i>\r\n"
+				"%s<sip:%s>\r\n"
+				"%s%u@%s\r\n"
+				"%s%i %s\r\n"
+				"%s<sipsak@%s:%i>\r\n"
+				"%s0\r\n"
+				"%s70\r\n"
+				"%ssipsak %s\r\n"
+				"\r\n", 
+				OPT_STR, domainname, SIP20_STR, 
+				VIA_STR, fqdn, lport, 
+				FROM_STR, fqdn, lport, 
+				TO_STR, domainname,	
+				CALL_STR, c, fqdn, 
+				CSEQ_STR, namebeg, OPT_STR, 
+				CONT_STR, fqdn,	lport, 
+				CON_LEN_STR, 
+				MAX_FRW_STR, 
+				UA_STR, SIPSAK_VERSION);
 			break;
 		default:
 			printf("error: unknown request type to create\n");
 			exit(2);
 			break;
 	}
-	if (usern)
-		free(usern);
+//	if (usern)
+	free(usern);
 	if (verbose > 2)
 		printf("request:\n%s", buff);
 }
