@@ -1,5 +1,5 @@
 /*
- * $Id: sipsak.c,v 1.74 2004/09/22 14:01:50 janakj Exp $
+ * $Id: sipsak.c,v 1.75 2004/10/08 17:30:52 calrissian Exp $
  *
  * Copyright (C) 2002-2004 Fhg Fokus
  * Copyright (C) 2004 Nils Ohlmeier
@@ -68,7 +68,7 @@ void print_version() {
 	printf(" Copyright (C) 2004 Nils Ohlmeier\n");
 	printf(" report bugs to %s\n\n", PACKAGE_BUGREPORT);
 	printf(
-		" shoot  : sipsak [-f FILE] -s SIPURI\n"
+		" shoot  : sipsak [-f FILE] [-L] -s SIPURI\n"
 		" trace  : sipsak -T -s SIPURI\n"
 		" usrloc : sipsak -U [-I|M] [-b NUMBER] [-e NUMBER] [-x NUMBER] [-z] -s SIPURI\n"
 		" usrloc : sipsak -I|M [-b NUMBER] [-e NUMBER] -s SIPURI\n"
@@ -90,6 +90,7 @@ void print_long_help() {
 		"  --help                     displays this help message\n"
 		"  --version                  prints version string only\n"
 		"  --filename=FILE            the file which contains the SIP message to send\n"
+		"                               use - for standard input\n"
 		"  --sip-uri=SIPURI           the destination server uri in form\n"
 		"                               sip:[user@]servername[:port]\n"
 		"  --traceroute               activates the traceroute mode\n"
@@ -116,9 +117,9 @@ void print_long_help() {
 		"  --outbound-proxy=HOSTNAME  request target (outbound proxy)\n"
 		"  --hostname=HOSTNAME        overwrites the local hostname in all headers\n"
 		"  --max-forwards=NUMBER      the value for the max-forwards header field\n"
-		"  --numeric                  use IPs instead of FQDN in the Via-Line\n"
-	        "  --processes                Divide the workflow among the number of processes\n"
-	        "  --auth-username            Authentication username\n"
+		"  --numeric                  use IPs instead of FQDN in the Via-Line\n");
+	printf("  --processes                Divide the workflow among the number of processes\n"
+		"  --auth-username            Authentication username\n"
 		);
 	printf("  --no-via                   deactivate the insertion of a Via-Line\n"
 		"  --password=PASSWORD        password for authentication\n"
@@ -135,6 +136,7 @@ void print_long_help() {
 		"  --disposition=STRING       Content-Disposition value\n"
 		"  --search                   search for a RegExp in replies and return error\n"
 		"                             on failfure\n"
+		"  --no-crlf                  de-activate CR (\\r) insertion\n"
 		);
 }
 
@@ -186,12 +188,13 @@ void print_help() {
 		"  -G                activates replacement of variables\n"
 		"  -N                returns exit codes Nagios compliant\n"
 		"  -q                search for a RegExp in replies and return error\n"
-		"                    on failure\n"
-		"  -W NUMBER         return Nagios warning if retrans > number\n"
+		"                    on failure\n");
+	printf("  -W NUMBER         return Nagios warning if retrans > number\n"
 		"  -B STRING         send a message with string as body\n"
 		"  -O STRING         Content-Disposition value\n"
 		"  -P NUMBER         Number of processes to start\n"
 		"  -u STRING         Authentication username\n"
+		"  -L                de-activate CR (\\r) insertion in files\n"
 		);
 		exit(0);
 }
@@ -200,11 +203,10 @@ int main(int argc, char *argv[])
 {
 	FILE	*pf;
 	char	buff[BUFSIZE];
-	int		length, c;
+	int		length, c, i, j;
 	char	*delim, *delim2;
 #ifdef HAVE_GETOPT_LONG
 	int option_index = 0;
-	int i;
 	static struct option l_opts[] = {
 		{"help", 0, 0, 'X'},
 		{"version", 0, 0, 'V'},
@@ -244,6 +246,7 @@ int main(int argc, char *argv[])
 		{"disposition", 1, 0, 'O'},
 		{"processes", 1, 0, 'P'},
 		{"auth-username", 1, 0, 'u'},
+		{"no-crlf", 0, 0, 'L'},
 		{0, 0, 0, 0}
 	};
 #endif
@@ -252,9 +255,10 @@ int main(int argc, char *argv[])
 	numeric=warning_ext=rand_rem=nonce_count=replace_b=invite=message = 0;
 	sleep_ms=empty_contact=nagios_warn = 0;
 	namebeg=nameend=maxforw= -1;
-	via_ins=redirects = 1;
+	via_ins=redirects=crlf=processes  = 1;
 	username=password=replace_str=hostname=contact_uri=mes_body = NULL;
-	con_dis = NULL;
+	con_dis=auth_username = NULL;
+	re = NULL;
 	address = 0;
 	rport = 5060;
 	expires_t = USRLOC_EXP_DEF;
@@ -263,9 +267,6 @@ int main(int argc, char *argv[])
 	memset(ack, 0, BUFSIZE);
 	memset(fqdn, 0, FQDN_SIZE);
 	memset(messusern, 0, FQDN_SIZE);
-	re=0;
-	processes = 1;
-	auth_username = 0;
 	pid_t pid;
 	struct timespec ts;
 	int upp;
@@ -274,9 +275,9 @@ int main(int argc, char *argv[])
 
 	/* lots of command line switches to handle*/
 #ifdef HAVE_GETOPT_LONG
-	while ((c=getopt_long(argc, argv, "q:a:B:b:C:c:de:f:Fg:GhH:iIl:m:MnNo:O:p:r:Rs:t:TUvVwW:x:zP:u:", l_opts, &option_index)) != EOF){
+	while ((c=getopt_long(argc, argv, "a:B:b:c:C:de:f:Fg:GhH:iIl:Lm:MnNo:O:p:P:q:r:Rs:t:Tu:UvVwW:x:z", l_opts, &option_index)) != EOF){
 #else
-	while ((c=getopt(argc,argv,"q:a:B:b:C:c:de:f:Fg:GhH:iIl:m:MnNo:O:p:r:Rs:t:TUvVwW:x:zP:u:")) != EOF){
+	while ((c=getopt(argc,argv,"a:B:b:c:C:de:f:Fg:GhH:iIl:Lm:MnNo:O:p:P:q:r:Rs:t:Tu:UvVwW:x:z")) != EOF){
 #endif
 		switch(c){
 			case 'a':
@@ -351,22 +352,34 @@ int main(int argc, char *argv[])
 				flood=1;
 				break;
 			case 'f':
-				/* file is opened in binary mode so that the cr-lf is 
-				   preserved */
-				pf = fopen(optarg, "rb");
-				if (!pf){
-					puts("unable to open the file.\n");
-					exit_code(2);
+				if strncmp(optarg, "-", 1) {
+					/* file is opened in binary mode so that the cr-lf is 
+					   preserved */
+					pf = fopen(optarg, "rb");
+					if (!pf){
+						printf("error: unable to open the file '%s'.\n", optarg);
+						exit_code(2);
+					}
+					length  = fread(buff, 1, sizeof(buff), pf);
+					if (length >= sizeof(buff)){
+						printf("error:the file is too big. try files of less "
+							"than %i bytes.\n", BUFSIZE);
+						printf("      or recompile the program with bigger "
+							"BUFSIZE defined.\n");
+						exit_code(2);
+					}
+					fclose(pf);
 				}
-				length  = fread(buff, 1, sizeof(buff), pf);
-				if (length >= sizeof(buff)){
-					printf("error:the file is too big. try files of less "
-						"than %i bytes.\n", BUFSIZE);
-					printf("      or recompile the program with bigger "
-						"BUFSIZE defined.\n");
-					exit_code(2);
+				else {
+					for(i = 0; i < BUFSIZE - 1; i++) {
+						j = getchar();
+						if (j == EOF)
+							break;
+						else
+							buff[i] = j;
+					}
+					length = i;
 				}
-				fclose(pf);
 				buff[length] = '\0';
 				file_b=1;
 				break;
@@ -391,9 +404,12 @@ int main(int argc, char *argv[])
 			case 'l':
 				lport=atoi(optarg);
 				if (!lport) {
-					puts("error: non-numerical local port number");
+					printf("error: non-numerical local port number");
 					exit_code(2);
 				}
+				break;
+			case 'L':
+				crlf=0;
 				break;
 			case 'm':
 				maxforw=atoi(optarg);
@@ -439,7 +455,23 @@ int main(int argc, char *argv[])
 					exit_code(2);
 				}
 				break;
-
+			case 'q':
+				if (re) {
+					/* previously allocated -- free */
+					regfree(re);
+				} else {
+					/* never tried -- allocate */
+					re=malloc(sizeof(regex_t));
+				};
+				if (!re) {
+					fprintf(stderr, "Error: can't allocate RE\n");
+					exit_code(2);
+				};
+				if (regcomp(re, optarg, REG_EXTENDED|REG_ICASE|REG_NEWLINE )!=0) {
+					fprintf(stderr, "Error: compiling RE: %s\n", optarg );
+					exit_code(2);
+				};
+				break;
 			case 'r':
 				rport=atoi(optarg);
 				if (!rport) {
@@ -513,8 +545,10 @@ int main(int argc, char *argv[])
 			case 'U':
 				usrloc=1;
 				break;
-		        case 'u':
-				auth_username = optarg;
+			case 'u':
+				auth_username=malloc(strlen(optarg));
+				strncpy(auth_username, optarg, strlen(optarg));
+				*(auth_username+strlen(optarg)) = '\0';
 				break;
 			case 'v':
 				verbose++;
@@ -540,23 +574,6 @@ int main(int argc, char *argv[])
 			case 'W':
 				nagios_warn = atoi(optarg);
 				break;
-			case 'q':
-				if (re) {
-					/* previously allocated -- free */
-					regfree(re);
-				} else {
-					/* never tried -- allocate */
-					re=malloc(sizeof(regex_t));
-				};
-				if (!re) {
-					fprintf(stderr, "Error: can't allocate RE\n");
-					exit_code(2);
-				};
-				if (regcomp(re, optarg, REG_EXTENDED|REG_ICASE|REG_NEWLINE )!=0) {
-					fprintf(stderr, "Error: compiling RE: %s\n", optarg );
-					exit_code(2);
-				};
-				break;
 			case 'x':
 				expires_t=atoi(optarg);
 				break;
@@ -575,6 +592,10 @@ int main(int argc, char *argv[])
 		}
 	}
 
+	/* replace LF with CRLF if we read from a file */
+	if ((file_b) && (crlf)) {
+		insert_cr(buff);
+	}
 	/* lots of conditions to check */
 	if (trace) {
 		if (usrloc || flood || randtrash) {
@@ -732,12 +753,7 @@ int main(int argc, char *argv[])
 		}
 		
 		if (pid == 0){
-			     /* child */
-			     /*
-			upp = (nameend - namebeg + 1) / processes;
-			namebeg = namebeg + upp * i;
-			nameend = namebeg + upp;
-			     */
+	    	/* child */
 			upp = (nameend - namebeg + 1) / processes;
 			namebeg = namebeg + upp * i;
 			nameend = namebeg + upp;
@@ -748,10 +764,10 @@ int main(int argc, char *argv[])
 			}
 		}
 		
-		     /* Delay execution of children so that the
-		      * time of the first transmission gets spread over
-		      * the retransmission interval evenly
-		      */
+		/* Delay execution of children so that the
+		 * time of the first transmission gets spread over
+		 * the retransmission interval evenly
+		 */
 		ts.tv_sec = 0;
 		ts.tv_nsec = (float)DEFAULT_TIMEOUT / (float)processes * (float)1000 * (float)1000;
 		nanosleep(&ts, 0);

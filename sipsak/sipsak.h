@@ -1,5 +1,5 @@
 /*
- * $Id: sipsak.h,v 1.18 2004/09/22 14:01:50 janakj Exp $
+ * $Id: sipsak.h,v 1.19 2004/10/08 17:30:52 calrissian Exp $
  *
  * Copyright (C) 2002-2004 Fhg Fokus
  *
@@ -155,6 +155,9 @@
 #define NC_STR "nc="
 #define NC_STR_LEN (sizeof(NC_STR) - 1)
 
+#define EMPTY_STR ""
+#define EMPTY_STR_LEN (sizeof(EMPTY_STR) - 1)
+
 #define UA_STR "User-Agent: "
 #define UA_STR_LEN (sizeof(UA_STR) - 1)
 
@@ -173,13 +176,12 @@ int sleep_ms;
 int verbose, nameend, namebeg, expires_t, flood, warning_ext, invite, message;
 int maxforw, lport, rport, randtrash, trashchar, numeric, nonce_count;
 int file_b, uri_b, trace, via_ins, usrloc, redirects, rand_rem, replace_b;
-int empty_contact, nagios_warn;
+int empty_contact, nagios_warn, crlf;
 char *username, *domainname, *password, *replace_str, *hostname, *contact_uri;
-char *mes_body, *con_dis;
+char *mes_body, *con_dis, *auth_username;
 char fqdn[FQDN_SIZE], messusern[FQDN_SIZE];
 char confirm[BUFSIZE], ack[BUFSIZE];
 regex_t* re;
 int processes;
-char* auth_username;
 
 #endif
