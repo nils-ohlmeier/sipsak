@@ -1,4 +1,7 @@
-* version 0.8.2
+* version 0.8.6
+  - fixed wrong number of retries and timeouts from configure
+  - fixed missing username in default mode
+* version 0.8.5
   - seperated code into several files
   - introduced autoconf & automake
   - added option -o for sleeping between requests
