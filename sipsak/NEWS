@@ -1,4 +1,5 @@
 * version 0.8.2
   - ignores provisional responses in usrloc mode (-U)
+  - added support for proxy authorization (407)
   - new argument -H overwrites automatic hostname detection
   - new argument -o introduces sleeping seconds before sending next request

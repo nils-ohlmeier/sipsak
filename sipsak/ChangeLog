@@ -4,3 +4,4 @@
   - added option -o for sleeping between requests
   - added option -H to overwrite automatic hostname detection
   - ignores provisional responses in usrloc mode
+  - added support for proxy authorization (407)
