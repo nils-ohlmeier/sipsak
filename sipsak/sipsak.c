@@ -1,5 +1,5 @@
 /*
- * $Id: sipsak.c,v 1.24 2002/11/12 16:22:58 calrissian Exp $
+ * $Id: sipsak.c,v 1.25 2002/11/12 17:39:09 calrissian Exp $
  *
  * Copyright (C) 2002 Fhg Fokus
  *
@@ -266,7 +266,8 @@ void add_via(char *mes)
 		printf("can't add our Via Header Line because file is too big\n");
 		exit(2);
 	}
-	if ((via=strstr(mes,"Via:"))==NULL){
+	if ((via=strstr(mes, "Via:"))==NULL &&
+		(via=strstr(mes, "\nv:"))==NULL ){
 		/* We doesn't find a Via so we insert our via
 		   direct after the first line. */
 		via=strchr(mes,'\n');
@@ -290,14 +291,16 @@ void cpy_vias(char *reply){
 	char *first_via, *middle_via, *last_via, *backup;
 
 	/* lets see if we find any via */
-	if ((first_via=strstr(reply, "Via:"))==NULL){
+	if ((first_via=strstr(reply, "Via:"))==NULL &&
+		(first_via=strstr(reply, "\nv:"))==NULL ){
 		printf("error: the received message doesn't contain a Via header\n");
 		exit(3);
 	}
 	last_via=first_via+4;
 	middle_via=last_via;
 	/* proceed additional via lines */
-	while ((middle_via=strstr(last_via, "Via:"))!=NULL)
+	while ((middle_via=strstr(last_via, "Via:"))!=NULL &&
+		   (middle_via=strstr(last_via, "\nv:"))!=NULL )
 		last_via=middle_via+4;
 	last_via=strchr(last_via, '\n');
 	middle_via=strchr(mes_reply, '\n')+1;
@@ -409,7 +412,7 @@ void create_msg(char *buff, int action){
 void set_maxforw(char *mes){
 	char *max, *backup, *crlf;
 
-	if ((max=strstr(mes,"Max-Forwards"))==NULL){
+	if ((max=strstr(mes, "Max-Forwards:"))==NULL){
 		/* no max-forwards found so insert it after the first line*/
 		max=strchr(mes,'\n');
 		max++;
@@ -485,7 +488,7 @@ void warning_extract(char *message)
 	char *warning, *end, *mid, *server;
 	int srvsize;
 
-	warning=strstr(message, "Warning");
+	warning=strstr(message, "Warning:");
 	if (warning) {
 		end=strchr(warning, '"');
 		end--;
@@ -1093,7 +1096,8 @@ void shoot(char *buff)
 							REG_EXTENDED|REG_NOSUB|REG_ICASE);
 						if (regexec(&redexp, reply, 0, 0, 0)==0) {
 							/* try to find the contact in the redirect */
-							if ((foo=strstr(reply, "Contact"))==NULL) {
+							if ((foo=strstr(reply, "Contact"))==NULL &&
+								(foo=strstr(reply, "\nm:"))==NULL ) {
 								printf("error: cannot find Contact in this "
 									"redirect:\n%s\n", reply);
 								exit(3);
@@ -1218,6 +1222,8 @@ void shoot(char *buff)
 							*crlf='\0';
 							crlf++;
 							contact=strstr(crlf, "Contact");
+							if (!contact)
+								contact=strstr(crlf, "\nm:");
 							printf("(%.3f ms) %s\n", 
 								deltaT(&sendtime, &recvtime), reply);
 							if (contact){
