@@ -1,5 +1,5 @@
 /*
- * $Id: sipsak.c,v 1.15 2002/08/29 19:24:50 calrissian Exp $
+ * $Id: sipsak.c,v 1.16 2002/08/29 19:53:44 calrissian Exp $
  *
  * Copyright (C) 2002-2003 Fhg Fokus
  *
@@ -1079,6 +1079,14 @@ void shoot(char *buff)
 								}
 								break;
 							case 3:
+								if (strncmp(reply, MES_STR, MES_STR_LEN)==0) {
+									if (verbose)
+										printf("ignoring MESSAGE "
+											"retransmission\n");
+									retrans_r_c++;
+									dontsend=1;
+									continue;
+								}
 								if (regexec(&okexp, reply, 0, 0, 0)==0) {
 									if (verbose > 1) printf("   OK\n\n");
 									else if (verbose)
