@@ -1,5 +1,5 @@
 /*
- * $Id: sipsak.c,v 1.30 2002/12/11 07:52:42 calrissian Exp $
+ * $Id: sipsak.c,v 1.31 2002/12/15 20:23:53 calrissian Exp $
  *
  * Copyright (C) 2002 Fhg Fokus
  *
@@ -218,34 +218,43 @@ void get_fqdn(){
 			exit(2);
 		}
 	}
+	strcpy(hname,"cloudcity");
 	/* a hostname with dots should be a domainname */
 	if ((strchr(hname, '.'))==NULL) {
-		if (verbose > 2)
-			printf("hostname without dots. determine domainname...\n");
 		if (getdomainname(&dname[0], namelen) < 0) {
 			printf("error: cannot determine domainname\n");
 			exit(2);
 		}
-		sprintf(fqdn, "%s.%s", hname, dname);
+		if (strcmp(&dname[0],"(none)")!=0)
+			sprintf(fqdn, "%s.%s", hname, dname);
 	}
 	else {
 		strcpy(fqdn, hname);
 	}
 
 	he=gethostbyname(hname);
-	if (he && numeric) {
-		addrp = he->h_addr_list[0];
-		hlp[0]=fqdn[0]='\0';
-		fqdnp = &fqdn[0];
-		for (i = 0; i < 3; i++) {
-			sprintf(hlp, "%i.", addrp[i]);
+	if (he) {
+		if (numeric) {
+			addrp = he->h_addr_list[0];
+			hlp[0]=fqdn[0]='\0';
+			fqdnp = &fqdn[0];
+			for (i = 0; i < 3; i++) {
+				sprintf(hlp, "%i.", addrp[i]);
+				fqdnp = strcat(fqdn, hlp);
+			}
+			sprintf(hlp, "%i", addrp[3]);
 			fqdnp = strcat(fqdn, hlp);
 		}
-		sprintf(hlp, "%i", addrp[3]);
-		fqdnp = strcat(fqdn, hlp);
+		else {
+			strcpy(fqdn, he->h_name);
+		}
 	}
-	else if (!he) {
-		printf("error: can not resolve hostname: %s\n", fqdn);
+	else {
+		printf("error: cannot resolve hostname: %s\n", hname);
+		exit(2);
+	}
+	if ((strchr(fqdn, '.'))==NULL) {
+		printf("error: this FQDN or IP is not valid: %s\n", fqdn);
 		exit(2);
 	}
 
@@ -1168,7 +1177,7 @@ void shoot(char *buff)
 #ifdef AUTH
 					else if (regexec(&authexp, reply, 0, 0, 0)==0) {
 						if (!username) {
-							printf("error: received 401 but can not "
+							printf("error: received 401 but cannot "
 								"authentication without a username\n");
 							exit(2);
 						}
@@ -1552,10 +1561,7 @@ void print_help() {
 #endif
 		"   -d           ignore redirects\n"
 		"   -v           each v's produces more verbosity (max. 3)\n"
-		"   -w           extract IP from the warning in reply\n\n"
-		"The manupulation function are only tested with nice RFC conform "
-			"SIP-messages,\n"
-		"so don't expect them to work with ugly or malformed messages.\n");
+		"   -w           extract IP from the warning in reply\n");
 	exit(0);
 };
 
