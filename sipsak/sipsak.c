@@ -1,5 +1,5 @@
 /*
- * $Id: sipsak.c,v 1.43 2003/03/21 06:02:03 calrissian Exp $
+ * $Id: sipsak.c,v 1.44 2003/03/27 11:02:18 calrissian Exp $
  *
  * Copyright (C) 2002 Fhg Fokus
  *
@@ -2202,6 +2202,12 @@ int main(int argc, char *argv[])
 		}
 		if (invite && message) {
 			printf("error: invite and message tests are XOR\n");
+			exit(2);
+		}
+		if (invite && !lport) {
+			printf("WARNING: Do NOT use the usrloc invite mode without "
+				"registering sipsak before.\n         See man page for "
+				"details.\n");
 			exit(2);
 		}
 		if (via_ins) {
