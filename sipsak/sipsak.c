@@ -1,5 +1,5 @@
 /*
- * $Id: sipsak.c,v 1.84 2005/03/27 17:28:34 calrissian Exp $
+ * $Id: sipsak.c,v 1.85 2005/03/28 03:19:39 calrissian Exp $
  *
  * Copyright (C) 2002-2004 Fhg Fokus
  * Copyright (C) 2004 Nils Ohlmeier
@@ -666,6 +666,7 @@ int main(int argc, char *argv[])
 			}
 		}
 		if (via_ins) {
+			printf("warning: ignoring -i option when in usrloc mode\n");
 			via_ins=0;
 		}
 		if (nameend==-1)
