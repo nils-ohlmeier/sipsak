@@ -1,5 +1,5 @@
 /*
- * $Id: sipsak.c,v 1.37 2003/02/01 20:08:36 calrissian Exp $
+ * $Id: sipsak.c,v 1.38 2003/02/09 19:43:38 calrissian Exp $
  *
  * Copyright (C) 2002 Fhg Fokus
  *
@@ -16,7 +16,7 @@
  * GNU General Public License for more details.
  */
 
-/* sipsak written by nils ohlmeier (develop@ohlmeier.de).
+/* sipsak written by nils ohlmeier (ohlmeier@fokus.frauenhofer.de).
    based up on a modifyed version of shoot.
    return codes are now: 0 for an received 200, 1 for all other
    received responses, 2 for local errors, and 3 for remote errors.
@@ -37,9 +37,8 @@ bouquets and brickbats to farhan@hotfoon.com
 */
 
 /* TO-DO:
-   - multiple contacts in USRLOC mode
+   - multiple contacts in usrloc mode
    - endless randtrash mode with logfile
-   - support for short notation
    - support for IPv6
 */
 
@@ -64,16 +63,17 @@ bouquets and brickbats to farhan@hotfoon.com
 #include <openssl/md5.h>
 #endif
 
-#define SIPSAK_VERSION "v0.7.8"
+#define SIPSAK_VERSION "v0.8.0"
 #define RESIZE		1024
 #define BUFSIZE		4096
 #define FQDN_SIZE   200
-#define REQ_INV 1
-#define REQ_REG 2
-#define REQ_OPT 3
-#define REQ_FLOOD 4
-#define REQ_RAND 5
-#define REQ_REM 6
+#define REQ_REG 1
+#define REQ_REM 2
+#define REQ_INV 3
+#define REQ_MES 4
+#define REQ_OPT 5
+#define REQ_FLOOD 6
+#define REQ_RAND 7
 #define VIA_STR "Via: SIP/2.0/UDP "
 #define VIA_STR_LEN 17
 #define MAX_FRW_STR "Max-Forwards: "
@@ -82,12 +82,16 @@ bouquets and brickbats to farhan@hotfoon.com
 #define SIP20_STR_LEN 10
 #define SIP200_STR "SIP/2.0 200 OK\r\n"
 #define SIP200_STR_LEN 16
+#define INV_STR "INVITE"
+#define INV_STR_LEN 6
 #define REG_STR "REGISTER"
 #define REG_STR_LEN 8
 #define OPT_STR "OPTIONS"
 #define OPT_STR_LEN 7
 #define MES_STR "MESSAGE"
 #define MES_STR_LEN 7
+#define ACK_STR "ACK"
+#define ACK_STR_LEN 3
 #define FROM_STR "From: "
 #define FROM_STR_LEN 6
 #define TO_STR "To: "
@@ -102,7 +106,7 @@ bouquets and brickbats to farhan@hotfoon.com
 #define CON_TXT_STR_LEN 26
 #define CON_LEN_STR "Content-Length: "
 #define CON_LEN_STR_LEN 16
-#define SIPSAK_MES_STR "USRLOC test message from SIPsak for user "
+#define SIPSAK_MES_STR "usrloc test message from SIPsak for user "
 #define SIPSAK_MES_STR_LEN 41
 #define EXP_STR "Expires: "
 #define EXP_STR_LEN 9
@@ -127,17 +131,21 @@ bouquets and brickbats to farhan@hotfoon.com
 #define QOPAUTH_STR "\"auth\""
 #define NC_STR "nc="
 #define UA_STR "User-Agent: "
+#define SUB_STR "Subject: "
+#define SUB_STR_LEN 8
+#define SIP100_STR "SIP/2.0 100"
+#define SIP100_STR_LEN 11
 
 #define HASHHEXLEN 2*MD5_DIGEST_LENGTH
 
 /* lots of global variables. ugly but makes life easier. */
 long address;
-int verbose, nameend, namebeg, expires_t, flood, warning_ext;
+int verbose, nameend, namebeg, expires_t, flood, warning_ext, invite, message;
 int maxforw, lport, rport, randtrash, trashchar, numeric, nonce_count;
 int file_b, uri_b, trace, via_ins, usrloc, redirects, rand_rem, replace_b;
 char *username, *domainname, *password, *replace_str;
 char fqdn[FQDN_SIZE], messusern[FQDN_SIZE];
-char message[BUFSIZE], mes_reply[BUFSIZE];
+char confirm[BUFSIZE], ack[BUFSIZE];
 
 /* take either a dot.decimal string of ip address or a 
 domain name and returns a NETWORK ordered long int containing
@@ -308,7 +316,7 @@ void add_via(char *mes)
 /* copy the via lines from the message to the message 
    reply for correct routing of our reply.
 */
-void cpy_vias(char *reply){
+void cpy_vias(char *reply, char *dest){
 	char *first_via, *middle_via, *last_via, *backup;
 
 	/* lets see if we find any via */
@@ -324,7 +332,7 @@ void cpy_vias(char *reply){
 		   (middle_via=strstr(last_via, "\nv:"))!=NULL )
 		last_via=middle_via+4;
 	last_via=strchr(last_via, '\n');
-	middle_via=strchr(mes_reply, '\n')+1;
+	middle_via=strchr(dest, '\n')+1;
 	/* make a backup, insert the vias after the first line and append 
 	   backup
 	*/
@@ -334,7 +342,37 @@ void cpy_vias(char *reply){
 	strcpy(middle_via+(last_via-first_via+1), backup);
 	free(backup);
 	if (verbose > 2)
-		printf("message reply with vias included:\n%s\n", mes_reply);
+		printf("message reply with vias included:\n%s\n", reply);
+}
+
+void cpy_to(char *reply, char *dest) {
+	char *src_to, *dst_to, *backup, *tmp;
+
+	/* find the position where we want to insert the To */
+	if ((dst_to=strstr(dest, "To:"))==NULL) {
+		printf("error: could not find To in our reply\n");
+		exit(2);
+	}
+	/* find the To we want to copy */
+	if ((src_to=strstr(reply, "To:"))==NULL && 
+		(src_to=strstr(reply, "\nt:"))==NULL) {
+		if (verbose > 0)
+			printf("warning: could not find To in reply. "
+				"trying with original To\n");
+	}
+	else {
+		/* both To found, so copy it */
+		tmp=strchr(dst_to, '\n');
+		tmp++;
+		backup=malloc(strlen(tmp)+1);
+		strcpy(backup, tmp);
+		tmp=strchr(src_to, '\n');
+		strncpy(dst_to, src_to, tmp-src_to+1);
+		strcpy(dst_to+(tmp-src_to+1), backup);
+		free(backup);
+		if (verbose >2)
+			printf("reply with copyed To:\n%s\n", dest);
+	}
 }
 
 /* this function searches for search in mess and replaces it with
@@ -363,91 +401,121 @@ void replace_string(char *mess, char *search, char *replacement){
 /* create a valid sip header for the different modes */
 void create_msg(char *buff, int action){
 	unsigned int c;
-	char *usern;
+	char *usern=NULL;
 
+	if (action <= 4) {
+		if (verbose > 2)
+			printf("username: %s\ndomainname: %s\n", username, domainname);
+		usern=malloc(strlen(username)+10);
+		if (nameend>0) 
+			sprintf(usern, "%s%i", username, namebeg);
+		else
+			sprintf(usern, "%s", username);
+	}
 	c=rand();
 	switch (action){
 		case REQ_REG:
-			if (verbose > 2)
-				printf("username: %s\ndomainname: %s\n", username, domainname);
-			usern=malloc(strlen(username)+10);
-			if (nameend>0) {
-				sprintf(messusern, "%s sip:%s%i", MES_STR, username, namebeg);
-				sprintf(usern, "%s%i", username, namebeg);
-			}
-			else {
-				sprintf(messusern, "%s sip:%s", MES_STR, username);
-				sprintf(usern, "%s", username);
-			}
 			/* build the register, message and the 200 we need in for 
 			   USRLOC on one function call*/
 			sprintf(buff, "%s sip:%s%s%s%s:%i\r\n%s<sip:%s@%s>\r\n"
 				"%s<sip:%s@%s>\r\n%s%u@%s\r\n%s%i %s\r\n%s<sip:%s@%s:%i>\r\n"
-				"%s%i\r\n%ssipsak %s\r\n\r\n", REG_STR, domainname, SIP20_STR, 
-				VIA_STR, fqdn, lport, FROM_STR, usern, domainname, TO_STR, 
-				usern, domainname, CALL_STR, c, fqdn, CSEQ_STR, 3*namebeg+1, 
-				REG_STR, CONT_STR, usern, fqdn, lport, EXP_STR, expires_t, 
+				"%s%i\r\n%s0\r\n%s70\r\n%ssipsak %s\r\n\r\n", REG_STR, 
+				domainname, SIP20_STR, VIA_STR, fqdn, lport, FROM_STR, usern, 
+				domainname, TO_STR, usern, domainname, CALL_STR, c, fqdn, 
+				CSEQ_STR, 3*namebeg+1, REG_STR, CONT_STR, usern, fqdn, lport, 
+				EXP_STR, expires_t, CON_LEN_STR, MAX_FRW_STR, UA_STR, 
+				SIPSAK_VERSION);
+			break;
+		case REQ_REM:
+			sprintf(buff, "%s sip:%s%s%s%s:%i\r\n%s<sip:%s@%s>\r\n"
+				"%s<sip:%s@%s>\r\n%s%u@%s\r\n%s%i %s\r\n%s<sip:%s@%s:%i>;%s0"
+				"\r\n%s%i\r\n%s0\r\n%s70\r\n%ssipsak %s\r\n\r\n", REG_STR, 
+				domainname,	SIP20_STR, VIA_STR, fqdn, lport, FROM_STR, usern, 
+				domainname,	TO_STR, usern, domainname, CALL_STR, c, fqdn, 
+				CSEQ_STR, trashchar, REG_STR, CONT_STR, usern, fqdn, lport, 
+				CON_EXP_STR, EXP_STR, expires_t, CON_LEN_STR, MAX_FRW_STR, 
 				UA_STR, SIPSAK_VERSION);
-			c=rand();
-			sprintf(message, "%s sip:%s@%s%s%s%s:%i\r\n%s<sip:sipsak@%s:%i>\r\n"
-				"%s<sip:%s@%s>\r\n%s%u@%s\r\n%s%i %s\r\n%s%s%i\r\n%ssipsak %s"
-				"\r\n\r\n%s%s%i.", MES_STR, usern, domainname, SIP20_STR, 
+			break;
+		case REQ_INV:
+			sprintf(buff, "%s sip:%s@%s%s%s%s:%i\r\n%s<sip:sipsak@%s:%i>\r\n"
+				"%s<sip:%s@%s>\r\n%s%u@%s\r\n%s%i %s\r\n%s0\r\n%sDONT ANSWER"
+				" this test call!\r\n%s70\r\n%ssipsak %s\r\n\r\n", 
+				INV_STR, usern, domainname, SIP20_STR, VIA_STR, fqdn, lport, 
+				FROM_STR, fqdn, lport, TO_STR, usern, domainname, CALL_STR, c, 
+				fqdn, CSEQ_STR, 3*namebeg+2, INV_STR, CON_LEN_STR, SUB_STR, 
+				MAX_FRW_STR, UA_STR, SIPSAK_VERSION);
+			sprintf(confirm, "%s%s<sip:sipsak@%s:%i>\r\n%s<sip:%s@%s>\r\n"
+				"%s%u@%s\r\n%s%i %s\r\n%s0\r\n%ssipsak %s\r\n\r\n", 
+				SIP200_STR, FROM_STR, fqdn, lport, TO_STR, usern, domainname, 
+				CALL_STR, c, fqdn, CSEQ_STR, 3*namebeg+2, INV_STR, CON_LEN_STR,
+				UA_STR, SIPSAK_VERSION);
+			sprintf(ack, "%s sip:%s@%s%s%s%s:%i\r\n%s<sip:sipsak@%s:%i>\r\n"
+				"%s<sip:%s@%s>\r\n%s%u@%s\r\n%s%i %s\r\n%s0\r\n%s70\r\n"
+				"%ssipsak %s\r\n\r\n", ACK_STR, usern, domainname, SIP20_STR, 
 				VIA_STR, fqdn, lport, FROM_STR, fqdn, lport, TO_STR, usern, 
-				domainname, CALL_STR, c, fqdn, CSEQ_STR, 3*namebeg+2, MES_STR, 
-				CON_TXT_STR, CON_LEN_STR, SIPSAK_MES_STR_LEN+strlen(usern), 
-				UA_STR, SIPSAK_VERSION,	SIPSAK_MES_STR, username, namebeg);
-			sprintf(mes_reply, "%s%s<sip:sipsak@%s:%i>\r\n%s<sip:%s@%s>\r\n"
-				"%s%u@%s\r\n%s%i %s\r\n%s 0\r\n%ssipsak %s\r\n\r\n", 
+				domainname, CALL_STR, c, fqdn, CSEQ_STR, 3*namebeg+2, ACK_STR, 
+				CON_LEN_STR, MAX_FRW_STR, UA_STR, SIPSAK_VERSION);
+			if (verbose > 2)
+				printf("ack:\n%s\nreply:\n%s\n", ack, confirm);
+			if (nameend>0)
+				sprintf(messusern, "%s sip:%s%i", INV_STR, username, namebeg);
+			else
+				sprintf(messusern, "%s sip:%s", INV_STR, username);
+			break;
+		case REQ_MES:
+			sprintf(buff, "%s sip:%s@%s%s%s%s:%i\r\n%s<sip:sipsak@%s:%i>\r\n"
+				"%s<sip:%s@%s>\r\n%s%u@%s\r\n%s%i %s\r\n%s%s%i\r\n%s70\r\n"
+				"%ssipsak %s\r\n\r\n%s%s%i.", MES_STR, usern, domainname, 
+				SIP20_STR, VIA_STR, fqdn, lport, FROM_STR, fqdn, lport, TO_STR,
+				usern, domainname, CALL_STR, c, fqdn, CSEQ_STR, 3*namebeg+2, 
+				MES_STR, CON_TXT_STR, CON_LEN_STR, 
+				SIPSAK_MES_STR_LEN+strlen(usern), MAX_FRW_STR, UA_STR, 
+				SIPSAK_VERSION,	SIPSAK_MES_STR, username, namebeg);
+			sprintf(confirm, "%s%s<sip:sipsak@%s:%i>\r\n%s<sip:%s@%s>\r\n"
+				"%s%u@%s\r\n%s%i %s\r\n%s0\r\n%ssipsak %s\r\n\r\n", 
 				SIP200_STR, FROM_STR, fqdn, lport, TO_STR, usern, domainname, 
 				CALL_STR, c, fqdn, CSEQ_STR, 3*namebeg+2, MES_STR, CON_LEN_STR,
 				UA_STR, SIPSAK_VERSION);
-			if (verbose > 2) {
-				printf("message:\n%s\n", message);
-				printf("message reply:\n%s\n", mes_reply);
-			}
-			free(usern);
+			if (nameend>0)
+				sprintf(messusern, "%s sip:%s%i", MES_STR, username, namebeg);
+			else
+				sprintf(messusern, "%s sip:%s", MES_STR, username);
+			if (verbose > 2)
+				printf("reply:\n%s\n", confirm);
 			break;
 		case REQ_OPT:
 			sprintf(buff, "%s sip:%s@%s%s%s<sip:sipsak@%s:%i>\r\n"
 				"%s<sip:%s@%s>\r\n%s%u@%s\r\n%s%i %s\r\n"
-				"%s<sip:sipsak@%s:%i>\r\n%ssipsak %s\r\n\r\n", OPT_STR, 
-				username, domainname, SIP20_STR, FROM_STR, fqdn, lport, TO_STR,
-				username, domainname, CALL_STR, c, fqdn, CSEQ_STR, namebeg, 
-				OPT_STR, CONT_STR, fqdn, lport, UA_STR, SIPSAK_VERSION);
+				"%s<sip:sipsak@%s:%i>\r\n%s0\r\n%s70\r\n%ssipsak %s\r\n\r\n", 
+				OPT_STR, username, domainname, SIP20_STR, FROM_STR, fqdn, lport,
+				TO_STR,	username, domainname, CALL_STR, c, fqdn, CSEQ_STR, 
+				namebeg, OPT_STR, CONT_STR, fqdn, lport, CON_LEN_STR, 
+				MAX_FRW_STR, UA_STR, SIPSAK_VERSION);
 			break;
 		case REQ_FLOOD:
 			sprintf(buff, "%s sip:%s%s%s%s:9\r\n%s<sip:sipsak@%s:9>\r\n"
-				"%s<sip:%s>\r\n%s%u@%s\r\n%s%i %s\r\n%s<sipsak@%s:9>\r\n%s"
-				"sipsak %s\r\n\r\n", FLOOD_METH, domainname, SIP20_STR, 
-				VIA_STR, fqdn, FROM_STR, fqdn, TO_STR, domainname, CALL_STR, c,
-				fqdn, CSEQ_STR, namebeg, FLOOD_METH, CONT_STR, fqdn, UA_STR, 
-				SIPSAK_VERSION);
+				"%s<sip:%s>\r\n%s%u@%s\r\n%s%i %s\r\n%s<sipsak@%s:9>\r\n"
+				"%s0\r\n%s70\r\n%ssipsak %s\r\n\r\n", FLOOD_METH, domainname, 
+				SIP20_STR, VIA_STR, fqdn, FROM_STR, fqdn, TO_STR, domainname, 
+				CALL_STR, c, fqdn, CSEQ_STR, namebeg, FLOOD_METH, CONT_STR, 
+				fqdn, CON_LEN_STR, MAX_FRW_STR, UA_STR, SIPSAK_VERSION);
 			break;
 		case REQ_RAND:
 			sprintf(buff, "%s sip:%s%s%s%s:%i\r\n%s<sip:sipsak@%s:%i>\r\n"
-				"%s<sip:%s>\r\n%s%u@%s\r\n%s%i %s\r\n%s<sipsak@%s:%i>\r\n%s"
-				"sipsak %s\r\n\r\n", OPT_STR, domainname, SIP20_STR, VIA_STR, 
-				fqdn, lport, FROM_STR, fqdn, lport, TO_STR, domainname, 
-				CALL_STR, c, fqdn, CSEQ_STR, namebeg, OPT_STR, CONT_STR, fqdn,
-				lport, UA_STR, SIPSAK_VERSION);
-			break;
-		case REQ_REM:
-			usern=malloc(strlen(username)+10);
-			sprintf(usern, "%s%i", username, namebeg);
-			sprintf(buff, "%s sip:%s%s%s%s:%i\r\n%s<sip:%s@%s>\r\n"
-				"%s<sip:%s@%s>\r\n%s%u@%s\r\n%s%i %s\r\n%s<sip:%s@%s:%i>;%s0"
-				"\r\n%s%i\r\n%ssipsak %s\r\n\r\n", REG_STR, domainname, 
-				SIP20_STR, VIA_STR, fqdn, lport, FROM_STR, usern, domainname,
-				TO_STR, usern, domainname, CALL_STR, c, fqdn, CSEQ_STR, 
-				3*namebeg+3, REG_STR, CONT_STR, usern, fqdn, lport, 
-				CON_EXP_STR, EXP_STR, expires_t, UA_STR, SIPSAK_VERSION);
-			free(usern);
+				"%s<sip:%s>\r\n%s%u@%s\r\n%s%i %s\r\n%s<sipsak@%s:%i>\r\n"
+				"%s0\r\n%s70\r\n%ssipsak %s\r\n\r\n", OPT_STR, domainname, 
+				SIP20_STR, VIA_STR, fqdn, lport, FROM_STR, fqdn, lport, TO_STR, 
+				domainname,	CALL_STR, c, fqdn, CSEQ_STR, namebeg, OPT_STR, 
+				CONT_STR, fqdn,	lport, CON_LEN_STR, MAX_FRW_STR, UA_STR, 
+				SIPSAK_VERSION);
 			break;
 		default:
 			printf("error: unknown request type to create\n");
 			exit(2);
 			break;
 	}
+	if (usern)
+		free(usern);
 	if (verbose > 2)
 		printf("request:\n%s", buff);
 }
@@ -848,7 +916,7 @@ void shoot(char *buff)
 	}
 
 	/* for the via line we need our listening port number */
-	if ((via_ins||usrloc||replace_b) && lport==0){
+	if ((via_ins||usrloc||invite||message||replace_b) && lport==0){
 		memset(&sockname, 0, sizeof(sockname));
 		slen=sizeof(sockname);
 		getsockname(ssock, (struct sockaddr *)&sockname, &slen);
@@ -880,10 +948,29 @@ void shoot(char *buff)
 	regcomp(&tmhexp, "^SIP/[0-9]\\.[0-9] 483 ", 
 		REG_EXTENDED|REG_NOSUB|REG_ICASE); 
 
-	if (usrloc){
-		/* in usrloc every test consists of three steps */
-		nretries=3*(nameend-namebeg)+3;
-		create_msg(buff, REQ_REG);
+	if (usrloc||invite||message){
+		/* calculate the number of required steps and create initial mes */
+		if (usrloc) {
+			if (invite)
+				nretries=4*(nameend-namebeg)+4;
+			else if (message)
+				nretries=3*(nameend-namebeg)+3;
+			else
+				nretries=nameend-namebeg+1;
+			create_msg(buff, REQ_REG);
+			usrlocstep=0;
+		}
+		else if (invite) {
+			nretries=3*(nameend-namebeg)+3;
+			create_msg(buff, REQ_INV);
+			usrlocstep=1;
+		}
+		else {
+			nretries=2*(nameend-namebeg)+2;
+			create_msg(buff, REQ_MES);
+			usrlocstep=4;
+		}
+		cseqcmp=1;
 	}
 	else if (trace){
 		/* for trace we need some spezial initis */
@@ -959,7 +1046,7 @@ void shoot(char *buff)
 				set_maxforw(buff);
 			}
 			/* some initial output */
-			else if (usrloc && (verbose > 1) && !dontsend) {
+			else if ((usrloc||invite||message) && (verbose > 1) && !dontsend) {
 				switch (usrlocstep) {
 					case 0:
 						if (nameend>0)
@@ -969,12 +1056,28 @@ void shoot(char *buff)
 							printf("registering user %s... ", username);
 						break;
 					case 1:
-						printf("sending message... ");
+						if (nameend>0)
+							printf("inviting user %s%i... ", username, namebeg);
+						else
+							printf("invitng user %s... ", username);
 						break;
 					case 2:
-						printf("sending message reply... ");
+						printf("sending invite reply... ");
 						break;
 					case 3:
+						printf("sending invite ack... ");
+						break;
+					case 4:
+						if (nameend>0)
+							printf("sending message to %s%i... ", username,
+								namebeg);
+						else
+							printf("sending message to %s... ", username);
+						break;
+					case 5:
+						printf("sending message reply... ");
+						break;
+					case 6:
 						if (nameend>0)
 							printf("remove binding for %s%i...", username, 
 								namebeg);
@@ -1044,7 +1147,7 @@ void shoot(char *buff)
 					/* printout that we did not received anything */
 					if (trace) printf("%i: timeout after %i ms\n", i, 
 									retryAfter);
-					else if (usrloc) {
+					else if (usrloc||invite||message) {
 						printf("timeout after %i ms\n", retryAfter);
 						i--;
 					}
@@ -1082,7 +1185,8 @@ void shoot(char *buff)
 				}
 				else if (FD_ISSET(ssock, &fd)) {
 					/* no timeout, no error ... something has happened :-) */
-				 	if (!trace && !usrloc && !randtrash && (verbose > 1))
+				 	if (!trace && !usrloc && !invite && !message && !randtrash 
+						&& (verbose > 1))
 						printf ("\nmessage received:\n");
 				}
 				else {
@@ -1108,7 +1212,7 @@ void shoot(char *buff)
 						delaytime.tv_usec = 0;
 					}
 					/* check for old CSeq => ignore retransmission */
-					if (usrloc) {
+					/* if (usrloc) {
 						switch (usrlocstep) {
 							case 0: 
 								cseqcmp = 3*namebeg+1;
@@ -1127,7 +1231,8 @@ void shoot(char *buff)
 								break;
 						}
 					}
-					else
+					else */
+					if (!usrloc && !invite && !message)
 						cseqcmp = namebeg;
 					cseqtmp = cseq(reply);
 					if ((0 < cseqtmp) && (cseqtmp < cseqcmp)) {
@@ -1246,6 +1351,7 @@ void shoot(char *buff)
 									deltaT(&sendtime, &recvtime), reply);
 							}
 							namebeg++;
+							cseqcmp++;
 							maxforw++;
 							create_msg(buff, REQ_OPT);
 							add_via(buff);
@@ -1296,18 +1402,18 @@ void shoot(char *buff)
 								exit(1);
 						}
 					}
-					else if (usrloc) {
+					else if (usrloc||invite||message) {
 						switch (usrlocstep) {
 							case 0:
-								/* at first we have sended a register and look 
-								   at the response now*/
+								/* we have sent a register and look 
+								   at the response now */
 								if (regexec(&okexp, reply, 0, 0, 0)==0) {
 									if (verbose > 1)
 										printf ("  OK\n");
 									if (verbose > 2)
 										printf("\n%s\n", reply);
-									strcpy(buff, message);
-									usrlocstep=1;
+									//strcpy(buff, confirm);
+									//usrlocstep=1;
 								}
 								else {
 									printf("\nreceived:\n%s\nerror: didn't "
@@ -1315,53 +1421,9 @@ void shoot(char *buff)
 										"above). aborting\n", reply);
 									exit(1);
 								}
-								break;
-							case 1:
-								/* now we sended the message and look if its 
-								   forwarded to us*/
-								if (!strncmp(reply, messusern, 
-									strlen(messusern))) {
-									if (verbose > 1) {
-										crlf=strstr(reply, "\r\n\r\n");
-										crlf=crlf+4;
-										printf("  received message\n  "
-											"'%s'\n", crlf);
-									}
-									if (verbose > 2)
-										printf("\n%s\n", reply);
-									cpy_vias(reply);
-									strcpy(buff, mes_reply);
-									usrlocstep=2;
-								}
-								else {
-									printf("\nreceived:\n%s\nerror: didn't "
-										"received the 'MESSAGE' we sended (see"
-										" above). aborting\n", reply);
-									exit(1);
-								}
-								break;
-							case 2:
-								/* finnaly we sended our reply on the message 
-								   and look if this is also forwarded to us*/
-								if (strncmp(reply, MES_STR, MES_STR_LEN)==0) {
-									if (verbose)
-										printf("ignoring MESSAGE "
-											"retransmission\n");
-									retrans_r_c++;
-									dontsend=1;
-									continue;
-								}
-								if (regexec(&okexp, reply, 0, 0, 0)==0) {
-									if (verbose > 1)
-										printf("  reply received\n\n");
-									else if (verbose && nameend>0)
-										printf("USRLOC for %s%i completed "
-											"successful\n", username, namebeg);
-									else if (verbose)
-										printf("USRLOC for %s completed "
-											"successful\n", username);
+								if (!invite && !message) {
 									if (namebeg==nameend) {
-										printf("\nAll USRLOC tests completed "
+										printf("\nAll usrloc tests completed "
 											"successful.\nreceived last message"
 											" %.3f ms after first request (test"
 											" duration).\n", deltaT(&firstsendt,
@@ -1382,14 +1444,14 @@ void shoot(char *buff)
 										exit(0);
 									}
 									/* lets see if we deceid to remove a 
-									   binding (case 3)*/
+									   binding (case 6)*/
 									rem_rand=rand();
 									if (!rand_rem ||
 										((float)rem_rand/RAND_MAX) 
 											> USRLOC_REMOVE_PERCENT) {
 										namebeg++;
 										create_msg(buff, REQ_REG);
-										usrlocstep=0;
+										cseqcmp++;
 									}
 									else {
 										/* to prevent only removing of low
@@ -1398,19 +1460,261 @@ void shoot(char *buff)
 										rem_namebeg = namebeg;
 										namebeg = ((float)rem_rand/RAND_MAX)
 													* namebeg;
+										cseqcmp++;
+										trashchar=cseqcmp;
 										create_msg(buff, REQ_REM);
-										usrlocstep=3;
+										usrlocstep=6;
 									}
 								}
+								else if (invite) {
+									create_msg(buff, REQ_INV);
+									cseqcmp++;
+									usrlocstep=1;
+								}
+								else if (message) {
+									create_msg(buff, REQ_MES);
+									cseqcmp++;
+									usrlocstep=4;
+								}
+								break;
+							case 1:
+								/* see if we received our invite */
+								if (strncmp(reply, SIP100_STR, 
+									SIP100_STR_LEN)==0) {
+									if (verbose > 2)
+										printf("ignoring 100.. ");
+									dontsend=1;
+									continue;
+								}
+								if (!strncmp(reply, messusern, 
+									strlen(messusern))) {
+									if (verbose > 1)
+										printf("received invite\n");
+									if (verbose > 2)
+										printf("\n%s\n", reply);
+									cpy_vias(reply, confirm);
+									cpy_to(reply, confirm);
+									strcpy(buff, confirm);
+									usrlocstep=2;
+								}
 								else {
-									printf("\nreceived:\n%s\nerror: didn't "
-										"received the '200 OK' that we sended "
-										"as the reply on the message (see "
+									printf("\nreceived:\n%s\nerror: did not "
+										"received the INVITE that was sent "
+										"(see above). aborting\n", reply);
+									exit(1);
+								}
+								break;
+							case 2:
+								/* received we our ok ? */
+								if (strncmp(reply, INV_STR, INV_STR_LEN)==0) {
+									if (verbose)
+										printf("ignoring INVITE "
+											"retransmission\n");
+									retrans_r_c++;
+									dontsend=1;
+									continue;
+								}
+								if (regexec(&okexp, reply, 0, 0, 0)==0) {
+									if (verbose > 1)
+										printf("  reply received\n");
+									if (verbose > 2)
+										printf("\n%s\n", reply);
+									cpy_to(reply, ack);
+									strcpy(buff, ack);
+									usrlocstep=3;
+								}
+								else {
+									printf("\nreceived:\n%s\nerror: did not "
+										"received the '200 OK' that was sent "
+										"as the reply on the INVITE (see "
 										"above). aborting\n", reply);
 									exit(1);
 								}
 								break;
 							case 3:
+								/* did we received our ack */
+								sprintf(messusern, "%s sip:%s%i", ACK_STR, 
+									username, namebeg);
+								if (strncmp(reply, messusern, 
+									strlen(messusern))==0) {
+									if (verbose > 1)
+										printf(" ack received\n");
+									if (verbose > 2)
+										printf("\n%s\n", reply);
+									if (verbose && nameend>0)
+										printf("usrloc for %s%i completed "
+											"successful\n", username, namebeg);
+									else if (verbose)
+										printf("usrloc for %s completed "
+											"successful\n", username);
+									if (namebeg==nameend) {
+										printf("\nAll usrloc tests completed "
+											"successful.\nreceived last message"
+											" %.3f ms after first request (test"
+											" duration).\n", deltaT(&firstsendt,
+											 &recvtime));
+										if (big_delay)
+											printf("biggest delay between "
+												"request and response was %.3f"
+												" ms\n", big_delay);
+										if (retrans_r_c)
+											printf("%i retransmission(s) "
+												"received from server.\n", 
+												retrans_r_c);
+										if (retrans_s_c)
+											printf("%i time(s) the timeout of "
+												"%i ms exceeded and request was"
+												" retransmitted.\n", 
+												retrans_s_c, retryAfter);
+										exit(0);
+									}
+									if (usrloc) {
+										/* lets see if we deceid to remove a 
+										   binding (case 6)*/
+										rem_rand=rand();
+										if (!rand_rem ||
+											((float)rem_rand/RAND_MAX) 
+												> USRLOC_REMOVE_PERCENT) {
+											namebeg++;
+											create_msg(buff, REQ_REG);
+											cseqcmp=cseqcmp+2;
+											usrlocstep=0;
+										}
+										else {
+											/* to prevent only removing of low
+											   user numbers new random number*/
+											rem_rand = rand();
+											rem_namebeg = namebeg;
+											namebeg = ((float)rem_rand/RAND_MAX)
+														* namebeg;
+											cseqcmp++;
+											trashchar=cseqcmp;
+											create_msg(buff, REQ_REM);
+											usrlocstep=6;
+										}
+									}
+									else {
+										namebeg++;
+										create_msg(buff, REQ_INV);
+										cseqcmp=cseqcmp+3;
+										usrlocstep=1;
+									}
+								}
+								else {
+									printf("\nreceived:\n%s\nerror: did not "
+										"received the 'ACK' that was sent "
+										"as the reply on the '200 OK' (see "
+										"above). aborting\n", reply);
+									exit(1);
+								}
+								break;
+							case 4:
+								/* we sent the message and look if its 
+								   forwarded to us */
+								if (!strncmp(reply, messusern, 
+									strlen(messusern))) {
+									if (verbose > 1) {
+										crlf=strstr(reply, "\r\n\r\n");
+										crlf=crlf+4;
+										printf("  received message\n  "
+											"'%s'\n", crlf);
+									}
+									if (verbose > 2)
+										printf("\n%s\n", reply);
+									cpy_vias(reply, confirm);
+									cpy_to(reply, confirm);
+									strcpy(buff, confirm);
+									usrlocstep=5;
+								}
+								else {
+									printf("\nreceived:\n%s\nerror: did not "
+										"received the 'MESSAGE' that was sent "
+										"(see above). aborting\n", reply);
+									exit(1);
+								}
+								break;
+							case 5:
+								/* we sent our reply on the message and
+								   look if this is also forwarded to us */
+								if (strncmp(reply, MES_STR, MES_STR_LEN)==0) {
+									if (verbose)
+										printf("ignoring MESSAGE "
+											"retransmission\n");
+									retrans_r_c++;
+									dontsend=1;
+									continue;
+								}
+								if (regexec(&okexp, reply, 0, 0, 0)==0) {
+									if (verbose > 1)
+										printf("  reply received\n\n");
+									else if (verbose && nameend>0)
+										printf("usrloc for %s%i completed "
+											"successful\n", username, namebeg);
+									else if (verbose)
+										printf("usrloc for %s completed "
+											"successful\n", username);
+									if (namebeg==nameend) {
+										printf("\nAll usrloc tests completed "
+											"successful.\nreceived last message"
+											" %.3f ms after first request (test"
+											" duration).\n", deltaT(&firstsendt,
+											 &recvtime));
+										if (big_delay)
+											printf("biggest delay between "
+												"request and response was %.3f"
+												" ms\n", big_delay);
+										if (retrans_r_c)
+											printf("%i retransmission(s) "
+												"received from server.\n", 
+												retrans_r_c);
+										if (retrans_s_c)
+											printf("%i time(s) the timeout of "
+												"%i ms exceeded and request was"
+												" retransmitted.\n", 
+												retrans_s_c, retryAfter);
+										exit(0);
+									}
+									if (usrloc) {
+										/* lets see if we deceid to remove a 
+										   binding (case 6)*/
+										rem_rand=rand();
+										if (!rand_rem ||
+											((float)rem_rand/RAND_MAX) 
+												> USRLOC_REMOVE_PERCENT) {
+											namebeg++;
+											create_msg(buff, REQ_REG);
+											cseqcmp=cseqcmp+2;
+											usrlocstep=0;
+										}
+										else {
+											/* to prevent only removing of low
+											   user numbers new random number*/
+											rem_rand = rand();
+											rem_namebeg = namebeg;
+											namebeg = ((float)rem_rand/RAND_MAX)
+														* namebeg;
+											cseqcmp++;
+											trashchar=cseqcmp;
+											create_msg(buff, REQ_REM);
+											usrlocstep=6;
+										}
+									}
+									else {
+										namebeg++;
+										create_msg(buff, REQ_MES);
+										cseqcmp=cseqcmp+3;
+										usrlocstep=4;
+									}
+								}
+								else {
+									printf("\nreceived:\n%s\nerror: did not "
+										"received the '200 OK' that was sent "
+										"as the reply on the MESSAGE (see "
+										"above). aborting\n", reply);
+									exit(1);
+								}
+								break;
+							case 6:
 								if (strncmp(reply, MES_STR, MES_STR_LEN)==0) {
 									if (verbose)
 										printf("ignoring MESSAGE "
@@ -1430,11 +1734,12 @@ void shoot(char *buff)
 									namebeg = rem_namebeg;
 									namebeg++;
 									create_msg(buff, REQ_REG);
+									cseqcmp++;
 									usrlocstep = 0;
 									i--;
 								}
 								else {
-									printf("\nreceived:\n%s\nerror: didn't "
+									printf("\nreceived:\n%s\nerror: did not "
 										"received the expected 200 on the "
 										"remove bindings request for %s%i (see"
 										" above). aborting\n", reply, username, 
@@ -1574,8 +1879,9 @@ void print_help() {
 	printf("\n\n"
 		" shoot : sipsak [-f filename] -s sip:uri\n"
 		" trace : sipsak -T -s sip:uri\n"
-		" USRLOC: sipsak -U [-b number] [-e number] [-x number] [-z] -s "
+		" usrloc: sipsak -U [-I|M] [-b number] [-e number] [-x number] [-z] -s "
 			"sip:uri\n"
+		" usrloc: sipsak -I|M [-b number] [-e number] -s sip:uri\n"
 		" flood : sipsak -F [-c number] -s sip:uri\n"
 		" random: sipsak -R [-t number] -s sip:uri\n\n"
 		" additional parameter in every mode:\n"
@@ -1591,12 +1897,14 @@ void print_help() {
 		"   -s sip:uri   the destination server uri in form "
 			"sip:[user@]servername[:port]\n"
 		"   -T           activates the traceroute mode\n"
-		"   -U           activates the USRLOC mode\n"
+		"   -U           activates the usrloc mode\n"
+		"   -I           simulates a successful calls with itself\n"
+		"   -M           sends messages ti itself\n"
 		"   -b number    the starting number appendix to the user name in "
-			"USRLOC mode\n"
+			"usrloc mode\n"
 		"                (default: 0)\n"
 		"   -e number    the ending numer of the appendix to the user name in "
-			"USRLOC\n"
+			"usrloc\n"
 		"                mode\n"
 		"   -x number    the expires header field value (default: 15)\n"
 		"   -z           activates randomly removing of user bindings\n"
@@ -1633,7 +1941,7 @@ int main(int argc, char *argv[])
 
 	/* some initialisation to be shure */
 	file_b=uri_b=trace=lport=usrloc=flood=verbose=randtrash=trashchar = 0;
-	numeric=warning_ext=rand_rem=nonce_count=replace_b = 0;
+	numeric=warning_ext=rand_rem=nonce_count=replace_b=invite=message = 0;
 	namebeg=nameend=maxforw = -1;
 	via_ins=redirects = 1;
 	username=password=replace_str = NULL;
@@ -1641,8 +1949,8 @@ int main(int argc, char *argv[])
     rport = 5060;
 	expires_t = USRLOC_EXP_DEF;
 	memset(buff, 0, BUFSIZE);
-	memset(message, 0, BUFSIZE);
-	memset(mes_reply, 0, BUFSIZE);
+	memset(confirm, 0, BUFSIZE);
+	memset(ack, 0, BUFSIZE);
 	memset(fqdn, 0, FQDN_SIZE);
 	memset(messusern, 0, FQDN_SIZE);
 
@@ -1650,9 +1958,9 @@ int main(int argc, char *argv[])
 
 	/* lots of command line switches to handle*/
 #ifdef AUTH
-	while ((c=getopt(argc,argv,"a:b:c:de:f:Fg:Ghil:m:nr:Rs:t:TUvVwx:z")) != EOF){
+	while ((c=getopt(argc,argv,"a:b:c:de:f:Fg:GhiIl:m:Mnr:Rs:t:TUvVwx:z")) != EOF){
 #else
-	while ((c=getopt(argc,argv,"b:c:de:f:Fg:Ghil:m:nr:Rs:t:TUvVwx:z")) != EOF){
+	while ((c=getopt(argc,argv,"b:c:de:f:Fg:GhiIl:m:Mnr:Rs:t:TUvVwx:z")) != EOF){
 #endif
 		switch(c){
 #ifdef AUTH
@@ -1719,6 +2027,9 @@ int main(int argc, char *argv[])
 			case 'i':
 				via_ins=0;
 				break;
+			case 'I':
+				invite=1;
+				break;
 			case 'l':
 				lport=atoi(optarg);
 				if (!lport) {
@@ -1732,6 +2043,9 @@ int main(int argc, char *argv[])
 					printf("error: non-numerical number of max-forwards\n");
 					exit(2);
 				}
+				break;
+			case 'M':
+				message=1;
 				break;
 			case 'n':
 				numeric = 1;
@@ -1856,7 +2170,7 @@ int main(int argc, char *argv[])
 		}
 		if (maxforw==-1) maxforw=255;
 	}
-	else if (usrloc) {
+	else if (usrloc || invite || message) {
 		if (trace || flood || randtrash) {
 			printf("error: usrloc can't be combined with trace, random or "
 				"flood\n");
@@ -1870,6 +2184,10 @@ int main(int argc, char *argv[])
 		if (namebeg>0 && nameend==-1) {
 			printf("error: if a starting numbers is given also an ending "
 				"number have to be specified\n");
+			exit(2);
+		}
+		if (invite && message) {
+			printf("error: invite and message tests are XOR\n");
 			exit(2);
 		}
 		if (via_ins) {
