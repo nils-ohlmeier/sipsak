@@ -1,5 +1,5 @@
 /*
- * $Id: sipsak.c,v 1.13 2002/08/29 13:41:11 calrissian Exp $
+ * $Id: sipsak.c,v 1.14 2002/08/29 19:12:27 calrissian Exp $
  *
  * Copyright (C) 2002-2003 Fhg Fokus
  *
@@ -18,9 +18,6 @@
 
 /* sipsak written by nils ohlmeier (develop@ohlmeier.de).
    based up on a modifyed version of shoot.
-   set DEBUG on compile will produce much more output. primarily
-   it will print out the sended and received messages before or after
-   every network action.
 */
 
 /* changes by jiri@iptel.org; now messages can be really received;
@@ -64,7 +61,7 @@ bouquets and brickbats to farhan@hotfoon.com
 #include <arpa/inet.h>
 #include <sys/poll.h>
 
-#define SIPSAK_VERSION "v0.7.2"
+#define SIPSAK_VERSION "v0.7.3"
 #define RESIZE		1024
 #define BUFSIZE		4096
 #define FQDN_SIZE   200
@@ -198,9 +195,8 @@ void get_fqdn(){
 	}
 	/* a hostname with dots should be a domainname */
 	if ((strchr(hname, '.'))==NULL) {
-#ifdef DEBUG
-		printf("hostname without dots. determine domainname...\n");
-#endif
+		if (verbose > 2)
+			printf("hostname without dots. determine domainname...\n");
 		if (getdomainname(&dname[0], namelen) < 0) {
 			printf("error: cannot determine domainname\n");
 			exit(2);
@@ -230,9 +226,8 @@ void get_fqdn(){
 		}
 	}
 
-#ifdef DEBUG
-	printf("fqdnhostname: %s\n", fqdn);
-#endif
+	if (verbose > 2)
+		printf("fqdnhostname: %s\n", fqdn);
 }
 
 /* add a Via Header Field in the message. */
@@ -243,9 +238,8 @@ void add_via(char *mes)
 	/* first build our own Via-header-line */
 	via_line = malloc(VIA_STR_LEN+strlen(fqdn)+9);
 	sprintf(via_line, "%s%s:%i\r\n", VIA_STR, fqdn, lport);
-#ifdef DEBUG
-	printf("our Via-Line: %s\n", via_line);
-#endif
+	if (verbose > 2)
+		printf("our Via-Line: %s\n", via_line);
 
 	if (strlen(mes)+strlen(via_line)>= BUFSIZE){
 		printf("can't add our Via Header Line because file is too big\n");
@@ -264,7 +258,7 @@ void add_via(char *mes)
 	strncpy(via+strlen(via_line), backup, strlen(backup)+1);
 	free(via_line);
 	free(backup);
-	if (verbose)
+	if (verbose > 1)
 		printf("New message with Via-Line:\n%s\n", mes);
 }
 
@@ -294,9 +288,8 @@ void cpy_vias(char *reply){
 	strncpy(middle_via, first_via, last_via-first_via+1);
 	strcpy(middle_via+(last_via-first_via+1), backup);
 	free(backup);
-#ifdef DEBUG
-	printf("message reply with vias included:\n%s\n", mes_reply);
-#endif
+	if (verbose > 2)
+		printf("message reply with vias included:\n%s\n", mes_reply);
 }
 
 /* create a valid sip header for the different modes */
@@ -307,9 +300,8 @@ void create_msg(char *buff, int action){
 	c=rand();
 	switch (action){
 		case REQ_REG:
-#ifdef DEBUG
-			printf("username: %s\ndomainname: %s\n", username, domainname);
-#endif
+			if (verbose > 2)
+				printf("username: %s\ndomainname: %s\n", username, domainname);
 			usern=malloc(strlen(username)+10);
 			sprintf(messusern, "%s sip:%s%i", MES_STR, username, namebeg);
 			sprintf(usern, "%s%i", username, namebeg);
@@ -333,10 +325,10 @@ void create_msg(char *buff, int action){
 				"%s%u@%s\r\n%s%i %s\r\n%s 0\r\n\r\n", SIP200_STR, FROM_STR, 
 				fqdn, lport, TO_STR, usern, domainname, CALL_STR, c, fqdn, 
 				CSEQ_STR, 3*namebeg+2, MES_STR, CON_LEN_STR);
-#ifdef DEBUG
-			printf("message:\n%s\n", message);
-			printf("message reply:\n%s\n", mes_reply);
-#endif
+			if (verbose > 2) {
+				printf("message:\n%s\n", message);
+				printf("message reply:\n%s\n", mes_reply);
+			}
 			free(usern);
 			break;
 		case REQ_OPT:
@@ -376,9 +368,8 @@ void create_msg(char *buff, int action){
 			exit(2);
 			break;
 	}
-#ifdef DEBUG
-	printf("request:\n%s", buff);
-#endif
+	if (verbose > 2)
+		printf("request:\n%s", buff);
 }
 
 /* check for the existence of a Max-Forwards header field. if its 
@@ -397,11 +388,10 @@ void set_maxforw(char *mes){
 		max++;
 		strncpy(max, backup, strlen(backup)+1);
 		free(backup);
-		if (verbose)
+		if (verbose > 1)
 			printf("Max-Forwards %i inserted into header\n", maxforw);
-#ifdef DEBUG
-		printf("New message with inserted Max-Forwards:\n%s\n", mes);
-#endif
+		if (verbose > 2)
+			printf("New message with inserted Max-Forwards:\n%s\n", mes);
 	}
 	else{
 		/* found max-forwards => overwrite the value with maxforw*/
@@ -416,11 +406,10 @@ void set_maxforw(char *mes){
 		strncpy(crlf, backup, strlen(backup)+1);
 		crlf=crlf+strlen(backup);
 		free(backup);
-		if (verbose)
+		if (verbose > 1)
 			printf("Max-Forwards set to %i\n", maxforw);
-#ifdef DEBUG
-		printf("New message with changed Max-Forwards:\n%s\n", mes);
-#endif
+		if (verbose > 2)
+			printf("New message with changed Max-Forwards:\n%s\n", mes);
 	}
 }
 
@@ -438,9 +427,8 @@ void uri_replace(char *mes, char *uri)
 	strncpy(foo+strlen(uri), SIP20_STR, SIP20_STR_LEN);
 	strncpy(foo+strlen(uri)+SIP20_STR_LEN, backup, strlen(backup)+1);
 	free(backup);
-#ifdef DEBUG
-	printf("Message with modified uri:\n%s\n", mes);
-#endif
+	if (verbose > 2)
+		printf("Message with modified uri:\n%s\n", mes);
 }
 
 /* trashes one character in buff randomly */
@@ -455,9 +443,8 @@ void trash_random(char *message)
 	position=message+r;
 	r=t*(float)255;
 	*position=(char)r;
-#ifdef DEBUG
-	printf("request:\n%s\n", message);
-#endif
+	if (verbose > 2)
+		printf("request:\n%s\n", message);
 }
 
 /* tryes to find the warning header filed and prints out the IP */
@@ -496,16 +483,14 @@ int cseq(char *message)
 		cseq+=6;
 		num=atoi(cseq);
 		if (num < 1) {
-#ifdef DEBUG
-			printf("CSeq found but not convertable\n");
-#endif
+			if (verbose > 2)
+				printf("CSeq found but not convertable\n");
 			return 0;
 		}
 		return num;
 	}
-#ifdef DEBUG
-	printf("no CSeq found\n");
-#endif
+	if (verbose > 2)
+		printf("no CSeq found\n");
 	return 0;
 }
 
@@ -669,7 +654,7 @@ void shoot(char *buff)
 				set_maxforw(buff);
 			}
 			/* some initial output */
-			else if (usrloc && verbose && !dontsend) {
+			else if (usrloc && (verbose > 1) && !dontsend) {
 				switch (usrlocstep) {
 					case 0:
 						printf("registering user %s%i... ", username, namebeg);
@@ -690,12 +675,11 @@ void shoot(char *buff)
 			}
 			else if (randtrash && verbose) {
 				printf("message with %i randomized chars\n", i+1);
-#ifdef DEBUG
-				printf("request:\n%s\n", buff);
-#endif
+				if (verbose > 2)
+					printf("request:\n%s\n", buff);
 			}
-			else if (!trace && !usrloc && !flood && !randtrash && verbose &&
-						!dontsend){
+			else if (!trace && !usrloc && !flood && !randtrash && (verbose > 1)
+						&& !dontsend){
 				printf("** request **\n%s\n", buff);
 			}
 
@@ -746,7 +730,8 @@ void shoot(char *buff)
 					if (trace) printf("%i: timeout after %i ms\n", i, 
 									retryAfter);
 					else if (usrloc) {
-						printf("timeout after %i ms\n", retryAfter);
+						if (verbose)
+							printf("timeout after %i ms\n", retryAfter);
 						i--;
 					}
 					else if (verbose) printf("** timeout after %i ms**\n", 
@@ -783,7 +768,7 @@ void shoot(char *buff)
 				}
 				else if (FD_ISSET(ssock, &fd)) {
 					/* no timeout, no error ... something has happened :-) */
-				 	if (!trace && !usrloc && !randtrash)
+				 	if (!trace && !usrloc && !randtrash && verbose)
 						printf ("\nmessage received\n");
 				}
 				else {
@@ -832,7 +817,8 @@ void shoot(char *buff)
 						cseqcmp = namebeg;
 					cseqtmp = cseq(reply);
 					if ((0 < cseqtmp) && (cseqtmp < cseqcmp)) {
-						printf("irgnoring retransmission\n");
+						if (verbose)
+							printf("irgnoring retransmission\n");
 						retrans_r_c++;
 						dontsend = 1;
 						continue;
@@ -922,16 +908,17 @@ void shoot(char *buff)
 						if (regexec(&tmhexp, reply, 0, 0, 0)==0) {
 							/* we received 483 to many hops */
 							printf("%i: ", i);
-#ifdef DEBUG
-							printf("(%.3f ms)\n%s\n", 
-								deltaT(&sendtime, &recvtime), reply);
-#else
-							warning_extract(reply);
-							crlf=strchr(reply, '\n');
-							*crlf='\0';
-							printf("(%.3f ms) %s\n", 
-								deltaT(&sendtime, &recvtime), reply);
-#endif
+							if (verbose > 2) {
+								printf("(%.3f ms)\n%s\n", 
+									deltaT(&sendtime, &recvtime), reply);
+							}
+							else {
+								warning_extract(reply);
+								crlf=strchr(reply, '\n');
+								*crlf='\0';
+								printf("(%.3f ms) %s\n", 
+									deltaT(&sendtime, &recvtime), reply);
+							}
 							namebeg++;
 							maxforw++;
 							create_msg(buff, REQ_OPT);
@@ -941,16 +928,17 @@ void shoot(char *buff)
 						else if (regexec(&proexp, reply, 0, 0, 0)==0) {
 							/* we received a provisional response */
 							printf("%i: ", i);
-#ifdef DEBUG
-							printf("(%.3f ms)\n%s\n", 
-								deltaT(&sendtime, &recvtime), reply);
-#else
-							warning_extract(reply);
-							crlf=strchr(reply, '\n');
-							*crlf='\0';
-							printf("(%.3f ms) %s\n", 
-								deltaT(&sendtime, &recvtime), reply);
-#endif
+							if (verbose > 2) {
+								printf("(%.3f ms)\n%s\n", 
+									deltaT(&sendtime, &recvtime), reply);
+							}
+							else {
+								warning_extract(reply);
+								crlf=strchr(reply, '\n');
+								*crlf='\0';
+								printf("(%.3f ms) %s\n", 
+									deltaT(&sendtime, &recvtime), reply);
+							}
 							dontsend=1;
 							continue;
 						}
@@ -986,11 +974,10 @@ void shoot(char *buff)
 								/* at first we have sended a register and look 
 								   at the response now*/
 								if (regexec(&okexp, reply, 0, 0, 0)==0) {
-									if (verbose)
+									if (verbose > 1)
 										printf ("  OK\n");
-#ifdef DEBUG
-									printf("\n%s\n", reply);
-#endif
+									if (verbose > 2)
+										printf("\n%s\n", reply);
 									strcpy(buff, message);
 									usrlocstep=1;
 								}
@@ -1006,15 +993,14 @@ void shoot(char *buff)
 								   forwarded to us*/
 								if (!strncmp(reply, messusern, 
 									strlen(messusern))) {
-									if (verbose) {
+									if (verbose > 1) {
 										crlf=strstr(reply, "\r\n\r\n");
 										crlf=crlf+4;
 										printf("  received message\n  "
 											"'%s'\n", crlf);
 									}
-#ifdef DEBUG
-									printf("\n%s\n", reply);
-#endif
+									if (verbose > 2)
+										printf("\n%s\n", reply);
 									cpy_vias(reply);
 									strcpy(buff, mes_reply);
 									usrlocstep=2;
@@ -1030,16 +1016,17 @@ void shoot(char *buff)
 								/* finnaly we sended our reply on the message 
 								   and look if this is also forwarded to us*/
 								if (strncmp(reply, MES_STR, MES_STR_LEN)==0) {
-									printf("ignoring MESSAGE "
-										"retransmission\n");
+									if (verbose)
+										printf("ignoring MESSAGE "
+											"retransmission\n");
 									retrans_r_c++;
 									dontsend=1;
 									continue;
 								}
 								if (regexec(&okexp, reply, 0, 0, 0)==0) {
-									if (verbose)
+									if (verbose > 1)
 										printf("  reply received\n\n");
-									else
+									else if (verbose)
 										printf("USRLOC for %s%i completed "
 											"successful\n", username, namebeg);
 									if (namebeg==nameend) {
@@ -1094,8 +1081,9 @@ void shoot(char *buff)
 								break;
 							case 3:
 								if (regexec(&okexp, reply, 0, 0, 0)==0) {
-									if (verbose) printf("   OK\n\n");
-									else printf("Binding removal for %s%i "
+									if (verbose > 1) printf("   OK\n\n");
+									else if (verbose)
+										printf("Binding removal for %s%i "
 											"successful\n", username, namebeg);
 									namebeg = rem_namebeg;
 									namebeg++;
@@ -1122,20 +1110,21 @@ void shoot(char *buff)
 						/* in randomzing trash we are expexting 4?? error codes
 						   everything else should not be normal */
 						if (regexec(&errexp, reply, 0, 0, 0)==0) {
-#ifdef DEBUG
-							printf("received:\n%s\n", reply);
-#endif
-							if (verbose) printf("received expected 4xx ");
-							if (warning_ext) {
-								printf ("from ");
-								warning_extract(reply);
-								printf("\n");
+							if (verbose > 2)
+								printf("received:\n%s\n", reply);
+							if (verbose > 1) {
+								printf("received expected 4xx ");
+								if (warning_ext) {
+									printf ("from ");
+									warning_extract(reply);
+									printf("\n");
+								}
+								else printf("\n");
 							}
-							else printf("\n");
 						}
 						else {
 							printf("warning: did not received 4xx\n");
-							if (verbose) 
+							if (verbose > 1) 
 								printf("sended:\n%s\nreceived:\n%s\n", buff, 
 									reply);
 						}
@@ -1156,17 +1145,19 @@ void shoot(char *buff)
 					else {
 						/* in the normal send and reply case anything other 
 						   then 1xx will be treated as final response*/
-						printf("** reply received ");
-						if (i==0) 
-							printf("after %.3f ms **\n", 
-								deltaT(&sendtime, &recvtime));
-						else 
-							printf("%.3f ms after first send\n   and %.3f ms "
-								"after last send **\n", 
-								deltaT(&firstsendt, &recvtime), 
-								deltaT(&sendtime, &recvtime));
-						if (verbose) printf("%s\n", reply);
-						else {
+						if (verbose) {
+							printf("** reply received ");
+							if (i==0) 
+								printf("after %.3f ms **\n", 
+									deltaT(&sendtime, &recvtime));
+							else 
+								printf("%.3f ms after first send\n   and %.3f ms "
+									"after last send **\n", 
+									deltaT(&firstsendt, &recvtime), 
+									deltaT(&sendtime, &recvtime));
+						}
+						if (verbose > 1) printf("%s\n", reply);
+						else if (verbose) {
 							crlf=strchr(reply, '\n');
 							*crlf='\0';
 							printf("   %s\n", reply);
@@ -1215,11 +1206,8 @@ void shoot(char *buff)
 
 /* prints out some usage help and exits */
 void print_help() {
-	printf("sipsak %s ", SIPSAK_VERSION);
-#ifdef DEBUG
-	printf("(compiled with DEBUG) ");
-#endif
-	printf("\n\n"
+	printf("sipsak %s\n", SIPSAK_VERSION);
+	printf("\n"
 		" shoot : sipsak [-f filename] -s sip:uri\n"
 		" trace : sipsak -T -s sip:uri\n"
 		" USRLOC: sipsak -U [-b number] -e number [-x number] [-z] -s sip:uri\n"
@@ -1256,7 +1244,7 @@ void print_help() {
 		"   -n           use IPs instead of fqdn in the Via-Line\n"
 		"   -i           deactivate the insertion of a Via-Line\n"
 		"   -d           ignore redirects\n"
-		"   -v           be more verbose\n"
+		"   -v           each v's produces more verbosity (max. 3)\n"
 		"   -w           extract IP from the warning in reply\n\n"
 		"The manupulation function are only tested with nice RFC conform "
 			"SIP-messages,\n"
@@ -1426,14 +1414,10 @@ int main(int argc, char *argv[])
 				usrloc=1;
 				break;
 			case 'v':
-				verbose=1;
+				verbose++;
 				break;
 			case 'V':
-				printf("sipsak %s ", SIPSAK_VERSION);
-#ifdef DEBUG
-				printf("(compiled with DEBUG)");
-#endif
-				printf("\n");
+				printf("sipsak %s\n", SIPSAK_VERSION);
 				exit(0);
 				break;
 			case 'w':

@@ -20,14 +20,17 @@ RM = rm -f
 
 RM_CMD = $(RM) *.BAK *.bak *.o ,* *~ *.a *.orig *.rej
 
+WARNING = -Wall
 DEFS =
+
+FLAGS = $(WARNING) $(DEFS)
 
 all:: $(PROGS)
 
 %: %.o
 	$(CC) -o $@ $^
 %.o: %.c
-	$(CC) $(DEFS) -c $<
+	$(CC) $(FLAGS) -c $<
 
 sipsak: sipsak.o
 
