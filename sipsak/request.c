@@ -1,5 +1,5 @@
 /*
- * $Id: request.c,v 1.6 2004/02/22 01:06:33 calrissian Exp $
+ * $Id: request.c,v 1.7 2004/04/08 19:09:51 calrissian Exp $
  *
  * Copyright (C) 2002-2003 Fhg Fokus
  *
@@ -82,7 +82,7 @@ void create_msg(char *buff, int action){
 					"%s<sip:%s%s>\r\n"
 					"%s%u@%s\r\n"
 					"%s%i %s\r\n"
-					"%s<%s>\r\n"
+					"%s%s\r\n"
 					"%s%i\r\n"
 					"%s0\r\n"
 					"%s70\r\n"
