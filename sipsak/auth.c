@@ -1,5 +1,5 @@
 /*
- * $Id: auth.c,v 1.17 2005/03/01 12:05:35 calrissian Exp $
+ * $Id: auth.c,v 1.18 2005/03/27 17:28:57 calrissian Exp $
  *
  * Copyright (C) 2002-2004 Fhg Fokus
  *
@@ -23,8 +23,6 @@
 #include "auth.h"
 #include "sipsak.h"
 #include "exit_code.h"
-
-#include <string.h>
 
 #ifdef HAVE_OPENSSL_MD5_H
 #include <openssl/md5.h>

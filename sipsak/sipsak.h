@@ -1,5 +1,5 @@
 /*
- * $Id: sipsak.h,v 1.25 2005/03/27 15:34:15 calrissian Exp $
+ * $Id: sipsak.h,v 1.26 2005/03/27 17:28:57 calrissian Exp $
  *
  * Copyright (C) 2002-2004 Fhg Fokus
  *
@@ -33,6 +33,10 @@
 #ifdef HAVE_STRCASESTR
 #define __USE_GNU
 #define strstr strcasestr
+#endif
+
+#ifdef HAVE_STRING_H
+#include <string.h>
 #endif
 
 #define SIPSAK_VERSION PACKAGE_VERSION

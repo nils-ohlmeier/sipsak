@@ -1,5 +1,5 @@
 /*
- * $Id: shoot.c,v 1.41 2005/03/27 15:34:15 calrissian Exp $
+ * $Id: shoot.c,v 1.42 2005/03/27 17:28:57 calrissian Exp $
  *
  * Copyright (C) 2002-2004 Fhg Fokus
  * Copyright (C) 2004 Nils Ohlmeier
@@ -52,8 +52,6 @@
 #include "header_f.h"
 #include "helper.h"
 #include "exit_code.h"
-
-#include <string.h>
 
 #ifndef DEFAULT_RETRYS
 #define DEFAULT_RETRYS 5

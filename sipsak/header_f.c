@@ -1,5 +1,5 @@
 /*
- * $Id: header_f.c,v 1.10 2005/03/27 15:33:10 calrissian Exp $
+ * $Id: header_f.c,v 1.11 2005/03/27 17:28:57 calrissian Exp $
  *
  * Copyright (C) 2002-2004 Fhg Fokus
  *
@@ -23,8 +23,6 @@
 #include "sipsak.h"
 #include "exit_code.h"
 #include "helper.h"
-
-#include <string.h>
 
 /* add a Via Header Field in the message. */
 void add_via(char *mes)

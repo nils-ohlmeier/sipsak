@@ -1,5 +1,5 @@
 /*
- * $Id: helper.c,v 1.20 2005/01/05 23:37:24 calrissian Exp $
+ * $Id: helper.c,v 1.21 2005/03/27 17:28:57 calrissian Exp $
  *
  * Copyright (C) 2002-2004 Fhg Fokus
  *
@@ -31,8 +31,6 @@
 #include "helper.h"
 #include "sipsak.h"
 #include "exit_code.h"
-
-#include <string.h>
 
 /* take either a dot.decimal string of ip address or a 
 domain name and returns a NETWORK ordered long int containing
