@@ -1,5 +1,5 @@
 /*
- * $Id: shoot.c,v 1.21 2004/06/13 19:11:41 calrissian Exp $
+ * $Id: shoot.c,v 1.22 2004/06/13 19:35:26 calrissian Exp $
  *
  * Copyright (C) 2002-2004 Fhg Fokus
  * Copyright (C) 2004 Nils Ohlmeier
@@ -27,13 +27,17 @@
 #include <sys/socket.h>
 #include <sys/poll.h>
 #include <netinet/in.h>
+
+#include "shoot.h"
+
+#ifdef RAW_SUPPORT
 #include <netinet/ip.h>
 #include <netinet/ip_icmp.h>
 
 #define __FAVOR_BSD
 #include <netinet/udp.h>
+#endif
 
-#include "shoot.h"
 #include "sipsak.h"
 #include "request.h"
 #include "auth.h"
@@ -64,13 +68,15 @@ void shoot(char *buff)
 	struct timezone tz;
 	struct timespec sleep_ms_s, sleep_rem;
 	struct pollfd 	sockerr;
+#ifdef RAW_SUPPORT
 	struct ip 		*r_ip_hdr, *s_ip_hdr;
 	struct icmp 	*icmp_hdr;
 	struct udphdr 	*udp_hdr;
 	size_t r_ip_len, s_ip_len, icmp_len;
-	int srcport, dstport;
+	int srcport, dstport, rawsock;
+#endif
 	int redirected, retryAfter, nretries;
-	int usock, csock, rawsock, i, len, ret, usrlocstep;
+	int usock, csock, i, len, ret, usrlocstep;
 	int dontsend, cseqtmp, rand_tmp, flen;
 	int rem_rand, retrans_r_c, retrans_s_c;
 	int randretrys = 0;
@@ -120,12 +126,13 @@ void shoot(char *buff)
 		lport=ntohs(addr.sin_port);
 	}
 
+#ifdef RAW_SUPPORT
 	/* try to create the raw socket */
 	rawsock = (int)socket(PF_INET, SOCK_RAW, IPPROTO_ICMP);
 	if (rawsock==-1) {
 		if (verbose)
 			printf("Warning: need raw socket (root privileges) to receive all ICMP errors\n");
-
+#endif
 		/* create the connected socket as a primitve alternative to the 
 		   raw socket*/
 		csock = (int)socket(PF_INET, SOCK_DGRAM, IPPROTO_UDP);
@@ -141,10 +148,12 @@ void shoot(char *buff)
 			perror("connected UDP socket binding failed");
 			exit_code(2);
 		}
+#ifdef RAW_SUPPORT
 	}
 	else {
 		csock = -1;
 	}
+#endif
 
 	if (sleep_ms != 0) {
 		if (sleep_ms == -2) {
@@ -373,8 +382,10 @@ void shoot(char *buff)
 				FD_SET(usock, &fd); 
 				if (csock != -1)
 					FD_SET(csock, &fd); 
+#ifdef RAW_SUPPORT
 				if (rawsock != -1)
 					FD_SET(rawsock, &fd); 
+#endif
 
 				ret = select(FD_SETSIZE, &fd, NULL, NULL, &tv);
 				(void)gettimeofday(&recvtime, &tz);
@@ -452,10 +463,12 @@ void shoot(char *buff)
 						&& (verbose > 1))
 						printf ("\nmessage received:\n");
 				}
+#ifdef RAW_SUPPORT
 				else if ((rawsock != -1) && FD_ISSET(rawsock, &fd)) {
 					if (verbose > 1)
 						printf("\nreceived ICMP packet");
 				}
+#endif
 				else {
 					printf("\nselect returned succesfuly, nothing received\n");
 					continue;
@@ -470,6 +483,7 @@ void shoot(char *buff)
 				else if ((csock != -1) && (FD_ISSET(csock, &fd))) {
 					ret = recv(csock, reply, BUFSIZE, 0);
 				}
+#ifdef RAW_SUPPORT
 				else if ((rawsock != -1) && (FD_ISSET(rawsock, &fd))) {
 					/* lets check if the ICMP message matches with our 
 					   sent packet */
@@ -519,6 +533,7 @@ void shoot(char *buff)
 						continue;
 					}
 				}
+#endif
 				if(ret > 0)
 				{
 					reply[ret] = 0;
