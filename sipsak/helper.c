@@ -1,5 +1,5 @@
 /*
- * $Id: helper.c,v 1.1 2003/04/04 02:12:18 calrissian Exp $
+ * $Id: helper.c,v 1.2 2003/11/25 17:46:08 calrissian Exp $
  *
  * Copyright (C) 2002-2003 Fhg Fokus
  *
@@ -83,7 +83,7 @@ long getaddress(char *host)
 	*/
 	pent = gethostbyname(host);
 	if (!pent) {
-		perror("no gethostbyname");
+		perror("gethostbyname error");
 		exit(2);
 	}
 	lp = (long *) (pent->h_addr);
