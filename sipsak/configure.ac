@@ -27,5 +27,16 @@ AC_FUNC_MALLOC
 AC_FUNC_SELECT_ARGTYPES
 AC_CHECK_FUNCS([gethostbyname gethostname gettimeofday memset regcomp select socket strchr strstr uname])
 
+# Check for internal number of retrys
+def_retrys=-1
+AC_ARG_ENABLE([retrys],AC_HELP_STRING([--enable-retrys=NUM],[number NUM of retrys in default mode (default 5)]),[def_retrys=$enableval])
+if test "$def_retrys" = yes; then
+  def_retrys=5
+fi
+if test "$def_retrys" = no; then
+  def_retrys=-1
+fi
+AC_DEFINE_UNQUOTED(DEFAULT_RETRYS, $def_retrys, [Default number of retrys in default mode.])
+
 AC_CONFIG_FILES([Makefile])
 AC_OUTPUT

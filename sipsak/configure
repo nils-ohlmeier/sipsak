@@ -852,6 +852,7 @@ Optional Features:
                           (and sometimes confusing) to the casual installer
   --disable-dependency-tracking Speeds up one-time builds
   --enable-dependency-tracking  Do not reject slow dependency extractors
+  --enable-retrys=NUM     number NUM of retrys in default mode (default 5)
 
 Some influential environment variables:
   CC          C compiler command
@@ -4082,6 +4083,25 @@ _ACEOF
 
 fi
 done
+
+
+# Check for internal number of retrys and timeouts
+def_retrys=-1
+# Check whether --enable-retrys or --disable-retrys was given.
+if test "${enable_retrys+set}" = set; then
+  enableval="$enable_retrys"
+  def_retrys=$enableval
+fi;
+if test "$def_retrys" = yes; then
+  def_retrys=5
+fi
+if test "$def_retrys" = no; then
+  def_retrys=-1
+fi
+
+cat >>confdefs.h <<_ACEOF
+#define DEFAULT_RETRYS $def_retrys
+_ACEOF
 
 
           ac_config_files="$ac_config_files Makefile"

@@ -1,5 +1,5 @@
 /*
- * $Id: shoot.c,v 1.6 2003/09/06 18:28:09 calrissian Exp $
+ * $Id: shoot.c,v 1.7 2003/10/06 18:57:17 calrissian Exp $
  *
  * Copyright (C) 2002-2003 Fhg Fokus
  *
@@ -33,6 +33,10 @@
 #include "auth.h"
 #include "header_f.h"
 #include "helper.h"
+
+#ifndef DEFAULT_RETRYS
+#define DEFAULT_RETRYS 5
+#endif
 
 /*
 shot written by ashhar farhan, is not bound by any licensing at all.
