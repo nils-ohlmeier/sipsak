@@ -1,5 +1,5 @@
 /*
- * $Id: sipsak.c,v 1.79 2004/11/02 13:48:08 calrissian Exp $
+ * $Id: sipsak.c,v 1.80 2004/11/19 17:57:46 calrissian Exp $
  *
  * Copyright (C) 2002-2004 Fhg Fokus
  * Copyright (C) 2004 Nils Ohlmeier
@@ -207,6 +207,10 @@ int main(int argc, char *argv[])
 	char	buff[BUFSIZE];
 	int		length, c, i, j;
 	char	*delim, *delim2;
+	pid_t 	pid;
+	struct timespec ts;
+	int 	upp;
+
 #ifdef HAVE_GETOPT_LONG
 	int option_index = 0;
 	static struct option l_opts[] = {
@@ -269,9 +273,6 @@ int main(int argc, char *argv[])
 	memset(ack, 0, BUFSIZE);
 	memset(fqdn, 0, FQDN_SIZE);
 	memset(messusern, 0, FQDN_SIZE);
-	pid_t pid;
-	struct timespec ts;
-	int upp;
 
 	if (argc==1) print_help();
 
