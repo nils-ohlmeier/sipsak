@@ -1,5 +1,5 @@
 /*
- * $Id: header_f.c,v 1.1 2003/04/04 02:12:18 calrissian Exp $
+ * $Id: header_f.c,v 1.2 2003/12/30 21:42:07 calrissian Exp $
  *
  * Copyright (C) 2002-2003 Fhg Fokus
  *
@@ -29,8 +29,8 @@ void add_via(char *mes)
 	char *via_line, *via, *via2, *backup; 
 
 	/* first build our own Via-header-line */
-	via_line = malloc(VIA_STR_LEN+strlen(fqdn)+9);
-	sprintf(via_line, "%s%s:%i\r\n", VIA_STR, fqdn, lport);
+	via_line = malloc(VIA_STR_LEN+strlen(fqdn)+15);
+	sprintf(via_line, "%s%s:%i;rport\r\n", VIA_STR, fqdn, lport);
 	if (verbose > 2)
 		printf("our Via-Line: %s\n", via_line);
 
