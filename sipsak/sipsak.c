@@ -1,5 +1,5 @@
 /*
- * $Id: sipsak.c,v 1.4 2002/08/25 16:06:27 calrissian Exp $
+ * $Id: sipsak.c,v 1.5 2002/08/26 00:31:37 calrissian Exp $
  *
  * Copyright (C) 2002-2003 Fhg Fokus
  *
@@ -103,6 +103,8 @@ bouquets and brickbats to farhan@hotfoon.com
 #define SIPSAK_MES_STR_LEN 41
 #define EXP_STR "Expires: "
 #define EXP_STR_LEN 9
+#define CON_EXP_STR "expires="
+#define CONEXP_STR_LEN 8
 #define USRLOC_EXP_DEF 15
 #define FLOOD_METH "OPTIONS"
 #define USRLOC_REMOVE_PERCENT 0.1
@@ -360,11 +362,11 @@ void create_msg(char *buff, int action){
 			usern=malloc(strlen(username)+10);
 			sprintf(usern, "%s%i", username, namebeg);
 			sprintf(buff, "%s sip:%s%s%s%s:%i\r\n%s<sip:%s@%s>\r\n"
-				"%s<sip:%s@%s>\r\n%s%u@%s\r\n%s%i %s\r\n%s<sip:%s@%s:%i>\r\n"
-				"%s%i\r\n\r\n", REG_STR, domainname, SIP20_STR, VIA_STR, fqdn, 
-				lport, FROM_STR, usern, domainname, TO_STR, usern, domainname, 
-				CALL_STR, c, fqdn, CSEQ_STR, 3*namebeg+3, REG_STR, CONT_STR, 
-				usern, fqdn, lport, EXP_STR, expires_t);
+				"%s<sip:%s@%s>\r\n%s%u@%s\r\n%s%i %s\r\n%s<sip:%s@%s:%i>;%s0"
+				"\r\n%s%i\r\n\r\n", REG_STR, domainname, SIP20_STR, VIA_STR, 
+				fqdn, lport, FROM_STR, usern, domainname, TO_STR, usern, 
+				domainname, CALL_STR, c, fqdn, CSEQ_STR, 3*namebeg+3, REG_STR, 
+				CONT_STR, usern, fqdn, lport, CON_EXP_STR, EXP_STR, expires_t);
 			break;
 		default:
 			printf("error: unknown request type to create\n");
@@ -526,7 +528,7 @@ void shoot(char *buff)
 	int ssock, redirected, retryAfter, nretries;
 	int sock, i, len, ret, usrlocstep, randretrys;
 	int dontsend, cseqcmp, cseqtmp;
-	int rem_rand, rem_namebeg, rem_t;
+	int rem_rand, rem_namebeg;
 	char *contact, *crlf, *foo, *bar;
 	char reply[BUFSIZE];
 	fd_set	fd;
@@ -660,7 +662,7 @@ void shoot(char *buff)
 				set_maxforw(buff);
 			}
 			/* some initial output */
-			else if (usrloc && verbose) {
+			else if (usrloc && verbose && !dontsend) {
 				switch (usrlocstep) {
 					case 0:
 						printf("registering user %s%i... ", username, namebeg);
@@ -805,7 +807,7 @@ void shoot(char *buff)
 						cseqcmp = namebeg;
 					cseqtmp = cseq(reply);
 					if ((0 < cseqtmp) && (cseqtmp < cseqcmp)) {
-						printf("received retransmission: irgnoring\n");
+						printf("irgnoring retransmission\n");
 						dontsend = 1;
 						i--;
 						continue;
@@ -984,7 +986,7 @@ void shoot(char *buff)
 									if (verbose) {
 										crlf=strstr(reply, "\r\n\r\n");
 										crlf=crlf+4;
-										printf("         received message\n  "
+										printf("  received message\n  "
 											"'%s'\n", crlf);
 									}
 #ifdef DEBUG
@@ -1014,7 +1016,7 @@ void shoot(char *buff)
 								}
 								if (regexec(&okexp, reply, 0, 0, 0)==0) {
 									if (verbose)
-										printf("   reply received\n\n");
+										printf("  reply received\n\n");
 									else
 										printf("USRLOC for %s%i completed "
 											"successful\n", username, namebeg);
@@ -1040,8 +1042,6 @@ void shoot(char *buff)
 										rem_namebeg = namebeg;
 										namebeg = ((float)rem_rand/RAND_MAX)
 													* namebeg;
-										rem_t = expires_t;
-										expires_t = 0;
 										create_msg(buff, REQ_REM);
 										usrlocstep=3;
 									}
@@ -1057,9 +1057,10 @@ void shoot(char *buff)
 								break;
 							case 3:
 								if (regexec(&okexp, reply, 0, 0, 0)==0) {
-									printf("   OK\n\n");
+									if (verbose) printf("   OK\n\n");
+									else printf("Binding removal for %s%i "
+											"successful\n", username, namebeg);
 									namebeg = rem_namebeg;
-									expires_t = rem_t;
 									namebeg++;
 									create_msg(buff, REQ_REG);
 									usrlocstep = 0;
