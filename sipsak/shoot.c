@@ -1,5 +1,5 @@
 /*
- * $Id: shoot.c,v 1.10 2004/01/29 23:34:44 calrissian Exp $
+ * $Id: shoot.c,v 1.11 2004/01/29 23:41:34 calrissian Exp $
  *
  * Copyright (C) 2002-2003 Fhg Fokus
  *
@@ -637,12 +637,13 @@ void shoot(char *buff)
 									exit(1);
 								}
 								if (!invite && !message) {
-									if (namebeg==nameend && verbose) {
-										printf("\nAll usrloc tests completed "
-											"successful.\nreceived last message"
-											" %.3f ms after first request (test"
-											" duration).\n", deltaT(&firstsendt,
-											 &recvtime));
+									if (namebeg==nameend) {
+										if (verbose) 
+											printf("\nAll usrloc tests"
+											" completed successful.\nreceived"
+											" last message %.3f ms after first"
+											" request (test duration).\n", 
+											deltaT(&firstsendt, &recvtime));
 										if (big_delay)
 											printf("biggest delay between "
 												"request and response was %.3f"
