@@ -1,5 +1,5 @@
 /*
- * $Id: sipsak.h,v 1.3 2003/09/06 20:01:51 calrissian Exp $
+ * $Id: sipsak.h,v 1.4 2003/09/11 02:45:36 calrissian Exp $
  *
  * Copyright (C) 2002-2003 Fhg Fokus
  *
@@ -19,7 +19,7 @@
 #ifndef SIPSAK_H
 #define SIPSAK_H
 
-#define SIPSAK_VERSION "v0.8.2"
+#define SIPSAK_VERSION "v0.8.2_pre"
 #define RESIZE		1024
 #define BUFSIZE		4096
 #define FQDN_SIZE   200
@@ -58,8 +58,12 @@
 #define CSEQ_STR_LEN 6
 #define CONT_STR "Contact: "
 #define CONT_STR_LEN 9
-#define CON_TXT_STR "Content-Type: text/plain\r\n"
-#define CON_TXT_STR_LEN 26
+#define CON_TYP_STR "Content-Type: "
+#define CON_TYP_STR_LEN 14
+#define TXT_PLA_STR "text/plain"
+#define TXT_PLA_STR_LEN 10
+#define ACP_STR "Accept: "
+#define ACP_STR_LEN 8
 #define CON_LEN_STR "Content-Length: "
 #define CON_LEN_STR_LEN 16
 #define SIPSAK_MES_STR "usrloc test message from SIPsak for user "
