@@ -146,7 +146,16 @@ first registeres a user, and then simulates an
 invitation to this user. First an Invite is sent, this is replied with 200 OK
 and finaly an ACK is sent. This option can also be used without
 .BR -U
-, but you should be shure to NOT invite real UAs with this option.
+, but you should be shure to NOT invite real UAs with this option. In the case
+of a missing 
+.BR -U
+the
+.BR "-l port"
+is required because only if you made a 
+.BR -U 
+run with a fixed local port before, a run with
+.BR -I
+and the same fixed local port can be successful.
 .B Warning: sipsak 
 is no real UA and invitations to real UAs can result in unexpected 
 behaivior.
