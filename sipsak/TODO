@@ -1,4 +1,5 @@
 ToDo List (no order):
+ - increase hostname detection for the Via line
  - multiple contacts in usrloc mode
  - endless randtrash mode with logfile
  - support for IPv6
