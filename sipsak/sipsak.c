@@ -1,5 +1,5 @@
 /*
- * $Id: sipsak.c,v 1.7 2002/08/27 10:45:41 calrissian Exp $
+ * $Id: sipsak.c,v 1.8 2002/08/27 17:00:04 calrissian Exp $
  *
  * Copyright (C) 2002-2003 Fhg Fokus
  *
@@ -1074,7 +1074,8 @@ void shoot(char *buff)
 										printf("\nreceived:\n%s\n", reply);
 									printf("error: didn't received the "
 										"expected 200 on the remove bindings "
-										"request\n");
+										"request for %s%n\n", username, 
+										namebeg);
 									exit(1);
 								}
 								break;
