@@ -1,5 +1,5 @@
 /*
- * $Id: sipsak.h,v 1.17 2004/09/19 23:49:18 jiri Exp $
+ * $Id: sipsak.h,v 1.18 2004/09/22 14:01:50 janakj Exp $
  *
  * Copyright (C) 2002-2004 Fhg Fokus
  *
@@ -51,80 +51,121 @@
 #define REQ_OPT 5
 #define REQ_FLOOD 6
 #define REQ_RAND 7
+
 #define VIA_STR "Via: SIP/2.0/UDP "
-#define VIA_STR_LEN 17
+#define VIA_STR_LEN (sizeof(VIA_STR) - 1)
+
 #define MAX_FRW_STR "Max-Forwards: "
-#define MAX_FRW_STR_LEN 14
+#define MAX_FRW_STR_LEN (sizeof(MAX_FRW_STR) - 1)
+
 #define SIP20_STR " SIP/2.0\r\n"
-#define SIP20_STR_LEN 10
+#define SIP20_STR_LEN (sizeof(SIP20_STR) - 1)
+
 #define SIP200_STR "SIP/2.0 200 OK\r\n"
-#define SIP200_STR_LEN 16
+#define SIP200_STR_LEN (sizeof(SIP200_STR) - 1)
+
 #define INV_STR "INVITE"
-#define INV_STR_LEN 6
+#define INV_STR_LEN (sizeof(INV_STR) - 1)
+
 #define REG_STR "REGISTER"
-#define REG_STR_LEN 8
+#define REG_STR_LEN (sizeof(REG_STR) - 1)
+
 #define OPT_STR "OPTIONS"
-#define OPT_STR_LEN 7
+#define OPT_STR_LEN (sizeof(OPT_STR) - 1)
+
 #define MES_STR "MESSAGE"
-#define MES_STR_LEN 7
+#define MES_STR_LEN (sizeof(MES_STR) - 1)
+
 #define ACK_STR "ACK"
-#define ACK_STR_LEN 3
+#define ACK_STR_LEN (sizeof(ACK_STR) - 1)
+
 #define FROM_STR "From: "
-#define FROM_STR_LEN 6
+#define FROM_STR_LEN (sizeof(FROM_STR) - 1)
+
 #define TO_STR "To: "
-#define TO_STR_LEN 4
+#define TO_STR_LEN (sizeof(TO_STR) - 1)
+
 #define CALL_STR "Call-ID: "
-#define CALL_STR_LEN 9
+#define CALL_STR_LEN (sizeof(CALL_STR) - 1)
+
 #define CSEQ_STR "CSeq: "
-#define CSEQ_STR_LEN 6
+#define CSEQ_STR_LEN (sizeof(CSEQ_STR) - 1)
+
 #define CONT_STR "Contact: "
-#define CONT_STR_LEN 9
+#define CONT_STR_LEN (sizeof(CONT_STR) - 1)
+
 #define CON_TYP_STR "Content-Type: "
-#define CON_TYP_STR_LEN 14
+#define CON_TYP_STR_LEN (sizeof(CON_TYP_STR) - 1)
+
 #define CON_DIS_STR "Content-Disposition: "
-#define CON_DIS_STR_LEN 21
+#define CON_DIS_STR_LEN (sizeof(CON_DIS_STR) - 1)
+
 #define TXT_PLA_STR "text/plain"
-#define TXT_PLA_STR_LEN 10
+#define TXT_PLA_STR_LEN (sizeof(TXT_PLA_STR) - 1)
+
 #define ACP_STR "Accept: "
-#define ACP_STR_LEN 8
+#define ACP_STR_LEN (sizeof(ACP_STR) - 1)
+
 #define CON_LEN_STR "Content-Length: "
-#define CON_LEN_STR_LEN 16
+#define CON_LEN_STR_LEN (sizeof(CON_LEN_STR) - 1)
+
 #define SIPSAK_MES_STR "usrloc test message from SIPsak for user "
-#define SIPSAK_MES_STR_LEN 41
+#define SIPSAK_MES_STR_LEN (sizeof(SIPSAK_MES_STR) - 1)
+
 #define EXP_STR "Expires: "
-#define EXP_STR_LEN 9
+#define EXP_STR_LEN (sizeof(EXP_STR) - 1)
+
 #define CON_EXP_STR "expires="
-#define CONEXP_STR_LEN 8
+#define CON_EXP_STR_LEN (sizeof(CON_EXP_STR_LEN) - 1)
+
 #define USRLOC_EXP_DEF 15
 #define FLOOD_METH "OPTIONS"
 #define USRLOC_REMOVE_PERCENT 0.1
+
 #define WWWAUTH_STR "WWW-Authenticate: "
-#define WWWAUTH_STR_LEN 18
+#define WWWAUTH_STR_LEN (sizeof(WWWAUTH_STR) - 1)
+
 #define PROXYAUTH_STR "Proxy-Authenticate: "
-#define PROXYAUTH_STR_LEN 20
+#define PROXYAUTH_STR_LEN (sizeof(PROXYAUTH_STR) - 1)
+
 #define AUTH_STR "Authorization: Digest "
-#define AUTH_STR_LEN 22
+#define AUTH_STR_LEN (sizeof(AUTH_STR) - 1)
+
 #define PROXYAUZ_STR "Proxy-Authorization: Digest "
-#define PROXYAUZ_STR_LEN 28
+#define PROXYAUZ_STR_LEN (sizeof(PROXYAUZ_STR) - 1)
+
 #define REALM_STR "realm="
-#define REALM_STR_LEN 6
+#define REALM_STR_LEN (sizeof(REALM_STR) - 1)
+
 #define OPAQUE_STR "opaque="
+#define OPAQUE_STR_LEN (sizeof(OPAQUEE_STR) - 1)
+
 #define NONCE_STR "nonce="
-#define NONCE_STR_LEN 6
+#define NONCE_STR_LEN (sizeof(NONCE_STR) - 1)
+
 #define RESPONSE_STR "response="
-#define RESPONSE_STR_LEN 9
+#define RESPONSE_STR_LEN (sizeof(RESPONSE_STR) - 1)
+
 #define QOP_STR "qop="
-#define QOP_STR_LEN 4
+#define QOP_STR_LEN (sizeof(QOP_STR) - 1)
+
 #define QOPAUTH_STR "auth"
+#define QOPAUTH_STR_LEN (sizeof(QOPAUTH_STR) - 1)
+
 #define NC_STR "nc="
+#define NC_STR_LEN (sizeof(NC_STR) - 1)
+
 #define UA_STR "User-Agent: "
+#define UA_STR_LEN (sizeof(UA_STR) - 1)
+
 #define SUB_STR "Subject: "
-#define SUB_STR_LEN 8
+#define SUB_STR_LEN (sizeof(SUB_STR) - 1)
+
 #define SIP100_STR "SIP/2.0 100"
-#define SIP100_STR_LEN 11
+#define SIP100_STR_LEN (sizeof(SIP100_STR) - 1)
 
 #define MD5_HASHLEN 16
-#define HASHHEXLEN 2*MD5_HASHLEN
+#define HASHHEXLEN 2 * MD5_HASHLEN
 
 /* lots of global variables. ugly but makes life easier. */
 long address;
@@ -138,5 +179,7 @@ char *mes_body, *con_dis;
 char fqdn[FQDN_SIZE], messusern[FQDN_SIZE];
 char confirm[BUFSIZE], ack[BUFSIZE];
 regex_t* re;
+int processes;
+char* auth_username;
 
 #endif

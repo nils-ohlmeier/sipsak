@@ -1,5 +1,5 @@
 /*
- * $Id: sipsak.c,v 1.73 2004/09/19 23:49:18 jiri Exp $
+ * $Id: sipsak.c,v 1.74 2004/09/22 14:01:50 janakj Exp $
  *
  * Copyright (C) 2002-2004 Fhg Fokus
  * Copyright (C) 2004 Nils Ohlmeier
@@ -36,6 +36,7 @@
 #include <string.h>
 #include <time.h>
 #include <regex.h>
+#include <sys/wait.h>
 
 #include "config.h"
 
@@ -50,6 +51,16 @@
 
 /* regular expression for matching received replies */
 regex_t* re;
+
+
+static void sigchld_handler(int signo)
+{
+	int chld_status;
+	pid_t chld;
+
+	while ((chld = waitpid(-1, &chld_status, WNOHANG)) > 0);
+}
+
 
 void print_version() {
 	printf("%s %s by Nils Ohlmeier\n", PACKAGE_NAME, PACKAGE_VERSION);
@@ -106,6 +117,8 @@ void print_long_help() {
 		"  --hostname=HOSTNAME        overwrites the local hostname in all headers\n"
 		"  --max-forwards=NUMBER      the value for the max-forwards header field\n"
 		"  --numeric                  use IPs instead of FQDN in the Via-Line\n"
+	        "  --processes                Divide the workflow among the number of processes\n"
+	        "  --auth-username            Authentication username\n"
 		);
 	printf("  --no-via                   deactivate the insertion of a Via-Line\n"
 		"  --password=PASSWORD        password for authentication\n"
@@ -177,6 +190,8 @@ void print_help() {
 		"  -W NUMBER         return Nagios warning if retrans > number\n"
 		"  -B STRING         send a message with string as body\n"
 		"  -O STRING         Content-Disposition value\n"
+		"  -P NUMBER         Number of processes to start\n"
+		"  -u STRING         Authentication username\n"
 		);
 		exit(0);
 }
@@ -189,6 +204,7 @@ int main(int argc, char *argv[])
 	char	*delim, *delim2;
 #ifdef HAVE_GETOPT_LONG
 	int option_index = 0;
+	int i;
 	static struct option l_opts[] = {
 		{"help", 0, 0, 'X'},
 		{"version", 0, 0, 'V'},
@@ -226,6 +242,8 @@ int main(int argc, char *argv[])
 		{"search", 1, 0, 'q'},
 		{"message-body", 1, 0, 'B'},
 		{"disposition", 1, 0, 'O'},
+		{"processes", 1, 0, 'P'},
+		{"auth-username", 1, 0, 'u'},
 		{0, 0, 0, 0}
 	};
 #endif
@@ -246,14 +264,19 @@ int main(int argc, char *argv[])
 	memset(fqdn, 0, FQDN_SIZE);
 	memset(messusern, 0, FQDN_SIZE);
 	re=0;
+	processes = 1;
+	auth_username = 0;
+	pid_t pid;
+	struct timespec ts;
+	int upp;
 
 	if (argc==1) print_help();
 
 	/* lots of command line switches to handle*/
 #ifdef HAVE_GETOPT_LONG
-	while ((c=getopt_long(argc, argv, "q:a:B:b:C:c:de:f:Fg:GhH:iIl:m:MnNo:O:p:r:Rs:t:TUvVwW:x:z", l_opts, &option_index)) != EOF){
+	while ((c=getopt_long(argc, argv, "q:a:B:b:C:c:de:f:Fg:GhH:iIl:m:MnNo:O:p:r:Rs:t:TUvVwW:x:zP:u:", l_opts, &option_index)) != EOF){
 #else
-	while ((c=getopt(argc,argv,"q:a:B:b:C:c:de:f:Fg:GhH:iIl:m:MnNo:O:p:r:Rs:t:TUvVwW:x:z")) != EOF){
+	while ((c=getopt(argc,argv,"q:a:B:b:C:c:de:f:Fg:GhH:iIl:m:MnNo:O:p:r:Rs:t:TUvVwW:x:zP:u:")) != EOF){
 #endif
 		switch(c){
 			case 'a':
@@ -409,6 +432,14 @@ int main(int argc, char *argv[])
 			case 'p':
 				address = getaddress(optarg);
 				break;
+		        case 'P':
+				processes=atoi(optarg);
+				if (!processes) {
+					printf("error: non-numerical number of processes\n");
+					exit_code(2);
+				}
+				break;
+
 			case 'r':
 				rport=atoi(optarg);
 				if (!rport) {
@@ -481,6 +512,9 @@ int main(int argc, char *argv[])
 				break;
 			case 'U':
 				usrloc=1;
+				break;
+		        case 'u':
+				auth_username = optarg;
 				break;
 			case 'v':
 				verbose++;
@@ -683,8 +717,52 @@ int main(int argc, char *argv[])
 	/* this is not a cryptographic random number generator,
 	   but hey this is only a test-tool => should be satisfying*/
 	srand(time(0));
+	
+	if (processes > 1) {
+		if (signal(SIGCHLD , sigchld_handler)  == SIG_ERR ) {
+			printf("error: Could not install SIGCHLD handler\n");
+			exit_code(2);
+		}
+	}
+
+	for(i = 0; i < processes - 1; i++) {
+		if ((pid = fork()) < 0) {
+			printf("error: Cannot fork\n");
+			exit_code(2);
+		}
+		
+		if (pid == 0){
+			     /* child */
+			     /*
+			upp = (nameend - namebeg + 1) / processes;
+			namebeg = namebeg + upp * i;
+			nameend = namebeg + upp;
+			     */
+			upp = (nameend - namebeg + 1) / processes;
+			namebeg = namebeg + upp * i;
+			nameend = namebeg + upp;
+			shoot(buff);
+		} else {
+			if (lport) {
+				lport++;
+			}
+		}
+		
+		     /* Delay execution of children so that the
+		      * time of the first transmission gets spread over
+		      * the retransmission interval evenly
+		      */
+		ts.tv_sec = 0;
+		ts.tv_nsec = (float)DEFAULT_TIMEOUT / (float)processes * (float)1000 * (float)1000;
+		nanosleep(&ts, 0);
+	}
 
 	/* here we go...*/
+	if (processes > 1) {
+		upp = (nameend - namebeg + 1) / processes;
+		namebeg = namebeg + upp * i;
+		nameend = namebeg + upp;
+	}
 	shoot(buff);
 
 	/* normaly we won't come back here, but to satisfy the compiler */
