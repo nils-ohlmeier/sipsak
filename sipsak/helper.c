@@ -1,5 +1,5 @@
 /*
- * $Id: helper.c,v 1.18 2004/12/22 22:11:29 calrissian Exp $
+ * $Id: helper.c,v 1.19 2005/01/03 13:10:50 calrissian Exp $
  *
  * Copyright (C) 2002-2004 Fhg Fokus
  *
@@ -204,7 +204,7 @@ void insert_cr(char *mes){
 
 	pos = mes;
 	lf = strchr(pos, '\n');
-	while ((lf != NULL) && (--lf != "\r")) {
+	while ((lf != NULL) && (*(--lf) != '\r')) {
 		backup=malloc(strlen(lf)+2);
 		if (!backup) {
 			printf("failed to allocate memory\n");
