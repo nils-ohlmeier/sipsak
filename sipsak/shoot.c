@@ -1,5 +1,5 @@
 /*
- * $Id: shoot.c,v 1.24 2004/06/15 10:46:52 calrissian Exp $
+ * $Id: shoot.c,v 1.25 2004/06/15 13:16:16 calrissian Exp $
  *
  * Copyright (C) 2002-2004 Fhg Fokus
  * Copyright (C) 2004 Nils Ohlmeier
@@ -329,7 +329,7 @@ void shoot(char *buff)
 						break;
 					case MES_OK_RECV:
 						if (mes_body)
-							printf("sending message ... ");
+							printf("sending message ... \n");
 						else
 							printf("sending message reply... ");
 						break;
@@ -1053,10 +1053,19 @@ void shoot(char *buff)
 									}
 								}
 								else {
-									printf("\nreceived:\n%s\nerror: did not "
-										"received the '200 OK' that was sent "
-										"as the reply on the MESSAGE (see "
-										"above). aborting\n", reply);
+									if (verbose) {
+										if (mes_body)
+											printf("\nreceived:\n%s\nerror: did"
+												" not received 200 for the "
+												"MESSAGE (see above)\n",
+												reply);
+										else
+											printf("\nreceived:\n%s\nerror: did"
+												" not received the '200 OK' "
+												"that was sent as the reply on"
+												" the MESSAGE (see above). "
+												"aborting\n", reply);
+									}
 									exit_code(1);
 								}
 								if (sleep_ms != 0)

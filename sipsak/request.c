@@ -1,5 +1,5 @@
 /*
- * $Id: request.c,v 1.12 2004/06/15 10:46:52 calrissian Exp $
+ * $Id: request.c,v 1.13 2004/06/15 13:16:16 calrissian Exp $
  *
  * Copyright (C) 2002-2004 Fhg Fokus
  *
@@ -295,7 +295,7 @@ void create_msg(char *buff, int action){
 				sprintf(messusern, "%s sip:%s%i", MES_STR, username, namebeg);
 			else
 				sprintf(messusern, "%s sip:%s", MES_STR, username);
-			if (verbose > 2)
+			if ((!mes_body) && (verbose > 2))
 				printf("reply:\n%s\n", confirm);
 			break;
 		case REQ_OPT:
@@ -377,6 +377,9 @@ void create_msg(char *buff, int action){
 	}
 	free(usern);
 	if (verbose > 2)
-		printf("request:\n%s", buff);
+		if (*(&buff + strlen(buff) - 1) != "\n")
+			printf("request:\n%s\n", buff);
+		else
+			printf("request:\n%s", buff);
 }
 
