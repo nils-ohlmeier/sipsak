@@ -1,5 +1,5 @@
 /*
- * $Id: shoot.c,v 1.11 2004/01/29 23:41:34 calrissian Exp $
+ * $Id: shoot.c,v 1.12 2004/01/31 17:29:32 calrissian Exp $
  *
  * Copyright (C) 2002-2003 Fhg Fokus
  *
@@ -644,15 +644,15 @@ void shoot(char *buff)
 											" last message %.3f ms after first"
 											" request (test duration).\n", 
 											deltaT(&firstsendt, &recvtime));
-										if (big_delay)
+										if (big_delay && verbose)
 											printf("biggest delay between "
 												"request and response was %.3f"
 												" ms\n", big_delay);
-										if (retrans_r_c)
+										if (retrans_r_c && verbose)
 											printf("%i retransmission(s) "
 												"received from server.\n", 
 												retrans_r_c);
-										if (retrans_s_c)
+										if (retrans_s_c && verbose)
 											printf("%i time(s) the timeout of "
 												"%i ms exceeded and request was"
 												" retransmitted.\n", 
