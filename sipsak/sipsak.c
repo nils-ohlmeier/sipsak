@@ -1,5 +1,5 @@
 /*
- * $Id: sipsak.c,v 1.6 2002/08/26 11:38:09 calrissian Exp $
+ * $Id: sipsak.c,v 1.7 2002/08/27 10:45:41 calrissian Exp $
  *
  * Copyright (C) 2002-2003 Fhg Fokus
  *
@@ -38,7 +38,10 @@ bouquets and brickbats to farhan@hotfoon.com
 */
 
 /* TO-DO:
+   - multiple contacts in USRLOC mode
+   - endless randtrash mode with logfile
    - support for short notation
+   - digest auth support
    - support for IPv6
 */
 
