@@ -1,5 +1,5 @@
 /*
- * $Id: shoot.c,v 1.14 2004/02/23 00:08:05 calrissian Exp $
+ * $Id: shoot.c,v 1.15 2004/04/26 15:37:00 calrissian Exp $
  *
  * Copyright (C) 2002-2003 Fhg Fokus
  *
@@ -837,6 +837,13 @@ void shoot(char *buff)
 							case 4:
 								/* we sent the message and look if its 
 								   forwarded to us */
+								if (strncmp(reply, SIP100_STR, 
+									SIP100_STR_LEN)==0) {
+									if (verbose > 2)
+										printf("ignoring 100.. ");
+									dontsend=1;
+									continue;
+								}
 								if (!strncmp(reply, messusern, 
 									strlen(messusern))) {
 									if (verbose > 1) {
