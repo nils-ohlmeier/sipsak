@@ -1,5 +1,5 @@
 /*
- * $Id: sipsak.c,v 1.10 2002/08/28 00:26:35 calrissian Exp $
+ * $Id: sipsak.c,v 1.11 2002/08/29 12:04:26 calrissian Exp $
  *
  * Copyright (C) 2002-2003 Fhg Fokus
  *
@@ -531,7 +531,7 @@ void shoot(char *buff)
 	int ssock, redirected, retryAfter, nretries;
 	int sock, i, len, ret, usrlocstep, randretrys;
 	int dontsend, cseqcmp, cseqtmp;
-	int rem_rand, rem_namebeg, retrans_c;
+	int rem_rand, rem_namebeg, retrans_r_c, retrans_s_c;
 	char *contact, *crlf, *foo, *bar;
 	char reply[BUFSIZE];
 	fd_set	fd;
@@ -542,7 +542,7 @@ void shoot(char *buff)
 	redirected = 1;
 	nretries = 5;
 	retryAfter = 5000;
-	usrlocstep=dontsend=retrans_c = 0;
+	usrlocstep=dontsend=retrans_r_c=retrans_s_c = 0;
 
 	/* create a sending socket */
 	sock = (int)socket(PF_INET, SOCK_DGRAM, IPPROTO_UDP);
@@ -741,6 +741,10 @@ void shoot(char *buff)
 					/* printout that we did not received anything */
 					if (trace) printf("%i: timeout after %i ms\n", i, 
 									retryAfter);
+					else if (usrloc) {
+						printf("timeout after %i ms\n", retryAfter);
+						i--;
+					}
 					else if (verbose) printf("** timeout after %i ms**\n", 
 										retryAfter);
 					if (randtrash) {
@@ -763,6 +767,7 @@ void shoot(char *buff)
 					}
 					retryAfter = retryAfter * 2;
 					if (retryAfter > 5000) retryAfter = 5000;
+					retrans_s_c++;
 					/* if we did not exit until here lets try another send */
 					continue;
 				}
@@ -815,7 +820,7 @@ void shoot(char *buff)
 					cseqtmp = cseq(reply);
 					if ((0 < cseqtmp) && (cseqtmp < cseqcmp)) {
 						printf("irgnoring retransmission\n");
-						retrans_c++;
+						retrans_r_c++;
 						dontsend = 1;
 						continue;
 					}
@@ -1016,7 +1021,7 @@ void shoot(char *buff)
 								if (strncmp(reply, MES_STR, MES_STR_LEN)==0) {
 									printf("ignoring MESSAGE "
 										"retransmission\n");
-									retrans_c++;
+									retrans_r_c++;
 									dontsend=1;
 									continue;
 								}
@@ -1029,10 +1034,13 @@ void shoot(char *buff)
 									if (namebeg==nameend) {
 										printf("All USRLOC tests completed "
 											"successful.\n");
-										if (retrans_c)
+										if (retrans_r_c)
 											printf("%i retransmissions "
 												"received during test.\n", 
-												retrans_c);
+												retrans_r_c);
+										if (retrans_s_c)
+											printf("sent %i retransmissions "
+												"during test.\n", retrans_s_c);
 										exit(0);
 									}
 									/* lets see if we deceid to remove a 
@@ -1180,8 +1188,10 @@ void shoot(char *buff)
 	} /* while redirected */
 	if (randtrash) exit(0);
 	printf("** I give up retransmission....\n");
-	if (retrans_c)
-		printf("%i retransmissions received during test\n", retrans_c);
+	if (retrans_r_c)
+		printf("%i retransmissions received during test\n", retrans_r_c);
+	if (retrans_s_c)
+		printf("sent %i retransmissions during test\n", retrans_s_c);
 	exit(1);
 }
 
