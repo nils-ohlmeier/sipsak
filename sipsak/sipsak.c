@@ -1,5 +1,5 @@
 /*
- * $Id: sipsak.c,v 1.42 2003/03/18 04:59:31 calrissian Exp $
+ * $Id: sipsak.c,v 1.43 2003/03/21 06:02:03 calrissian Exp $
  *
  * Copyright (C) 2002 Fhg Fokus
  *
@@ -1404,7 +1404,7 @@ void shoot(char *buff)
 							   be treated as final */
 							if (maxforw==i) printf("%i: ", i);
 							else printf("\t");
-							warning_extract(crlf);
+							warning_extract(reply);
 							crlf=strchr(reply,'\n');
 							*crlf='\0';
 							crlf++;
