@@ -1,5 +1,5 @@
 /*
- * $Id: shoot.c,v 1.20 2004/06/06 18:13:52 calrissian Exp $
+ * $Id: shoot.c,v 1.21 2004/06/13 19:11:41 calrissian Exp $
  *
  * Copyright (C) 2002-2004 Fhg Fokus
  * Copyright (C) 2004 Nils Ohlmeier
@@ -27,6 +27,11 @@
 #include <sys/socket.h>
 #include <sys/poll.h>
 #include <netinet/in.h>
+#include <netinet/ip.h>
+#include <netinet/ip_icmp.h>
+
+#define __FAVOR_BSD
+#include <netinet/udp.h>
 
 #include "shoot.h"
 #include "sipsak.h"
@@ -54,14 +59,19 @@ bouquets and brickbats to farhan@hotfoon.com
 /* this is the main function with the loops and modes */
 void shoot(char *buff)
 {
-	struct sockaddr_in	addr;
+	struct sockaddr_in	addr, faddr;
 	struct timeval	tv, sendtime, recvtime, firstsendt, delaytime;
 	struct timezone tz;
 	struct timespec sleep_ms_s, sleep_rem;
-	struct pollfd sockerr;
+	struct pollfd 	sockerr;
+	struct ip 		*r_ip_hdr, *s_ip_hdr;
+	struct icmp 	*icmp_hdr;
+	struct udphdr 	*udp_hdr;
+	size_t r_ip_len, s_ip_len, icmp_len;
+	int srcport, dstport;
 	int redirected, retryAfter, nretries;
-	int sock, lsock, i, len, ret, usrlocstep;
-	int dontsend, cseqtmp, rand_tmp;
+	int usock, csock, rawsock, i, len, ret, usrlocstep;
+	int dontsend, cseqtmp, rand_tmp, flen;
 	int rem_rand, retrans_r_c, retrans_s_c;
 	int randretrys = 0;
 	int cseqcmp = 0;
@@ -70,6 +80,7 @@ void shoot(char *buff)
 	char *contact, *foo, *bar, *lport_str;
 	char *crlf = NULL;
 	char reply[BUFSIZE];
+	char fstr[INET_ADDRSTRLEN];
 	fd_set	fd;
 	socklen_t slen;
 	regex_t redexp, proexp, okexp, tmhexp, errexp, authexp;
@@ -86,34 +97,53 @@ void shoot(char *buff)
 	delaytime.tv_usec = 0;
 
 	/* create the un-connected socket */
-	lsock = (int)socket(PF_INET, SOCK_DGRAM, IPPROTO_UDP);
-	if (lsock==-1) {
-		perror("listening socket creation failed");
-		exit_code(2);
-	}
-
-	/* create the connected socket */
-	sock = (int)socket(PF_INET, SOCK_DGRAM, IPPROTO_UDP);
-	if (sock==-1) {
-		perror("sending socket creation failed");
-		exit_code(2);
-	}
-
-	addr.sin_family=AF_INET;
-	addr.sin_addr.s_addr = htonl( INADDR_ANY );
-	addr.sin_port = htons((short)lport);
-	if (bind( lsock, (struct sockaddr *) &addr, sizeof(addr) )==-1) {
-		perror("listening socket binding failed");
+	usock = (int)socket(PF_INET, SOCK_DGRAM, IPPROTO_UDP);
+	if (usock==-1) {
+		perror("unconnected UDP socket creation failed");
 		exit_code(2);
 	}
 
 	memset(&addr, 0, sizeof(addr));
 	addr.sin_family=AF_INET;
 	addr.sin_addr.s_addr = htonl( INADDR_ANY );
-	addr.sin_port = htons((short)0);
-	if (bind( sock, (struct sockaddr *) &addr, sizeof(addr) )==-1) {
-		perror("sending socket binding failed");
+	addr.sin_port = htons((short)lport);
+	if (bind( usock, (struct sockaddr *) &addr, sizeof(addr) )==-1) {
+		perror("unconnected UDP socket binding failed");
 		exit_code(2);
+	}
+
+	/* for the via line we need our listening port number */
+	if (lport==0){
+		memset(&addr, 0, sizeof(addr));
+		slen=sizeof(addr);
+		getsockname(usock, (struct sockaddr *)&addr, &slen);
+		lport=ntohs(addr.sin_port);
+	}
+
+	/* try to create the raw socket */
+	rawsock = (int)socket(PF_INET, SOCK_RAW, IPPROTO_ICMP);
+	if (rawsock==-1) {
+		if (verbose)
+			printf("Warning: need raw socket (root privileges) to receive all ICMP errors\n");
+
+		/* create the connected socket as a primitve alternative to the 
+		   raw socket*/
+		csock = (int)socket(PF_INET, SOCK_DGRAM, IPPROTO_UDP);
+		if (csock==-1) {
+			perror("connected UDP socket creation failed");
+			exit_code(2);
+		}
+
+		addr.sin_family=AF_INET;
+		addr.sin_addr.s_addr = htonl( INADDR_ANY );
+		addr.sin_port = htons((short)0);
+		if (bind( csock, (struct sockaddr *) &addr, sizeof(addr) )==-1) {
+			perror("connected UDP socket binding failed");
+			exit_code(2);
+		}
+	}
+	else {
+		csock = -1;
 	}
 
 	if (sleep_ms != 0) {
@@ -126,14 +156,6 @@ void shoot(char *buff)
 			sleep_ms_s.tv_sec = sleep_ms / 1000;
 			sleep_ms_s.tv_nsec = (sleep_ms % 1000) * 1000;
 		}
-	}
-
-	/* for the via line we need our listening port number */
-	if ((via_ins||usrloc||invite||message||replace_b) && lport==0){
-		memset(&addr, 0, sizeof(addr));
-		slen=sizeof(addr);
-		getsockname(lsock, (struct sockaddr *)&addr, &slen);
-		lport=ntohs(addr.sin_port);
 	}
 
 	if (replace_b){
@@ -241,16 +263,17 @@ void shoot(char *buff)
 
 		/* destination socket init here because it could be changed in a 
 		   case of a redirect */
+		memset(&addr, 0, sizeof(addr));
 		addr.sin_addr.s_addr = address;
 		addr.sin_port = htons((short)rport);
 		addr.sin_family = AF_INET;
 	
-		/* we connect as per the RFC 2543 recommendations
-		   modified from sendto/recvfrom */
-		ret = connect(sock, (struct sockaddr *)&addr, sizeof(addr));
-		if (ret==-1) {
-			perror("connect sending socket failed");
-			exit_code(2);
+		if (csock != -1) {
+			ret = connect(csock, (struct sockaddr *)&addr, sizeof(addr));
+			if (ret==-1) {
+				perror("connecting UDP socket failed");
+				exit_code(2);
+			}
 		}
 
 		/* here we go for the number of nretries which strongly depends on the 
@@ -322,7 +345,12 @@ void shoot(char *buff)
 
 			if (! dontsend) {
 				/* lets fire the request to the server and store when we did */
-				ret = send(sock, buff, strlen(buff), 0);
+				if (csock == -1) {
+					ret = sendto(usock, buff, strlen(buff), 0, (struct sockaddr *)&addr, sizeof(addr));
+				}
+				else {
+					ret = send(csock, buff, strlen(buff), 0);
+				}
 				(void)gettimeofday(&sendtime, &tz);
 				if (ret==-1) {
 					printf("\n");
@@ -342,8 +370,11 @@ void shoot(char *buff)
 				tv.tv_usec = (retryAfter % 1000) * 1000;
 
 				FD_ZERO(&fd);
-				FD_SET(sock, &fd); 
-				FD_SET(lsock, &fd); 
+				FD_SET(usock, &fd); 
+				if (csock != -1)
+					FD_SET(csock, &fd); 
+				if (rawsock != -1)
+					FD_SET(rawsock, &fd); 
 
 				ret = select(FD_SETSIZE, &fd, NULL, NULL, &tv);
 				(void)gettimeofday(&recvtime, &tz);
@@ -353,11 +384,17 @@ void shoot(char *buff)
 					if (i==0)
 						memcpy(&firstsendt, &sendtime, sizeof(struct timeval));
 					/* lets see if we at least received an icmp error */
-					sockerr.fd=sock;
+					if (csock == -1) 
+						sockerr.fd=usock;
+					else
+						sockerr.fd=csock;
 					sockerr.events=POLLERR;
 					if ((poll(&sockerr, 1, 10))==1) {
 						if (sockerr.revents && POLLERR) {
-							recv(sock, reply, strlen(reply), 0);
+							if (csock == -1)
+								recv(usock, reply, strlen(reply), 0);
+							else
+								recv(csock, reply, strlen(reply), 0);
 							printf("\n");
 							perror("send failure");
 							if (randtrash) 
@@ -409,11 +446,15 @@ void shoot(char *buff)
 					perror("select error");
 					exit_code(2);
 				}
-				else if (FD_ISSET(sock, &fd) || FD_ISSET(lsock, &fd)) {
+				else if (FD_ISSET(usock, &fd) || ((csock != -1) && FD_ISSET(csock, &fd))) {
 					/* no timeout, no error ... something has happened :-) */
 				 	if (!trace && !usrloc && !invite && !message && !randtrash 
 						&& (verbose > 1))
 						printf ("\nmessage received:\n");
+				}
+				else if ((rawsock != -1) && FD_ISSET(rawsock, &fd)) {
+					if (verbose > 1)
+						printf("\nreceived ICMP packet");
 				}
 				else {
 					printf("\nselect returned succesfuly, nothing received\n");
@@ -423,11 +464,60 @@ void shoot(char *buff)
 				/* we are retrieving only the extend of a decent 
 				   MSS = 1500 bytes */
 				len = sizeof(addr);
-				if (FD_ISSET(sock, &fd)) {
-					ret = recv(sock, reply, BUFSIZE, 0);
+				if (FD_ISSET(usock, &fd)) {
+					ret = recv(usock, reply, BUFSIZE, 0);
 				}
-				else if (FD_ISSET(lsock, &fd)) {
-					ret = recv(lsock, reply, BUFSIZE, 0);
+				else if ((csock != -1) && (FD_ISSET(csock, &fd))) {
+					ret = recv(csock, reply, BUFSIZE, 0);
+				}
+				else if ((rawsock != -1) && (FD_ISSET(rawsock, &fd))) {
+					/* lets check if the ICMP message matches with our 
+					   sent packet */
+					flen = sizeof(faddr);
+					memset(&faddr, 0, sizeof(addr));
+					ret = recvfrom(rawsock, reply, BUFSIZE, 0, (struct sockaddr *)&faddr, &flen);
+					if (ret == -1) {
+						perror("error while trying to read from icmp raw socket");
+						exit_code(2);
+					}
+					r_ip_hdr = (struct ip *) reply;
+					r_ip_len = r_ip_hdr->ip_hl << 2;
+
+					icmp_hdr = (struct icmp *) (reply + r_ip_len);
+					icmp_len = ret - r_ip_len;
+
+					if (icmp_len < 8) {
+						if (verbose > 1)
+							printf(": ignoring (ICMP header length below 8 bytes)\n");
+						continue;
+					}
+					else if (icmp_len < 36) {
+						if (verbose > 1)
+							printf(": ignoring (ICMP message too short to contain IP and UDP header)\n");
+						continue;
+					}
+					s_ip_hdr = (struct ip *) ((char *)icmp_hdr + 8);
+					s_ip_len = s_ip_hdr->ip_hl << 2;
+					if (s_ip_hdr->ip_p == IPPROTO_UDP) {
+						udp_hdr = (struct udphdr *) ((char *)s_ip_hdr + s_ip_len);
+						srcport = ntohs(udp_hdr->uh_sport);
+						dstport = ntohs(udp_hdr->uh_dport);
+						if ((srcport == lport) && (dstport == rport)) {
+							inet_ntop(AF_INET, &faddr.sin_addr, fstr, INET_ADDRSTRLEN);
+							printf(" (type: %u, code: %u): from %s\n", icmp_hdr->icmp_type, icmp_hdr->icmp_code, fstr);
+							exit_code(3);
+						}
+						else {
+							if (verbose > 2)
+								printf(": ignoring (ICMP error does not match send data)\n");
+							continue;
+						}
+					}
+					else {
+						if (verbose > 1)
+							printf(": ignoring (ICMP data is not a UDP packet)\n");
+						continue;
+					}
 				}
 				if(ret > 0)
 				{
