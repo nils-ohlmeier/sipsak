@@ -1,5 +1,5 @@
 /*
- * $Id: auth.c,v 1.2 2003/09/06 20:01:51 calrissian Exp $
+ * $Id: auth.c,v 1.3 2003/09/06 22:25:41 calrissian Exp $
  *
  * Copyright (C) 2002-2003 Fhg Fokus
  *
@@ -128,8 +128,8 @@ void insert_auth(char *message, char *authreq)
 
 		/* lets start with some basic stuff... username, uri and algorithm */
 		if (proxy_auth) {
-			sprintf(insert, PROXYAUTH_STR);
-			insert=insert+PROXYAUTH_STR_LEN;
+			sprintf(insert, PROXYAUZ_STR);
+			insert=insert+PROXYAUZ_STR_LEN;
 		}
 		else {
 			sprintf(insert, AUTH_STR);
