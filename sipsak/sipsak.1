@@ -5,7 +5,7 @@
 .SH NAME
 sipsak \- a utility for various tests on sip server
 .SH SYNOPSIS
-.B sipsak [-dFhinRTUVvwz] [-a
+.B sipsak [-dFGhinRTUVvwz] [-a
 .I password
 .B ] [-b
 .I number 
@@ -15,6 +15,8 @@ sipsak \- a utility for various tests on sip server
 .I number 
 .B ] [-f 
 .I filename 
+.B ] [-g
+.I string
 .B ] [-l 
 .I port
 .B ] [-m 
@@ -99,6 +101,22 @@ increasing CSeq numbers are sent to the server. Replies are ignored --
 source port 9 (discard) of localhost is advertised in topmost Via.
 .IP -h
 Prints out a simple usage help message.
+.IP "-g string"
+Activates the replacement of $replace$ within the request (usualy read 
+in from a file) with the
+.I string.
+.IP -G
+Activates the automatic replacement of the following variables in the
+request (usualy read in from a file):
+.B $dsthost$ 
+will be replaced by with the host or domainname which is given
+by the
+.B -s
+parameter.
+.B $srchost$
+will be replaced by the hostname of the local machine.
+.B $port$
+will be replaced by the local listening port of sipsak.
 .IP -i
 Deactivates the insertion of the Via line of the localhost. 
 .B Warning: 
@@ -194,11 +212,11 @@ per cent of the bindings will be removed, is determined by the
 USRLOC_REMOVE_PERCENT define within the code (set it before compilation).
 Multiple removing of bindings is possible, and cannot be prevented.
 .SH RETURN VALUES
-The return value 0 means that no error occurred and received the expected 
-answer (a 200 in most cases). 1 will be returned on unexpected answers. 
+The return value 0 means that a 200 was received. 1 means something else 
+then 1xx or 2xx was received.
 2 will be returned on local errors like non resolvable names, socket errors or
 wrong options combination. 3 will be returned on remote errors like icmp error
-messages or redirects without a contact header.
+messages, redirects without a contact header or simply no answer (timeout).
 
 .SH CAUTION
 Use
