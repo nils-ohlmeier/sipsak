@@ -1,5 +1,5 @@
 /*
- * $Id: request.c,v 1.7 2004/04/08 19:09:51 calrissian Exp $
+ * $Id: request.c,v 1.8 2004/04/26 15:36:17 calrissian Exp $
  *
  * Copyright (C) 2002-2003 Fhg Fokus
  *
@@ -162,6 +162,7 @@ void create_msg(char *buff, int action){
 				"%s%u@%s\r\n"
 				"%s%i %s\r\n"
 				"%s0\r\n"
+				"%s<sip:sipsak@%s:%i>\r\n"
 				"%sDONT ANSWER this test call!\r\n"
 				"%s70\r\n"
 				"%ssipsak %s\r\n"
@@ -173,6 +174,7 @@ void create_msg(char *buff, int action){
 				CALL_STR, c, fqdn, 
 				CSEQ_STR, 3*namebeg+2, INV_STR, 
 				CON_LEN_STR, 
+        CONT_STR, fqdn, lport,
 				SUB_STR, 
 				MAX_FRW_STR, 
 				UA_STR, SIPSAK_VERSION);
