@@ -1,5 +1,5 @@
 /*
- * $Id: sipsak.c,v 1.41 2003/03/13 03:53:50 calrissian Exp $
+ * $Id: sipsak.c,v 1.42 2003/03/18 04:59:31 calrissian Exp $
  *
  * Copyright (C) 2002 Fhg Fokus
  *
@@ -59,11 +59,10 @@ bouquets and brickbats to farhan@hotfoon.com
 #include <arpa/inet.h>
 #include <sys/poll.h>
 
-#ifdef AUTH
-#include <openssl/md5.h>
-#endif
+#include "md5global.h"
+#include "md5.h"
 
-#define SIPSAK_VERSION "v0.8.0"
+#define SIPSAK_VERSION "v0.8.1"
 #define RESIZE		1024
 #define BUFSIZE		4096
 #define FQDN_SIZE   200
@@ -136,7 +135,8 @@ bouquets and brickbats to farhan@hotfoon.com
 #define SIP100_STR "SIP/2.0 100"
 #define SIP100_STR_LEN 11
 
-#define HASHHEXLEN 2*MD5_DIGEST_LENGTH
+#define MD5_HASHLEN 16
+#define HASHHEXLEN 2*MD5_HASHLEN
 
 /* lots of global variables. ugly but makes life easier. */
 long address;
@@ -162,7 +162,8 @@ contact: farhan@hotfoon.com
 
 long getaddress(char *host)
 {
-	int i, dotcount=0;
+	int i=0;
+	int dotcount=0;
 	char *p = host;
 	struct hostent* pent;
 	long l, *lp;
@@ -621,7 +622,6 @@ void warning_extract(char *message)
 	}
 }
 
-#ifdef AUTH
 /* converts a hash into hex output
    taken from the RFC 2617 */
 void cvt_hex(char *_b, char *_h)
@@ -629,7 +629,7 @@ void cvt_hex(char *_b, char *_h)
         unsigned short i;
         unsigned char j;
 
-        for (i = 0; i < MD5_DIGEST_LENGTH; i++) {
+        for (i = 0; i < MD5_HASHLEN; i++) {
                 j = (_b[i] >> 4) & 0xf;
                 if (j <= 9) {
                         _h[i * 2] = (j + '0');
@@ -650,11 +650,12 @@ void cvt_hex(char *_b, char *_h)
 void insert_auth(char *message, char *authreq)
 {
 	char *auth, *begin, *end, *insert, *backup, *realm, *usern, *nonce, 
-		*method, *uri, *ha1_tmp, *ha2_tmp, *resp_tmp, *qop_tmp;
-	char ha1[MD5_DIGEST_LENGTH], ha2[MD5_DIGEST_LENGTH], 
-		resp[MD5_DIGEST_LENGTH]; 
-	char ha1_hex[HASHHEXLEN], ha2_hex[HASHHEXLEN], resp_hex[HASHHEXLEN];
+		*method, *uri;
+	char *qop_tmp = NULL;
+	char ha1[MD5_HASHLEN], ha2[MD5_HASHLEN], resp[MD5_HASHLEN]; 
+	char ha1_hex[HASHHEXLEN+1], ha2_hex[HASHHEXLEN+1], resp_hex[HASHHEXLEN+1];
 	int cnonce, qop_auth=0;
+	MD5_CTX Md5Ctx;
 
 	/* prevent double auth insertion */
 	if ((begin=strstr(message, AUTH_STR))!=NULL) {
@@ -801,25 +802,35 @@ void insert_auth(char *message, char *authreq)
 		/* if no password is given we try it with the username */
 		if (!password)
 			password=usern;
-		ha1_tmp=malloc(strlen(usern)+strlen(realm)+strlen(password)+3);
-		if (qop_auth)
-			resp_tmp=malloc(2*HASHHEXLEN+strlen(nonce)+strlen(qop_tmp)+3);
-		else
-			resp_tmp=malloc(2*HASHHEXLEN+strlen(nonce)+3);
-		sprintf(ha1_tmp, "%s:%s:%s", usern, realm, password);
-		MD5(ha1_tmp, strlen(ha1_tmp), ha1);
-		cvt_hex(ha1, ha1_hex);
-		/* later ha1_hex is empty.. why th f***.. let's do it here */
-		sprintf(resp_tmp, "%s:%s:", ha1_hex, nonce);
-		if (qop_auth)
-			sprintf(resp_tmp+strlen(resp_tmp), "%s", qop_tmp);
-		ha2_tmp=malloc(strlen(method)+strlen(uri)+2);
-		sprintf(ha2_tmp, "%s:%s", method, uri);
-		MD5(ha2_tmp, strlen(ha2_tmp), ha2);
-		cvt_hex(ha2, ha2_hex);
-		sprintf(resp_tmp+strlen(resp_tmp), "%s", ha2_hex);
-		MD5(resp_tmp, strlen(resp_tmp), resp);
-		cvt_hex(resp, resp_hex);
+
+		MD5Init(&Md5Ctx);
+		MD5Update(&Md5Ctx, usern, strlen(usern));
+		MD5Update(&Md5Ctx, ":", 1);
+		MD5Update(&Md5Ctx, realm, strlen(realm));
+		MD5Update(&Md5Ctx, ":", 1);
+		MD5Update(&Md5Ctx, password, strlen(password));
+		MD5Final(ha1, &Md5Ctx);
+		cvt_hex(&ha1[0], &ha1_hex[0]);
+
+		MD5Init(&Md5Ctx);
+		MD5Update(&Md5Ctx, method, strlen(method));
+		MD5Update(&Md5Ctx, ":", 1);
+		MD5Update(&Md5Ctx, uri, strlen(uri));
+		MD5Final(ha2, &Md5Ctx);
+		cvt_hex(&ha2[0], &ha2_hex[0]);
+
+		MD5Init(&Md5Ctx);
+		MD5Update(&Md5Ctx, &ha1_hex, HASHHEXLEN);
+		MD5Update(&Md5Ctx, ":", 1);
+		MD5Update(&Md5Ctx, nonce, strlen(nonce));
+		MD5Update(&Md5Ctx, ":", 1);
+		if (qop_auth) {
+			MD5Update(&Md5Ctx, qop_tmp, strlen(qop_tmp));
+		}
+		MD5Update(&Md5Ctx, &ha2_hex, HASHHEXLEN);
+		MD5Final(resp, &Md5Ctx);
+		cvt_hex(&resp[0], &resp_hex[0]);
+
 		sprintf(insert, RESPONSE_STR);
 		insert+=RESPONSE_STR_LEN;
 		sprintf(insert, "\"%s\"\r\n", resp_hex);
@@ -836,10 +847,9 @@ void insert_auth(char *message, char *authreq)
 		printf("authorizing\n");
 	/* hopefully we free all here */
 	free(backup); free(auth); free(usern); free(method); free(uri); 
-	free(realm); free(nonce); free(ha1_tmp); free(ha2_tmp); free(resp_tmp);
+	free(realm); free(nonce); 
 	if (qop_auth) free(qop_tmp);
 }
-#endif
 
 int cseq(char *message)
 {
@@ -882,11 +892,15 @@ void shoot(char *buff)
 	struct timezone tz;
 	struct pollfd sockerr;
 	int ssock, redirected, retryAfter, nretries;
-	int sock, i, len, ret, usrlocstep, randretrys;
-	int dontsend, cseqcmp, cseqtmp;
-	int rem_rand, rem_namebeg, retrans_r_c, retrans_s_c;
+	int sock, i, len, ret, usrlocstep;
+	int dontsend, cseqtmp;
+	int rem_rand, retrans_r_c, retrans_s_c;
+	int randretrys = 0;
+	int cseqcmp = 0;
+	int rem_namebeg = 0;
 	double big_delay, tmp_delay;
-	char *contact, *crlf, *foo, *bar, *lport_str;
+	char *contact, *foo, *bar, *lport_str;
+	char *crlf = NULL;
 	char reply[BUFSIZE];
 	fd_set	fd;
 	socklen_t slen;
@@ -1334,17 +1348,18 @@ void shoot(char *buff)
 							exit(2);
 						}
 					} /* if redircts... */
-#ifdef AUTH
 					else if (regexec(&authexp, reply, 0, 0, 0)==0) {
 						if (!username) {
 							printf("error: received 401 but cannot "
 								"authentication without a username\n");
 							exit(2);
 						}
+						/* prevents a strange error */
+						regcomp(&authexp, "^SIP/[0-9]\\.[0-9] 401 ", 
+							REG_EXTENDED|REG_NOSUB|REG_ICASE);
 						insert_auth(buff, reply);
 						i--;
 					}
-#endif
 					else if (trace) {
 						if (regexec(&tmhexp, reply, 0, 0, 0)==0) {
 							/* we received 483 to many hops */
@@ -1887,9 +1902,6 @@ void shoot(char *buff)
 /* prints out some usage help and exits */
 void print_help() {
 	printf("sipsak %s", SIPSAK_VERSION);
-#ifdef AUTH
-	printf(" (with digest auth support)");
-#endif
 	printf("\n\n"
 		" shoot : sipsak [-f filename] -s sip:uri\n"
 		" trace : sipsak -T -s sip:uri\n"
@@ -1899,11 +1911,7 @@ void print_help() {
 		" flood : sipsak -F [-c number] -s sip:uri\n"
 		" random: sipsak -R [-t number] -s sip:uri\n\n"
 		" additional parameter in every mode:\n"
-#ifdef AUTH
 		"   [-a password] [-d] [-i] [-l port] [-m number] [-n] [-r port] [-v] "
-#else
-		"   [-d] [-i] [-l port] [-m number] [-n] [-r port] [-v] "
-#endif
 			"[-V] [-w]\n"
 		"   -h           displays this help message\n"
 		"   -V           prints version string only\n"
@@ -1934,10 +1942,8 @@ void print_help() {
 		"   -m number    the value for the max-forwards header field\n"
 		"   -n           use IPs instead of fqdn in the Via-Line\n"
 		"   -i           deactivate the insertion of a Via-Line\n"
-#ifdef AUTH
 		"   -a password  password for authentication\n"
 		"                (if omitted password=username)\n"
-#endif
 		"   -d           ignore redirects\n"
 		"   -v           each v's produces more verbosity (max. 3)\n"
 		"   -w           extract IP from the warning in reply\n"
@@ -1971,18 +1977,12 @@ int main(int argc, char *argv[])
 	if (argc==1) print_help();
 
 	/* lots of command line switches to handle*/
-#ifdef AUTH
 	while ((c=getopt(argc,argv,"a:b:c:de:f:Fg:GhiIl:m:Mnr:Rs:t:TUvVwx:z")) != EOF){
-#else
-	while ((c=getopt(argc,argv,"b:c:de:f:Fg:GhiIl:m:Mnr:Rs:t:TUvVwx:z")) != EOF){
-#endif
 		switch(c){
-#ifdef AUTH
 			case 'a':
 				password=malloc(strlen(optarg));
 				strncpy(password, optarg, strlen(optarg));
 				break;
-#endif
 			case 'b':
 				if ((namebeg=atoi(optarg))==-1) {
 					printf("error: non-numerical appendix begin for the "
