@@ -1,5 +1,5 @@
 /*
- * $Id: shoot.c,v 1.4 2003/07/03 20:12:07 calrissian Exp $
+ * $Id: shoot.c,v 1.5 2003/09/06 16:53:40 calrissian Exp $
  *
  * Copyright (C) 2002-2003 Fhg Fokus
  *
@@ -611,7 +611,14 @@ void shoot(char *buff)
 							case 0:
 								/* we have sent a register and look 
 								   at the response now */
-								if (regexec(&okexp, reply, 0, 0, 0)==0) {
+								if (regexec(&proexp, reply, 0, 0, 0)==0) {
+									if (verbose > 2)
+										printf("\nignoring provisinal "
+											"response\n");
+									dontsend = 1;
+									break;
+								}
+								else if (regexec(&okexp, reply, 0, 0, 0)==0) {
 									if (verbose > 1)
 										printf ("\tOK\n");
 									if (verbose > 2)
