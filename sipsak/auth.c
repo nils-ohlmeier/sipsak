@@ -1,5 +1,5 @@
 /*
- * $Id: auth.c,v 1.12 2004/10/08 17:25:30 calrissian Exp $
+ * $Id: auth.c,v 1.13 2004/11/10 21:21:19 calrissian Exp $
  *
  * Copyright (C) 2002-2004 Fhg Fokus
  *
@@ -105,7 +105,7 @@ void insert_auth(char *message, char *authreq)
 		}
 		if ((begin=strstr(auth, "Digest"))==NULL) {
 			printf("%s\nerror: couldn't find authentication method Digest in "
-				"the 402 response above\n", authreq);
+				"the 40[1|7] response above\n", authreq);
 			exit_code(3);
 		}
 		if ((begin=strstr(auth, "algorithm="))!=NULL) {
