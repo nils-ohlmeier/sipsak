@@ -1,5 +1,5 @@
 /*
- * $Id: helper.c,v 1.11 2004/06/24 17:47:46 calrissian Exp $
+ * $Id: helper.c,v 1.12 2004/06/26 22:52:10 calrissian Exp $
  *
  * Copyright (C) 2002-2004 Fhg Fokus
  *
@@ -56,7 +56,7 @@ long getaddress(char *host)
 	while (*p)
 	{
 		for (i = 0; i < 3; i++, p++)
-			if (!isdigit(*p))
+			if (!isdigit((int)*p))
 				break;
 		if (*p != '.')
 			break;
@@ -116,6 +116,7 @@ void get_fqdn(){
 				exit_code(2);
 			}
 		}
+#ifdef HAVE_GETDOMAINNAME
 		/* a hostname with dots should be a domainname */
 		if ((strchr(hname, '.'))==NULL) {
 			if (getdomainname(&dname[0], namelen) < 0) {
@@ -128,6 +129,7 @@ void get_fqdn(){
 		else {
 			strcpy(fqdn, hname);
 		}
+#endif
 	}
 
 	he=gethostbyname(hname);
@@ -144,7 +146,12 @@ void get_fqdn(){
 			fqdnp = strcat(fqdn, hlp);
 		}
 		else {
-			strcpy(fqdn, he->h_name);
+			if ((strchr(he->h_name, '.'))!=NULL && (strchr(hname, '.'))==NULL) {
+				strcpy(fqdn, he->h_name);
+			}
+			else {
+				strcpy(fqdn, hname);
+			}
 		}
 	}
 	else {
