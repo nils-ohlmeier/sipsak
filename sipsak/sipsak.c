@@ -1,5 +1,5 @@
 /*
- * $Id: sipsak.c,v 1.25 2002/11/12 17:39:09 calrissian Exp $
+ * $Id: sipsak.c,v 1.26 2002/11/13 02:44:20 calrissian Exp $
  *
  * Copyright (C) 2002 Fhg Fokus
  *
@@ -64,7 +64,7 @@ bouquets and brickbats to farhan@hotfoon.com
 #include <openssl/md5.h>
 #endif
 
-#define SIPSAK_VERSION "v0.7.5"
+#define SIPSAK_VERSION "v0.7.6"
 #define RESIZE		1024
 #define BUFSIZE		4096
 #define FQDN_SIZE   200
