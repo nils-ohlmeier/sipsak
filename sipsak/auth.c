@@ -1,5 +1,5 @@
 /*
- * $Id: auth.c,v 1.8 2004/06/24 17:47:46 calrissian Exp $
+ * $Id: auth.c,v 1.9 2004/07/09 17:58:41 calrissian Exp $
  *
  * Copyright (C) 2002-2004 Fhg Fokus
  *
@@ -103,8 +103,8 @@ void insert_auth(char *message, char *authreq)
 		}
 		if ((begin=strstr(auth, "algorithm="))!=NULL) {
 			begin+=10;
-			if ((strncmp(begin, "MD5", 3))!=0) {
-				printf("%s\nerror: unsupported authentication algorithm\n", 
+			if ((strncmp(begin, "MD5", 3))!=0 && (strncmp(begin, "\"MD5\"", 5))!=0) {
+				printf("\n%s\nerror: unsupported authentication algorithm\n", 
 					authreq);
 				exit_code(2);
 			}
@@ -115,7 +115,7 @@ void insert_auth(char *message, char *authreq)
 			sprintf(usern, "%s%i", username, namebeg);
 		else
 			sprintf(usern, "%s", username);
-		/* extract the method from teh original request */
+		/* extract the method from the original request */
 		end=strchr(message, ' ');
 		method=malloc(end-message+1);
 		strncpy(method, message, (end-message));
@@ -167,8 +167,13 @@ void insert_auth(char *message, char *authreq)
 		/* copy opaque if needed */
 		if ((begin=strstr(auth, OPAQUE_STR))!=NULL) {
 			end=strchr(begin, ',');
+			if (!end) {
+				end=strchr(begin, '\r');
+			}
 			strncpy(insert, begin, end-begin+1);
 			insert=insert+(end-begin+1);
+			if (*(insert-1) == '\r')
+				*(insert-1)=',';
 			sprintf(insert, " ");
 			insert++;
 		}
