@@ -1,3 +1,8 @@
+* version 0.8.9
+  - added Nagios compliant exit codes
+  - fixed missing replies from un-symmetric servers
+  - added outbound proxy option
+  - fixed SIP issues (CSeq increasement on authorization and added missing To and From tags)
 * version 0.8.8
   - added -p option to use an outbound proxy
   - added -C option to use given Contact in REGISTER
