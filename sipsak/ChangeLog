@@ -1,3 +1,7 @@
+* version 0.8.7
+  - merged listening and sending socket into one
+  - added rport parameter to all Via lines
+  - improved error reporting on host name resolving problems
 * version 0.8.6
   - fixed wrong number of retries and timeouts from configure
   - fixed missing username in default mode
