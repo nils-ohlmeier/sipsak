@@ -1,5 +1,5 @@
 /*
- * $Id: sipsak.c,v 1.35 2003/01/24 14:17:42 calrissian Exp $
+ * $Id: sipsak.c,v 1.36 2003/02/01 16:16:34 calrissian Exp $
  *
  * Copyright (C) 2002 Fhg Fokus
  *
@@ -441,6 +441,7 @@ void create_msg(char *buff, int action){
 				TO_STR, usern, domainname, CALL_STR, c, fqdn, CSEQ_STR, 
 				3*namebeg+3, REG_STR, CONT_STR, usern, fqdn, lport, 
 				CON_EXP_STR, EXP_STR, expires_t, UA_STR, SIPSAK_VERSION);
+			free(usern);
 			break;
 		default:
 			printf("error: unknown request type to create\n");
@@ -1082,7 +1083,7 @@ void shoot(char *buff)
 				else if (FD_ISSET(ssock, &fd)) {
 					/* no timeout, no error ... something has happened :-) */
 				 	if (!trace && !usrloc && !randtrash && (verbose > 1))
-						printf ("\nmessage received\n");
+						printf ("\nmessage received:\n");
 				}
 				else {
 					printf("\nselect returned succesfuly, nothing received\n");
@@ -1487,32 +1488,44 @@ void shoot(char *buff)
 					else {
 						/* in the normal send and reply case anything other 
 						   then 1xx will be treated as final response*/
-						if (verbose > 1) {
-							printf("%s\n\n", reply);
-							printf("** reply received ");
-							if (i==0) 
-								printf("after %.3f ms **\n", 
-									deltaT(&sendtime, &recvtime));
-							else 
-								printf("%.3f ms after first send\n   and "
-									"%.3f ms after last send **\n", 
-									deltaT(&firstsendt, &recvtime), 
-									deltaT(&sendtime, &recvtime));
-							crlf=strchr(reply, '\n');
-							*crlf='\0';
-							printf("   %s\n", reply);
-						}
-						else if (verbose) printf("%s\n", reply);
 						if (regexec(&proexp, reply, 0, 0, 0)==0) {
-							if (verbose > 1) 
-								printf("   provisional received; still waiting"
-								" for a final response\n");
+							if (verbose > 1) {
+								printf("%s\n\n", reply);
+								printf("** reply received ");
+								if (i==0) 
+									printf("after %.3f ms **\n", 
+										deltaT(&sendtime, &recvtime));
+								else 
+									printf("%.3f ms after first send\n   and "
+										"%.3f ms after last send **\n", 
+										deltaT(&firstsendt, &recvtime), 
+										deltaT(&sendtime, &recvtime));
+								crlf=strchr(reply, '\n');
+								*crlf='\0';
+								printf("   %s\n   provisional received; still"
+									" waiting for a final response\n", reply);
+							}
 							retryAfter = retryAfter * 2;
 							if (retryAfter > 5000) retryAfter = 5000;
 							dontsend = 1;
 							continue;
 						} else {
-							if (verbose > 1) printf("   final received\n");
+							if (verbose > 1) {
+								printf("%s\n\n", reply);
+								printf("** reply received ");
+								if (i==0) 
+									printf("after %.3f ms **\n", 
+										deltaT(&sendtime, &recvtime));
+								else 
+									printf("%.3f ms after first send\n   and "
+										"%.3f ms after last send **\n", 
+										deltaT(&firstsendt, &recvtime), 
+										deltaT(&sendtime, &recvtime));
+								crlf=strchr(reply, '\n');
+								*crlf='\0';
+								printf("   %s\n   final received\n", reply);
+							}
+							else if (verbose) printf("%s\n", reply);
 							if (regexec(&okexp, reply, 0, 0, 0)==0)
 								exit(0);
 							else
