@@ -5,7 +5,7 @@
 .SH NAME
 sipsak \- a utility for various tests on sip server
 .SH SYNOPSIS
-.B sipsak [-dFGhiInMRTUVvwz] [-a
+.B sipsak [-dFGhiInNMRTUVvwz] [-a
 .I password
 .B ] [-b
 .I number 
@@ -204,6 +204,10 @@ can cause unexpected behaivor.
 .IP -n
 Instead of the full qualified domain name in the Via line the IP of the
 local host will be used.
+.IP -N
+Use Nagios comliant return codes instead of the normal sipsak ones. This means
+.B sipsak 
+will return 0 if everything was ok and 2 in case of any error (local or remote).
 .IP "-o number"
 .B sipsak 
 will sleep for 
