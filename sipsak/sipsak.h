@@ -1,5 +1,5 @@
 /*
- * $Id: sipsak.h,v 1.24 2005/03/01 11:38:05 calrissian Exp $
+ * $Id: sipsak.h,v 1.25 2005/03/27 15:34:15 calrissian Exp $
  *
  * Copyright (C) 2002-2004 Fhg Fokus
  *
@@ -205,7 +205,7 @@ int verbose, nameend, namebeg, expires_t, flood, warning_ext, invite, message;
 int maxforw, lport, rport, randtrash, trashchar, numeric;
 unsigned int nonce_count;
 int file_b, uri_b, trace, via_ins, usrloc, redirects, rand_rem, replace_b;
-int empty_contact, nagios_warn, fix_crlf;
+int empty_contact, nagios_warn, fix_crlf, timing;
 char *username, *domainname, *password, *replace_str, *hostname, *contact_uri;
 char *mes_body, *con_dis, *auth_username;
 char fqdn[FQDN_SIZE];

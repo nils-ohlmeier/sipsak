@@ -1,5 +1,5 @@
 /*
- * $Id: sipsak.c,v 1.82 2005/03/01 11:39:34 calrissian Exp $
+ * $Id: sipsak.c,v 1.83 2005/03/27 15:34:15 calrissian Exp $
  *
  * Copyright (C) 2002-2004 Fhg Fokus
  * Copyright (C) 2004 Nils Ohlmeier
@@ -134,6 +134,7 @@ void print_long_help() {
 		"  --disposition=STRING       Content-Disposition value\n"
 		"  --search=REGEXP            search for a RegExp in replies and return error\n"
 		"                             on failfure\n"
+		"  --timing                   print the timing informations at the end\n"
 		);
 	exit_code(0);
 }
@@ -194,6 +195,7 @@ void print_help() {
 		"  -B STRING         send a message with string as body\n"
 		"  -O STRING         Content-Disposition value\n"
 		"  -P NUMBER         Number of processes to start\n"
+		"  -A                print timing informations\n"
 		);
 		exit_code(0);
 }
@@ -250,13 +252,14 @@ int main(int argc, char *argv[])
 		{"processes", 1, 0, 'P'},
 		{"auth-username", 1, 0, 'u'},
 		{"no-crlf", 0, 0, 'L'},
+		{"timing", 0, 0, 'A'},
 		{0, 0, 0, 0}
 	};
 #endif
 	/* some initialisation to be shure */
 	file_b=uri_b=trace=lport=usrloc=flood=verbose=randtrash=trashchar = 0;
 	warning_ext=rand_rem=nonce_count=replace_b=invite=message = 0;
-	sleep_ms=empty_contact=nagios_warn = 0;
+	sleep_ms=empty_contact=nagios_warn=timing = 0;
 	namebeg=nameend=maxforw= -1;
 	numeric=via_ins=redirects=fix_crlf=processes  = 1;
 	username=password=replace_str=hostname=contact_uri=mes_body = NULL;
@@ -275,15 +278,18 @@ int main(int argc, char *argv[])
 
 	/* lots of command line switches to handle*/
 #ifdef HAVE_GETOPT_LONG
-	while ((c=getopt_long(argc, argv, "a:B:b:c:C:de:f:Fg:GhH:iIl:Lm:MnNo:O:p:P:q:r:Rs:t:Tu:UvVwW:x:z", l_opts, &option_index)) != EOF){
+	while ((c=getopt_long(argc, argv, "a:AB:b:c:C:de:f:Fg:GhH:iIl:Lm:MnNo:O:p:P:q:r:Rs:t:Tu:UvVwW:x:z", l_opts, &option_index)) != EOF){
 #else
-	while ((c=getopt(argc,argv,"a:B:b:c:C:de:f:Fg:GhH:iIl:Lm:MnNo:O:p:P:q:r:Rs:t:Tu:UvVwW:x:z")) != EOF){
+	while ((c=getopt(argc,argv,"a:AB:b:c:C:de:f:Fg:GhH:iIl:Lm:MnNo:O:p:P:q:r:Rs:t:Tu:UvVwW:x:z")) != EOF){
 #endif
 		switch(c){
 			case 'a':
 				password=malloc(strlen(optarg));
 				strncpy(password, optarg, strlen(optarg));
 				*(password+strlen(optarg)) = '\0';
+				break;
+			case 'A':
+				timing=1;
 				break;
 			case 'b':
 				if ((namebeg=atoi(optarg))==-1) {

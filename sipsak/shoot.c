@@ -1,5 +1,5 @@
 /*
- * $Id: shoot.c,v 1.40 2005/01/05 23:37:24 calrissian Exp $
+ * $Id: shoot.c,v 1.41 2005/03/27 15:34:15 calrissian Exp $
  *
  * Copyright (C) 2002-2004 Fhg Fokus
  * Copyright (C) 2004 Nils Ohlmeier
@@ -503,6 +503,8 @@ void shoot(char *buff)
 						if (verbose>0)
 							printf("*** giving up, no response after %.3f ms\n",
 								senddiff);
+						else if (timing)
+							printf("%.3f ms\n", senddiff);
 						exit_code(3);
 					}
 					/* set retry time according to RFC3261 */
@@ -853,6 +855,8 @@ void shoot(char *buff)
 											if (retrans_s_c > nagios_warn)
 												exit_code(4);
 										}
+										if (timing) printf("%.3f ms\n",
+															deltaT(&firstsendt, &recvtime));
 										on_success(reply);
 									}
 									/* lets see if we deceid to remove a 
@@ -1274,6 +1278,8 @@ void shoot(char *buff)
 								printf("   %s\n   final received\n", reply);
 							}
 							else if (verbose>0) printf("%s\n", reply);
+							else if (timing) printf("%.3f ms\n", 
+										deltaT(&firstsendt, &recvtime));
 							if (regexec(&okexp, reply, 0, 0, 0)==0)
 								on_success(reply);
 							else
