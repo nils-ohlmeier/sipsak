@@ -1,11 +1,7 @@
 ToDo List (no order):
- - outbound host/proxy (different from ruri; network destination host)
  - Nagios compliance
  - add RFC-conform From tag
  - check all parameters with is[alpha|number]
- - use given Contacts in REGISTER
-   (Note: i do not plan a config file for
-    multiple accounts currently)
  - increase hostname detection for the Via line
  - multiple contacts in usrloc mode
  - endless randtrash mode with logfile

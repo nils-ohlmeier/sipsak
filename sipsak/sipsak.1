@@ -27,6 +27,8 @@ sipsak \- a utility for various tests on sip server
 .I number
 .B ] [-o 
 .I number
+.B ] [-p
+.I hostname
 .B ] [-r 
 .I port
 .B ] [-t 
@@ -209,6 +211,10 @@ will sleep for
 ms before it starts the next cycle in the usrloc mode. This will slow down
 the whole test process to be more realistic. Each cycle will be still completed
 as fast as possible, but the whole test will be slowed down.
+.IP "-p hostname"
+the address of the hostname is the target where the request will be sent to 
+(outgoing proxy). Use this if the destination host is different then the host
+part of the request uri.
 .IP "-r port"
 Instead of the default sip port 5060 the 
 .BR port

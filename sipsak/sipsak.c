@@ -1,5 +1,5 @@
 /*
- * $Id: sipsak.c,v 1.56 2004/02/22 01:06:33 calrissian Exp $
+ * $Id: sipsak.c,v 1.57 2004/02/29 04:28:02 calrissian Exp $
  *
  * Copyright (C) 2002-2003 Fhg Fokus
  *
@@ -85,6 +85,7 @@ void print_help() {
 		"                (default: request length)\n"
 		"   -l port      the local port to use (default: any)\n"
 		"   -r port      the remote port to use (default: 5060)\n"
+		"   -p hostname  request target (outgoing proxy)\n"
 		"   -H hostname  overwrites the hostname in all headers\n"
 		"                (usefull if the detection of the hostname fails)\n"
 		"   -m number    the value for the max-forwards header field\n"
@@ -126,7 +127,7 @@ int main(int argc, char *argv[])
 	if (argc==1) print_help();
 
 	/* lots of command line switches to handle*/
-	while ((c=getopt(argc,argv,"a:b:C:c:de:f:Fg:GhH:iIl:m:Mno:r:Rs:t:TUvVwx:z")) != EOF){
+	while ((c=getopt(argc,argv,"a:b:C:c:de:f:Fg:GhH:iIl:m:Mno:p:r:Rs:t:TUvVwx:z")) != EOF){
 		switch(c){
 			case 'a':
 				password=malloc(strlen(optarg));
@@ -265,6 +266,9 @@ int main(int argc, char *argv[])
 					}
 				}
 				break;
+			case 'p':
+				address = getaddress(optarg);
+				break;
 			case 'r':
 				rport=atoi(optarg);
 				if (!rport) {
@@ -305,7 +309,8 @@ int main(int argc, char *argv[])
 							strncpy(domainname, delim, strlen(delim));
 							*(domainname+strlen(delim)) = '\0';
 						}
-						address = getaddress(delim);
+						if (!address)
+							address = getaddress(delim);
 						if (!address){
 							printf("error:unable to determine the remote host "
 								"address\n");
