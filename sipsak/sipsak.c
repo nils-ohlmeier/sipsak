@@ -1,5 +1,5 @@
 /*
- * $Id: sipsak.c,v 1.77 2004/10/12 10:25:01 calrissian Exp $
+ * $Id: sipsak.c,v 1.78 2004/10/14 20:00:22 calrissian Exp $
  *
  * Copyright (C) 2002-2004 Fhg Fokus
  * Copyright (C) 2004 Nils Ohlmeier
@@ -359,7 +359,7 @@ int main(int argc, char *argv[])
 				flood=1;
 				break;
 			case 'f':
-				if strncmp(optarg, "-", 1) {
+				if (strncmp(optarg, "-", 1)) {
 					/* file is opened in binary mode so that the cr-lf is 
 					   preserved */
 					pf = fopen(optarg, "rb");
