@@ -1,5 +1,5 @@
 /*
- * $Id: auth.c,v 1.11 2004/08/07 13:08:37 calrissian Exp $
+ * $Id: auth.c,v 1.12 2004/10/08 17:25:30 calrissian Exp $
  *
  * Copyright (C) 2002-2004 Fhg Fokus
  *
@@ -97,7 +97,7 @@ void insert_auth(char *message, char *authreq)
 		auth=malloc((end-begin)+1);
 		strncpy(auth, begin, (end-begin));
 		*(auth+(end-begin))='\0';
-		/* we support Digest nad MD5 only */
+		/* we support Digest and MD5 only */
 		if ((begin=strstr(auth, "Basic"))!=NULL) {
 			printf("%s\nerror: authentication method Basic is deprecated since"
 				" RFC 3261 and not supported by sipsak\n", authreq);
@@ -117,11 +117,16 @@ void insert_auth(char *message, char *authreq)
 			}
 		}
 		/* we need the username at some points */
-		usern=malloc(strlen(username)+10);
-		if (nameend>0)
-			sprintf(usern, "%s%i", username, namebeg);
-		else
-			sprintf(usern, "%s", username);
+		if (auth_username != NULL) {
+			usern = auth_username;
+		}
+		else {
+			usern=malloc(strlen(username)+10);
+			if (nameend>0)
+				sprintf(usern, "%s%i", username, namebeg);
+			else
+				sprintf(usern, "%s", username);
+		}
 		/* extract the method from the original request */
 		end=strchr(message, ' ');
 		method=malloc(end-message+1);
@@ -230,7 +235,7 @@ void insert_auth(char *message, char *authreq)
 		}
 		/* if no password is given we try it with the username */
 		if (!password)
-			password=usern;
+			password = EMPTY_STR;
 
 		MD5Init(&Md5Ctx);
 		MD5Update(&Md5Ctx, usern, strlen(usern));
@@ -275,8 +280,9 @@ void insert_auth(char *message, char *authreq)
 	if (verbose>1) 
 		printf("authorizing\n");
 	/* hopefully we free all here */
-	free(backup); free(auth); free(usern); free(method); free(uri); 
+	free(backup); free(auth); free(method); free(uri); 
 	free(realm); free(nonce); 
+	if (auth_username == NULL) free(usern); 
 	if (qop_auth) free(qop_tmp);
 }
 
