@@ -1,5 +1,5 @@
 /*
- * $Id: helper.c,v 1.4 2003/11/30 21:02:20 calrissian Exp $
+ * $Id: helper.c,v 1.5 2003/12/08 19:50:24 calrissian Exp $
  *
  * Copyright (C) 2002-2003 Fhg Fokus
  *
@@ -20,14 +20,6 @@
 #include <netdb.h>
 #include <sys/utsname.h>
 #include <string.h>
-/*
-#include <stdio.h>
-#include <ctype.h>
-#include <sys/socket.h>
-#include <netinet/in.h>
-#include <arpa/inet.h>
-#include <unistd.h>
-*/
 
 #include "helper.h"
 #include "sipsak.h"
