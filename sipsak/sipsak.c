@@ -1,5 +1,5 @@
 /*
- * $Id: sipsak.c,v 1.5 2002/08/26 00:31:37 calrissian Exp $
+ * $Id: sipsak.c,v 1.6 2002/08/26 11:38:09 calrissian Exp $
  *
  * Copyright (C) 2002-2003 Fhg Fokus
  *
@@ -61,7 +61,7 @@ bouquets and brickbats to farhan@hotfoon.com
 #include <arpa/inet.h>
 #include <sys/poll.h>
 
-#define SIPSAK_VERSION "v0.7"
+#define SIPSAK_VERSION "v0.7.1"
 #define RESIZE		1024
 #define BUFSIZE		4096
 #define FQDN_SIZE   200
