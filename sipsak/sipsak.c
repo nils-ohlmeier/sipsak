@@ -1,5 +1,5 @@
 /*
- * $Id: sipsak.c,v 1.78 2004/10/14 20:00:22 calrissian Exp $
+ * $Id: sipsak.c,v 1.79 2004/11/02 13:48:08 calrissian Exp $
  *
  * Copyright (C) 2002-2004 Fhg Fokus
  * Copyright (C) 2004 Nils Ohlmeier
@@ -118,7 +118,7 @@ void print_long_help() {
 		"  --outbound-proxy=HOSTNAME  request target (outbound proxy)\n"
 		"  --hostname=HOSTNAME        overwrites the local hostname in all headers\n"
 		"  --max-forwards=NUMBER      the value for the max-forwards header field\n"
-		"  --numeric                  use IPs instead of FQDN in the Via-Line\n");
+		"  --numeric                  use FQDN instead of IPs in the Via-Line\n");
 	printf("  --processes=NUMBER         Divide the workflow among the number of processes\n"
 		"  --auth-username=STRING     username for authentication\n"
 		);
@@ -178,7 +178,7 @@ void print_help() {
 	printf(
 		"  -H HOSTNAME       overwrites the local hostname in all headers\n"
 		"  -m NUMBER         the value for the max-forwards header field\n"
-		"  -n                use IPs instead of FQDN in the Via-Line\n"
+		"  -n                use FQDN instead of IPs in the Via-Line\n"
 		"  -i                deactivate the insertion of a Via-Line\n"
 		"  -a PASSWORD       password for authentication\n"
 		"                      (if omitted password=\"\")\n"
@@ -254,10 +254,10 @@ int main(int argc, char *argv[])
 #endif
 	/* some initialisation to be shure */
 	file_b=uri_b=trace=lport=usrloc=flood=verbose=randtrash=trashchar = 0;
-	numeric=warning_ext=rand_rem=nonce_count=replace_b=invite=message = 0;
+	warning_ext=rand_rem=nonce_count=replace_b=invite=message = 0;
 	sleep_ms=empty_contact=nagios_warn = 0;
 	namebeg=nameend=maxforw= -1;
-	via_ins=redirects=crlf=processes  = 1;
+	numeric=via_ins=redirects=crlf=processes  = 1;
 	username=password=replace_str=hostname=contact_uri=mes_body = NULL;
 	con_dis=auth_username = NULL;
 	re = NULL;
@@ -429,7 +429,7 @@ int main(int argc, char *argv[])
 				message=1;
 				break;
 			case 'n':
-				numeric = 1;
+				numeric = 0;
 				break;
 			case 'N':
 				exit_mode=EM_NAGIOS;
