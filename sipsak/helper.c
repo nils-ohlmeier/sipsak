@@ -1,5 +1,5 @@
 /*
- * $Id: helper.c,v 1.2 2003/11/25 17:46:08 calrissian Exp $
+ * $Id: helper.c,v 1.3 2003/11/30 20:59:49 calrissian Exp $
  *
  * Copyright (C) 2002-2003 Fhg Fokus
  *
@@ -16,16 +16,18 @@
  * GNU General Public License for more details.
  */
 
-#include <stdio.h>
 #include <stdlib.h>
+#include <netdb.h>
+#include <sys/utsname.h>
+/*
+#include <stdio.h>
 #include <string.h>
 #include <ctype.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
-#include <netdb.h>
-#include <sys/utsname.h>
 #include <unistd.h>
+*/
 
 #include "helper.h"
 #include "sipsak.h"
