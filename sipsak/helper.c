@@ -1,5 +1,5 @@
 /*
- * $Id: helper.c,v 1.5 2003/12/08 19:50:24 calrissian Exp $
+ * $Id: helper.c,v 1.6 2003/12/08 20:02:04 calrissian Exp $
  *
  * Copyright (C) 2002-2003 Fhg Fokus
  *
@@ -147,8 +147,14 @@ void get_fqdn(){
 		exit(2);
 	}
 	if ((strchr(fqdn, '.'))==NULL) {
-		printf("error: this FQDN or IP is not valid: %s\n", fqdn);
-		exit(2);
+		if (hostname) {
+			printf("WARNING: %s is not resolvable... continouing anyway\n");
+			strcpy(fqdn, hostname);
+		}
+		else {
+			printf("error: this FQDN or IP is not valid: %s\n", fqdn);
+			exit(2);
+		}
 	}
 
 	if (verbose > 2)
