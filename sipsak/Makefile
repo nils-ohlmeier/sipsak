@@ -18,27 +18,12 @@ INSTALL_MAN= /usr/local/man
 CC = gcc
 RM = rm -f
 
-OS = $(shell uname -s)
-
 RM_CMD = $(RM) *.BAK *.bak *.o ,* *~ *.a *.orig *.rej sipsak.exe
 
-WARNING = -Wall
-DEFS =
+WARNING = -Wall 
+DEFS = -O3
 
 FLAGS = $(WARNING) $(DEFS)
-
-ifeq ($(DEFS), -DAUTH)
-  LFLAGS = -lssl
-  ifeq ($(OS), freebsd)
-    LFLAGS+= -lcrypto
-  endif
-  ifeq ($(OS), netbsd)
-    LFLAGS+= -lcrypto
-  endif
-  ifneq (,$(findstring CYGWIN, $(OS)))
-    LFLAGS+= -lcrypto -static
-  endif
-endif
 
 all:: $(PROGS)
 
@@ -47,10 +32,10 @@ all:: $(PROGS)
 %.o: %.c
 	$(CC) $(FLAGS) -c $<
 
-sipsak: sipsak.o
+sipsak: md5.o sipsak.o
 
-auth:
-	@make DEFS=-DAUTH
+debug:
+	@make DEFS=-g
 
 # So crude but so effective ;-)
 # Less crude thanks to many contributions ;-)
