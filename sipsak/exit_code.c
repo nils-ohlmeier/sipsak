@@ -1,5 +1,5 @@
 /*
- * $Id: exit_code.c,v 1.2 2004/05/24 00:45:27 jiri Exp $
+ * $Id: exit_code.c,v 1.3 2004/06/06 18:11:35 calrissian Exp $
  *
  * Copyright (C) 2002-2004 Fhg Fokus
  *
@@ -27,14 +27,24 @@ void exit_code(int code)
 
 	switch(exit_mode) {
 		case EM_DEFAULT:	
-			exit(code);
+			if (code == 4) {
+				exit(0);
+			}
+			else {
+				exit(code);
+			}
 		case EM_NAGIOS:		
-			if (code>0) {
-				printf("SIP failure\n");
-				exit(2);
-			} else {
+			if (code == 0) {
 				printf("SIP ok\n");
 				exit(0);
+			}
+			else if (code == 4) {
+				printf("SIP warning\n");
+				exit(1);
+			}
+			else {
+				printf("SIP failure\n");
+				exit(2);
 			}
 		default:		
 			fprintf(stderr, "ERROR: unknown exit code\n");
