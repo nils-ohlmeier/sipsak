@@ -32,7 +32,7 @@ all:: $(PROGS)
 %.o: %.c
 	$(CC) $(FLAGS) -c $<
 
-sipsak: md5.o sipsak.o
+sipsak: md5.o auth.o header_f.o helper.o request.o shoot.o sipsak.o
 
 debug:
 	@make DEFS=-g
