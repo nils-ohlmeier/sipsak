@@ -1,5 +1,5 @@
 /*
- * $Id: sipsak.c,v 1.14 2002/08/29 19:12:27 calrissian Exp $
+ * $Id: sipsak.c,v 1.15 2002/08/29 19:24:50 calrissian Exp $
  *
  * Copyright (C) 2002-2003 Fhg Fokus
  *
@@ -730,8 +730,7 @@ void shoot(char *buff)
 					if (trace) printf("%i: timeout after %i ms\n", i, 
 									retryAfter);
 					else if (usrloc) {
-						if (verbose)
-							printf("timeout after %i ms\n", retryAfter);
+						printf("timeout after %i ms\n", retryAfter);
 						i--;
 					}
 					else if (verbose) printf("** timeout after %i ms**\n", 
