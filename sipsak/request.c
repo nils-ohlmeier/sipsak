@@ -1,5 +1,5 @@
 /*
- * $Id: request.c,v 1.16 2004/07/15 18:07:41 calrissian Exp $
+ * $Id: request.c,v 1.17 2004/10/19 20:10:09 calrissian Exp $
  *
  * Copyright (C) 2002-2004 Fhg Fokus
  *
@@ -359,7 +359,7 @@ void create_msg(char *buff, int action){
 				"%ssip:%s\r\n"
 				"%s%u@%s\r\n"
 				"%s%i %s\r\n"
-				"%ssipsak@%s:9\r\n"
+				"%ssip:sipsak@%s:9\r\n"
 				"%s0\r\n"
 				"%s70\r\n"
 				"%ssipsak %s\r\n"
