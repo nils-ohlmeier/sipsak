@@ -1,7 +1,8 @@
 /*
- * $Id: shoot.c,v 1.18 2004/05/27 10:56:05 calrissian Exp $
+ * $Id: shoot.c,v 1.19 2004/06/05 17:42:16 calrissian Exp $
  *
- * Copyright (C) 2002-2003 Fhg Fokus
+ * Copyright (C) 2002-2004 Fhg Fokus
+ * Copyright (C) 2004 Nils Ohlmeier
  *
  * This file belongs to sipsak, a free sip testing tool.
  *
@@ -59,7 +60,7 @@ void shoot(char *buff)
 	struct timespec sleep_ms_s, sleep_rem;
 	struct pollfd sockerr;
 	int redirected, retryAfter, nretries;
-	int sock , i, len, ret, usrlocstep;
+	int sock, lsock, i, len, ret, usrlocstep;
 	int dontsend, cseqtmp, rand_tmp;
 	int rem_rand, retrans_r_c, retrans_s_c;
 	int randretrys = 0;
@@ -84,18 +85,34 @@ void shoot(char *buff)
 	delaytime.tv_sec = 0;
 	delaytime.tv_usec = 0;
 
-	/* create the socket */
+	/* create the un-connected socket */
+	lsock = (int)socket(PF_INET, SOCK_DGRAM, IPPROTO_UDP);
+	if (lsock==-1) {
+		perror("listening socket creation failed");
+		exit_code(2);
+	}
+
+	/* create the connected socket */
 	sock = (int)socket(PF_INET, SOCK_DGRAM, IPPROTO_UDP);
 	if (sock==-1) {
-		perror("socket creation failed");
+		perror("sending socket creation failed");
 		exit_code(2);
 	}
 
 	addr.sin_family=AF_INET;
 	addr.sin_addr.s_addr = htonl( INADDR_ANY );
 	addr.sin_port = htons((short)lport);
+	if (bind( lsock, (struct sockaddr *) &addr, sizeof(addr) )==-1) {
+		perror("listening socket binding failed");
+		exit_code(2);
+	}
+
+	memset(&addr, 0, sizeof(addr));
+	addr.sin_family=AF_INET;
+	addr.sin_addr.s_addr = htonl( INADDR_ANY );
+	addr.sin_port = htons((short)0);
 	if (bind( sock, (struct sockaddr *) &addr, sizeof(addr) )==-1) {
-		perror("socket binding failed");
+		perror("sending socket binding failed");
 		exit_code(2);
 	}
 
@@ -115,7 +132,7 @@ void shoot(char *buff)
 	if ((via_ins||usrloc||invite||message||replace_b) && lport==0){
 		memset(&addr, 0, sizeof(addr));
 		slen=sizeof(addr);
-		getsockname(sock, (struct sockaddr *)&addr, &slen);
+		getsockname(lsock, (struct sockaddr *)&addr, &slen);
 		lport=ntohs(addr.sin_port);
 	}
 
@@ -232,7 +249,7 @@ void shoot(char *buff)
 		   modified from sendto/recvfrom */
 		ret = connect(sock, (struct sockaddr *)&addr, sizeof(addr));
 		if (ret==-1) {
-			perror("no connect");
+			perror("connect sending socket failed");
 			exit_code(2);
 		}
 
@@ -326,6 +343,7 @@ void shoot(char *buff)
 
 				FD_ZERO(&fd);
 				FD_SET(sock, &fd); 
+				FD_SET(lsock, &fd); 
 
 				ret = select(FD_SETSIZE, &fd, NULL, NULL, &tv);
 				(void)gettimeofday(&recvtime, &tz);
@@ -391,7 +409,7 @@ void shoot(char *buff)
 					perror("select error");
 					exit_code(2);
 				}
-				else if (FD_ISSET(sock, &fd)) {
+				else if (FD_ISSET(sock, &fd) || FD_ISSET(lsock, &fd)) {
 					/* no timeout, no error ... something has happened :-) */
 				 	if (!trace && !usrloc && !invite && !message && !randtrash 
 						&& (verbose > 1))
@@ -405,7 +423,12 @@ void shoot(char *buff)
 				/* we are retrieving only the extend of a decent 
 				   MSS = 1500 bytes */
 				len = sizeof(addr);
-				ret = recv(sock, reply, BUFSIZE, 0);
+				if (FD_ISSET(sock, &fd)) {
+					ret = recv(sock, reply, BUFSIZE, 0);
+				}
+				else if (FD_ISSET(lsock, &fd)) {
+					ret = recv(lsock, reply, BUFSIZE, 0);
+				}
 				if(ret > 0)
 				{
 					reply[ret] = 0;
