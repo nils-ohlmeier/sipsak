@@ -1,5 +1,5 @@
 /*
- * $Id: sipsak.h,v 1.1 2003/04/04 02:12:18 calrissian Exp $
+ * $Id: sipsak.h,v 1.2 2003/04/09 03:41:13 calrissian Exp $
  *
  * Copyright (C) 2002-2003 Fhg Fokus
  *
@@ -97,6 +97,7 @@
 
 /* lots of global variables. ugly but makes life easier. */
 long address;
+int sleep_ms;
 int verbose, nameend, namebeg, expires_t, flood, warning_ext, invite, message;
 int maxforw, lport, rport, randtrash, trashchar, numeric, nonce_count;
 int file_b, uri_b, trace, via_ins, usrloc, redirects, rand_rem, replace_b;

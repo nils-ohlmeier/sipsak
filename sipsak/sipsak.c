@@ -1,5 +1,5 @@
 /*
- * $Id: sipsak.c,v 1.46 2003/04/04 02:12:18 calrissian Exp $
+ * $Id: sipsak.c,v 1.47 2003/04/09 03:41:13 calrissian Exp $
  *
  * Copyright (C) 2002-2003 Fhg Fokus
  *
@@ -75,6 +75,7 @@ void print_help() {
 		"   -e number    the ending numer of the appendix to the user name in "
 			"usrloc\n"
 		"                mode\n"
+		"   -o number    sleep number ms before sending next request\n"
 		"   -x number    the expires header field value (default: 15)\n"
 		"   -z           activates randomly removing of user bindings\n"
 		"   -F           activates the flood mode\n"
@@ -111,7 +112,8 @@ int main(int argc, char *argv[])
 	/* some initialisation to be shure */
 	file_b=uri_b=trace=lport=usrloc=flood=verbose=randtrash=trashchar = 0;
 	numeric=warning_ext=rand_rem=nonce_count=replace_b=invite=message = 0;
-	namebeg=nameend=maxforw = -1;
+	sleep_ms = 0;
+	namebeg=nameend=maxforw= -1;
 	via_ins=redirects = 1;
 	username=password=replace_str=hostname = NULL;
 	address = 0;
@@ -126,7 +128,7 @@ int main(int argc, char *argv[])
 	if (argc==1) print_help();
 
 	/* lots of command line switches to handle*/
-	while ((c=getopt(argc,argv,"a:b:c:de:f:Fg:GhH:iIl:m:Mnr:Rs:t:TUvVwx:z")) != EOF){
+	while ((c=getopt(argc,argv,"a:b:c:de:f:Fg:GhH:iIl:m:Mno:r:Rs:t:TUvVwx:z")) != EOF){
 		switch(c){
 			case 'a':
 				password=malloc(strlen(optarg));
@@ -215,6 +217,19 @@ int main(int argc, char *argv[])
 				break;
 			case 'n':
 				numeric = 1;
+				break;
+			case 'o':
+				sleep_ms = 0;
+				if (strncmp(optarg, "rand", 4)==0) {
+					sleep_ms = -2;
+				}
+				else {
+					sleep_ms = atoi(optarg);
+					if (!sleep_ms) {
+						printf("error: non-numerical sleep value\n");
+						exit(2);
+					}
+				}
 				break;
 			case 'r':
 				rport=atoi(optarg);

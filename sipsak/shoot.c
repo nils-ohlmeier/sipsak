@@ -1,5 +1,5 @@
 /*
- * $Id: shoot.c,v 1.1 2003/04/04 02:12:18 calrissian Exp $
+ * $Id: shoot.c,v 1.2 2003/04/09 03:41:13 calrissian Exp $
  *
  * Copyright (C) 2002-2003 Fhg Fokus
  *
@@ -19,6 +19,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <time.h>
 #include <sys/time.h>
 #include <sys/types.h>
 #include <regex.h>
@@ -46,10 +47,11 @@ void shoot(char *buff)
 	struct sockaddr_in	addr, sockname;
 	struct timeval	tv, sendtime, recvtime, firstsendt, delaytime;
 	struct timezone tz;
+	struct timespec sleep_ms_s, sleep_rem;
 	struct pollfd sockerr;
 	int ssock, redirected, retryAfter, nretries;
-	int sock, i, len, ret, usrlocstep;
-	int dontsend, cseqtmp;
+	int sock , i, len, ret, usrlocstep;
+	int dontsend, cseqtmp, rand_tmp;
 	int rem_rand, retrans_r_c, retrans_s_c;
 	int randretrys = 0;
 	int cseqcmp = 0;
@@ -91,6 +93,18 @@ void shoot(char *buff)
 	if (bind( ssock, (struct sockaddr *) &sockname, sizeof(sockname) )==-1) {
 		perror("no bind");
 		exit(2);
+	}
+
+	if (sleep_ms != 0) {
+		if (sleep_ms == -2) {
+			rand_tmp = rand();
+			sleep_ms_s.tv_sec = rand_tmp / 1000;
+			sleep_ms_s.tv_nsec = (rand_tmp % 1000) * 1000;
+		}
+		else {
+			sleep_ms_s.tv_sec = sleep_ms / 1000;
+			sleep_ms_s.tv_nsec = (sleep_ms % 1000) * 1000;
+		}
 	}
 
 	/* for the via line we need our listening port number */
@@ -279,6 +293,12 @@ void shoot(char *buff)
 				printf("** request **\n%s\n", buff);
 			}
 
+			if (sleep_ms == -2) {
+				rand_tmp = rand();
+				sleep_ms_s.tv_sec = rand_tmp / 1000;
+				sleep_ms_s.tv_nsec = (rand_tmp % 1000) * 1000;
+			}
+
 			if (! dontsend) {
 				/* lets fire the request to the server and store when we did */
 				ret = send(sock, buff, strlen(buff), 0);
@@ -391,7 +411,6 @@ void shoot(char *buff)
 						delaytime.tv_sec = 0;
 						delaytime.tv_usec = 0;
 					}
-					/* check for old CSeq => ignore retransmission */
 					/* if (usrloc) {
 						switch (usrlocstep) {
 							case 0: 
@@ -412,6 +431,7 @@ void shoot(char *buff)
 						}
 					}
 					else */
+					/* check for old CSeq => ignore retransmission */
 					if (!usrloc && !invite && !message)
 						cseqcmp = namebeg;
 					cseqtmp = cseq(reply);
@@ -515,7 +535,7 @@ void shoot(char *buff)
 							REG_EXTENDED|REG_NOSUB|REG_ICASE);
 						insert_auth(buff, reply);
 						i--;
-					}
+					} /* if auth...*/
 					else if (trace) {
 						if (regexec(&tmhexp, reply, 0, 0, 0)==0) {
 							/* we received 483 to many hops */
@@ -582,7 +602,7 @@ void shoot(char *buff)
 							else
 								exit(1);
 						}
-					}
+					} /* if trace ... */
 					else if (usrloc||invite||message) {
 						switch (usrlocstep) {
 							case 0:
@@ -657,6 +677,9 @@ void shoot(char *buff)
 									cseqcmp++;
 									usrlocstep=4;
 								}
+								if (sleep_ms != 0) {
+									nanosleep(&sleep_ms_s, &sleep_rem);
+								}
 								break;
 							case 1:
 								/* see if we received our invite */
@@ -686,7 +709,7 @@ void shoot(char *buff)
 								}
 								break;
 							case 2:
-								/* received we our ok ? */
+								/* did we received our ok ? */
 								if (strncmp(reply, INV_STR, INV_STR_LEN)==0) {
 									if (verbose)
 										printf("ignoring INVITE "
@@ -792,6 +815,8 @@ void shoot(char *buff)
 										"above). aborting\n", reply);
 									exit(1);
 								}
+								if (sleep_ms != 0)
+									nanosleep(&sleep_ms_s, &sleep_rem);
 								break;
 							case 4:
 								/* we sent the message and look if its 
@@ -898,6 +923,8 @@ void shoot(char *buff)
 										"above). aborting\n", reply);
 									exit(1);
 								}
+								if (sleep_ms != 0)
+									nanosleep(&sleep_ms_s, &sleep_rem);
 								break;
 							case 6:
 								if (strncmp(reply, MES_STR, MES_STR_LEN)==0) {
@@ -931,6 +958,8 @@ void shoot(char *buff)
 										namebeg);
 									exit(1);
 								}
+								if (sleep_ms != 0)
+									nanosleep(&sleep_ms_s, &sleep_rem);
 								break;
 							default:
 								printf("error: unknown step in usrloc\n");
