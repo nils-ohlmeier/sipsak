@@ -1,5 +1,5 @@
 /*
- * $Id: shoot.c,v 1.17 2004/05/16 16:45:03 jiri Exp $
+ * $Id: shoot.c,v 1.18 2004/05/27 10:56:05 calrissian Exp $
  *
  * Copyright (C) 2002-2003 Fhg Fokus
  *
@@ -539,9 +539,11 @@ void shoot(char *buff)
 							exit_code(2);
 						}
 						/* prevents a strange error */
-						regcomp(&authexp, "^SIP/[0-9]\\.[0-9] 401 ", 
+						regcomp(&authexp, "^SIP/[0-9]\\.[0-9] 40[17] ", 
 							REG_EXTENDED|REG_NOSUB|REG_ICASE);
 						insert_auth(buff, reply);
+						if (verbose > 2)
+							printf("\nreceived:\n%s\n", buff);
 						increase_cseq(buff);
 						//i--;
 					} /* if auth...*/
