@@ -1,5 +1,5 @@
 /*
- * $Id: sipsak.h,v 1.19 2004/10/08 17:30:52 calrissian Exp $
+ * $Id: sipsak.h,v 1.20 2004/12/21 21:22:20 calrissian Exp $
  *
  * Copyright (C) 2002-2004 Fhg Fokus
  *
@@ -174,13 +174,16 @@
 long address;
 int sleep_ms;
 int verbose, nameend, namebeg, expires_t, flood, warning_ext, invite, message;
-int maxforw, lport, rport, randtrash, trashchar, numeric, nonce_count;
+int maxforw, lport, rport, randtrash, trashchar, numeric;
+unsigned int nonce_count;
 int file_b, uri_b, trace, via_ins, usrloc, redirects, rand_rem, replace_b;
-int empty_contact, nagios_warn, crlf;
+int empty_contact, nagios_warn, fix_crlf;
 char *username, *domainname, *password, *replace_str, *hostname, *contact_uri;
 char *mes_body, *con_dis, *auth_username;
-char fqdn[FQDN_SIZE], messusern[FQDN_SIZE];
-char confirm[BUFSIZE], ack[BUFSIZE];
+char fqdn[FQDN_SIZE];
+char messusern[FQDN_SIZE];
+char confirm[BUFSIZE];
+char ack[BUFSIZE];
 regex_t* re;
 int processes;
 

@@ -1,5 +1,5 @@
 /*
- * $Id: sipsak.c,v 1.80 2004/11/19 17:57:46 calrissian Exp $
+ * $Id: sipsak.c,v 1.81 2004/12/21 21:22:20 calrissian Exp $
  *
  * Copyright (C) 2002-2004 Fhg Fokus
  * Copyright (C) 2004 Nils Ohlmeier
@@ -48,10 +48,6 @@
 #include "helper.h"
 #include "shoot.h"
 #include "exit_code.h"
-
-/* regular expression for matching received replies */
-regex_t* re;
-
 
 static void sigchld_handler(int signo)
 {
@@ -138,7 +134,7 @@ void print_long_help() {
 		"  --search=REGEXP            search for a RegExp in replies and return error\n"
 		"                             on failfure\n"
 		);
-	exit(0);
+	exit_code(0);
 }
 
 /* prints out some usage help and exits */
@@ -198,7 +194,7 @@ void print_help() {
 		"  -O STRING         Content-Disposition value\n"
 		"  -P NUMBER         Number of processes to start\n"
 		);
-		exit(0);
+		exit_code(0);
 }
 
 int main(int argc, char *argv[])
@@ -261,7 +257,7 @@ int main(int argc, char *argv[])
 	warning_ext=rand_rem=nonce_count=replace_b=invite=message = 0;
 	sleep_ms=empty_contact=nagios_warn = 0;
 	namebeg=nameend=maxforw= -1;
-	numeric=via_ins=redirects=crlf=processes  = 1;
+	numeric=via_ins=redirects=fix_crlf=processes  = 1;
 	username=password=replace_str=hostname=contact_uri=mes_body = NULL;
 	con_dis=auth_username = NULL;
 	re = NULL;
@@ -417,7 +413,7 @@ int main(int argc, char *argv[])
 				}
 				break;
 			case 'L':
-				crlf=0;
+				fix_crlf=0;
 				break;
 			case 'm':
 				maxforw=atoi(optarg);
@@ -601,7 +597,7 @@ int main(int argc, char *argv[])
 	}
 
 	/* replace LF with CRLF if we read from a file */
-	if ((file_b) && (crlf)) {
+	if ((file_b) && (fix_crlf)) {
 		insert_cr(buff);
 	}
 	/* lots of conditions to check */

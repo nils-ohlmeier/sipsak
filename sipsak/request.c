@@ -1,5 +1,5 @@
 /*
- * $Id: request.c,v 1.17 2004/10/19 20:10:09 calrissian Exp $
+ * $Id: request.c,v 1.18 2004/12/21 21:22:20 calrissian Exp $
  *
  * Copyright (C) 2002-2004 Fhg Fokus
  *
@@ -28,13 +28,17 @@
 void create_msg(char *buff, int action){
 	unsigned int c;
 	char *usern=NULL;
-	int usern_len;
+	size_t usern_len;
 
-	if (username)
+	if (username != NULL)
 		usern_len=strlen(username)+11;
 	else
 		usern_len=1;
 	usern=malloc(usern_len);
+	if (!usern) {
+		printf("failed to allocate memory\n");
+		exit_code(255);
+	}
 	if (usern)
 		memset(usern, 0, usern_len);
 	else {
@@ -45,16 +49,16 @@ void create_msg(char *buff, int action){
 		if (verbose > 2)
 			printf("username: %s\ndomainname: %s\n", username, domainname);
 		if (nameend>0) 
-			sprintf(usern, "%s%i@", username, namebeg);
+			snprintf(usern, usern_len, "%s%i@", username, namebeg);
 		else
-			sprintf(usern, "%s@", username);
+			snprintf(usern, usern_len, "%s@", username);
 	}
-	c=rand();
+	c=(unsigned int)rand();
 	c+=lport;
 	switch (action){
 		case REQ_REG:
 			/* not elegant but easier :) */
-			if (empty_contact) {
+			if (empty_contact == 1) {
 				sprintf(buff, 
 					"%s sip:%s%s"
 					"%s%s:%i;rport\r\n"
@@ -218,10 +222,12 @@ void create_msg(char *buff, int action){
 				UA_STR, SIPSAK_VERSION);
 			if (verbose > 2)
 				printf("ack:\n%s\nreply:\n%s\n", ack, confirm);
-			if (nameend>0)
-				sprintf(messusern, "%s sip:%s%i", INV_STR, username, namebeg);
-			else
-				sprintf(messusern, "%s sip:%s", INV_STR, username);
+			if (username) {
+				if (nameend>0)
+					sprintf(messusern, "%s sip:%s%i", INV_STR, username, namebeg);
+				else
+					sprintf(messusern, "%s sip:%s", INV_STR, username);
+			}
 			break;
 		case REQ_MES:
 			if (mes_body) {
@@ -234,7 +240,7 @@ void create_msg(char *buff, int action){
 						"%s%u@%s\r\n"
 						"%s%i %s\r\n"
 						"%s%s\r\n"
-						"%s%i\r\n"
+						"%s%x\r\n"
 						"%s%s\r\n"
 						"%s70\r\n"
 						"%ssipsak %s\r\n"
@@ -247,7 +253,7 @@ void create_msg(char *buff, int action){
 						CALL_STR, c, fqdn, 
 						CSEQ_STR, 3*namebeg+2, MES_STR, 
 						CON_TYP_STR, TXT_PLA_STR, 
-						CON_LEN_STR, strlen(mes_body), 
+						CON_LEN_STR, (unsigned int)strlen(mes_body), 
 						CON_DIS_STR, con_dis,
 						MAX_FRW_STR, 
 						UA_STR, SIPSAK_VERSION,	
@@ -261,7 +267,7 @@ void create_msg(char *buff, int action){
 						"%s%u@%s\r\n"
 						"%s%i %s\r\n"
 						"%s%s\r\n"
-						"%s%i\r\n"
+						"%s%x\r\n"
 						"%s70\r\n"
 						"%ssipsak %s\r\n"
 						"\r\n"
@@ -273,7 +279,7 @@ void create_msg(char *buff, int action){
 						CALL_STR, c, fqdn, 
 						CSEQ_STR, 3*namebeg+2, MES_STR, 
 						CON_TYP_STR, TXT_PLA_STR, 
-						CON_LEN_STR, strlen(mes_body), 
+						CON_LEN_STR, (unsigned int)strlen(mes_body), 
 						MAX_FRW_STR, 
 						UA_STR, SIPSAK_VERSION,	
 						mes_body);
@@ -287,7 +293,7 @@ void create_msg(char *buff, int action){
 					"%s%u@%s\r\n"
 					"%s%i %s\r\n"
 					"%s%s\r\n"
-					"%s%i\r\n"
+					"%s%x\r\n"
 					"%s70\r\n"
 					"%ssipsak %s\r\n"
 					"\r\n"
@@ -299,7 +305,7 @@ void create_msg(char *buff, int action){
 					CALL_STR, c, fqdn, 
 					CSEQ_STR, 3*namebeg+2, MES_STR, 
 					CON_TYP_STR, TXT_PLA_STR, 
-					CON_LEN_STR, SIPSAK_MES_STR_LEN+strlen(usern)-1, 
+					CON_LEN_STR, (unsigned int)(SIPSAK_MES_STR_LEN+strlen(usern)-1), 
 					MAX_FRW_STR, 
 					UA_STR, SIPSAK_VERSION,	
 					SIPSAK_MES_STR, username, namebeg);
@@ -320,10 +326,12 @@ void create_msg(char *buff, int action){
 				CSEQ_STR, 3*namebeg+2, MES_STR, 
 				CON_LEN_STR,
 				UA_STR, SIPSAK_VERSION);
-			if (nameend>0)
-				sprintf(messusern, "%s sip:%s%i", MES_STR, username, namebeg);
-			else
-				sprintf(messusern, "%s sip:%s", MES_STR, username);
+			if (username) {
+				if (nameend>0)
+					sprintf(messusern, "%s sip:%s%i", MES_STR, username, namebeg);
+				else
+					sprintf(messusern, "%s sip:%s", MES_STR, username);
+			}
 			if ((!mes_body) && (verbose > 2))
 				printf("reply:\n%s\n", confirm);
 			break;

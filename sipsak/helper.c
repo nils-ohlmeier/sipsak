@@ -1,5 +1,5 @@
 /*
- * $Id: helper.c,v 1.16 2004/11/02 13:47:36 calrissian Exp $
+ * $Id: helper.c,v 1.17 2004/12/21 21:22:19 calrissian Exp $
  *
  * Copyright (C) 2002-2004 Fhg Fokus
  *
@@ -53,10 +53,10 @@ long getaddress(char *host)
 	/*try understanding if this is a valid ip address
 	we are skipping the values of the octets specified here.
 	for instance, this code will allow 952.0.320.567 through*/
-	while (*p)
+	while (*p != '\0')
 	{
 		for (i = 0; i < 3; i++, p++)
-			if (!isdigit((int)*p))
+			if (isdigit((int)*p) == 0)
 				break;
 		if (*p != '.')
 			break;
@@ -135,8 +135,8 @@ void get_fqdn(){
 
 	he=gethostbyname(hname);
 	if (he) {
-		if (numeric) {
-			sprintf(hlp, "%s", inet_ntoa(*(struct in_addr *) he->h_addr_list[0]));
+		if (numeric == 1) {
+			snprintf(hlp, 15, "%s", inet_ntoa(*(struct in_addr *) he->h_addr_list[0]));
 			strcpy(fqdn, hlp);
 		}
 		else {
@@ -181,6 +181,10 @@ void replace_string(char *mess, char *search, char *replacement){
 	else {
 		while (insert){
 			backup=malloc(strlen(insert)+1);
+			if (!backup) {
+				printf("failed to allocate memory\n");
+				exit_code(255);
+			}
 			strcpy(backup, insert+strlen(search));
 			strcpy(insert, replacement);
 			strcpy(insert+strlen(replacement), backup);
@@ -198,6 +202,10 @@ void insert_cr(char *mes){
 	lf = strchr(pos, '\n');
 	while ((lf != NULL) && (--lf != "\r")) {
 		backup=malloc(strlen(lf)+2);
+		if (!backup) {
+			printf("failed to allocate memory\n");
+			exit_code(255);
+		}
 		strcpy(backup, lf+1);
 		//strncpy(lf, "\r", 1);
 		*(lf+1) = '\r';
@@ -212,7 +220,13 @@ void insert_cr(char *mes){
 void swap_buffers(char *fst, char *snd) {
 	char *tmp;
 
+	if (fst == snd)
+		return;
 	tmp = malloc(strlen(fst)+1);
+	if (!tmp) {
+		printf("failed to allocate memory\n");
+		exit_code(255);
+	}
 	memset(tmp, 0, strlen(fst)+1);
 	strcpy(tmp, fst);
 	strcpy(fst, snd);
@@ -228,9 +242,9 @@ void trash_random(char *message)
 	char *position;
 
 	t=(float)rand()/RAND_MAX;
-	r=t * (float)strlen(message);
+	r=(int)(t * (float)strlen(message));
 	position=message+r;
-	r=t*(float)255;
+	r=(int)(t*(float)255);
 	*position=(char)r;
 	if (verbose > 2)
 		printf("request:\n%s\n", message);

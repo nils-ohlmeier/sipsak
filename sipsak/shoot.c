@@ -1,5 +1,5 @@
 /*
- * $Id: shoot.c,v 1.36 2004/11/08 21:43:13 calrissian Exp $
+ * $Id: shoot.c,v 1.37 2004/12/21 21:22:20 calrissian Exp $
  *
  * Copyright (C) 2002-2004 Fhg Fokus
  * Copyright (C) 2004 Nils Ohlmeier
@@ -69,7 +69,7 @@ bouquets and brickbats to farhan@hotfoon.com
 
 inline static void on_success(char *reply)
 {
-	if (re && regexec(re, reply, 0, 0, 0)==REG_NOMATCH) {
+	if ((reply != NULL) && re && regexec(re, reply, 0, 0, 0)==REG_NOMATCH) {
 		fprintf(stderr, "error: RegExp failed\n");
 		exit_code(32);
 	} else {
@@ -153,7 +153,7 @@ void shoot(char *buff)
 	/* try to create the raw socket */
 	rawsock = (int)socket(PF_INET, SOCK_RAW, IPPROTO_ICMP);
 	if (rawsock==-1) {
-		if (verbose)
+		if (verbose>0)
 			printf("Warning: need raw socket (root privileges) to receive all ICMP errors\n");
 #endif
 		/* create the connected socket as a primitve alternative to the 
@@ -190,7 +190,7 @@ void shoot(char *buff)
 		}
 	}
 
-	if (replace_b){
+	if (replace_b == 1){
 		replace_string(buff, "$dsthost$", domainname);
 		replace_string(buff, "$srchost$", fqdn);
 		lport_str=malloc(6);
@@ -217,19 +217,19 @@ void shoot(char *buff)
 	regcomp(&tmhexp, "^SIP/[0-9]\\.[0-9] 483 ", 
 		REG_EXTENDED|REG_NOSUB|REG_ICASE); 
 
-	if (usrloc||invite||message){
+	if (usrloc == 1||invite == 1||message == 1){
 		/* calculate the number of required steps and create initial mes */
-		if (usrloc) {
-			if (invite)
+		if (usrloc == 1) {
+			if (invite == 1)
 				nretries=4*(nameend-namebeg)+4;
-			else if (message)
+			else if (message == 1)
 				nretries=3*(nameend-namebeg)+3;
 			else
 				nretries=2*(nameend-namebeg)+2;
 			create_msg(buff, REQ_REG);
 			usrlocstep=REG_REP;
 		}
-		else if (invite) {
+		else if (invite == 1) {
 			nretries=3*(nameend-namebeg)+3;
 			create_msg(buff, REQ_INV);
 			usrlocstep=INV_RECV;
@@ -244,7 +244,7 @@ void shoot(char *buff)
 		}
 		cseqcmp=1;
 	}
-	else if (trace){
+	else if (trace == 1){
 		/* for trace we need some spezial initis */
 		if (maxforw!=-1)
 			nretries=maxforw;
@@ -255,19 +255,19 @@ void shoot(char *buff)
 		create_msg(buff, REQ_OPT);
 		add_via(buff);
 	}
-	else if (flood){
+	else if (flood == 1){
 		/* this should be the max of an (32 bit) int without the sign */
 		if (namebeg==-1) namebeg=INT_MAX;
 		nretries=namebeg;
 		namebeg=1;
 		create_msg(buff, REQ_FLOOD);
 	}
-	else if (randtrash){
+	else if (randtrash == 1){
 		randretrys=0;
 		namebeg=1;
 		create_msg(buff, REQ_RAND);
-		nameend=strlen(buff);
-		if (trashchar){
+		nameend=(int)strlen(buff);
+		if (trashchar == 1){
 			if (trashchar < nameend)
 				nameend=trashchar;
 			else
@@ -279,20 +279,20 @@ void shoot(char *buff)
 	}
 	else {
 		/* for non of the modes we also need some inits */
-		if (!file_b) {
+		if (file_b == 0) {
 			namebeg=1;
 			create_msg(buff, REQ_OPT);
 		}
 		/* retryAfter = retryAfter / 10; */
 		if(maxforw!=-1)
 			set_maxforw(buff);
-		if(via_ins)
+		if(via_ins == 1)
 			add_via(buff);
 	}
 
 	/* if we got a redirect this loop ensures sending to the 
 	   redirected server*/
-	while (redirected) {
+	while (redirected == 1) {
 		/* we don't want to send for ever */
 		redirected=0;
 
@@ -315,11 +315,11 @@ void shoot(char *buff)
 		   mode */
 		for (i = 0; i <= nretries; i++)
 		{
-			if (trace) {
+			if (trace == 1) {
 				set_maxforw(buff);
 			}
 			/* some initial output */
-			else if ((usrloc||invite||message) && (verbose > 1) && !dontsend) {
+			else if ((usrloc == 1||invite == 1||message == 1) && (verbose > 1) && (dontsend == 0)) {
 				switch (usrlocstep) {
 					case REG_REP:
 						if (nameend>0)
@@ -362,16 +362,15 @@ void shoot(char *buff)
 						break;
 				}
 			}
-			else if (flood && verbose) {
+			else if (flood == 1 && verbose > 0) {
 				printf("flooding message number %i\n", i+1);
 			}
-			else if (randtrash && verbose) {
+			else if (randtrash == 1 && verbose > 0) {
 				printf("message with %i randomized chars\n", i+1);
 				if (verbose > 2)
 					printf("request:\n%s\n", buff);
 			}
-			else if (!trace && !usrloc && !flood && !randtrash && (verbose > 1)
-						&& !dontsend){
+			else if (trace == 0 && usrloc == 0 && flood == 0 && randtrash == 0 && (verbose > 1)	&& dontsend == 0){
 				printf("** request **\n%s\n", buff);
 			}
 
@@ -381,7 +380,7 @@ void shoot(char *buff)
 				sleep_ms_s.tv_nsec = (rand_tmp % 1000) * 1000;
 			}
 
-			if (! dontsend) {
+			if (dontsend == 0) {
 				/* lets fire the request to the server and store when we did */
 				if (csock == -1) {
 					ret = sendto(usock, buff, strlen(buff), 0, (struct sockaddr *)&addr, sizeof(addr));
@@ -402,7 +401,7 @@ void shoot(char *buff)
 			}
 
 			/* in flood we are only interested in sending so skip the rest */
-			if (!flood) {
+			if (flood == 0) {
 				if (! dontrecv) {
 					/* set the timeout and wait for a response */
 					tv.tv_sec = retryAfter/1000;
@@ -454,25 +453,25 @@ void shoot(char *buff)
 								recv(csock, reply, strlen(reply), 0);
 							printf("\n");
 							perror("send failure");
-							if (randtrash) 
+							if (randtrash == 1) 
 								printf ("last message before send failure:"
 									"\n%s\n", buff);
 							exit_code(3);
 						}
 					}
 					/* printout that we did not received anything */
-					if (trace) {
+					if (trace == 1) {
 						printf("%i: timeout after %i ms\n", i, 
 									retryAfter);
 						i--;
 					}
-					else if (usrloc||invite||message) {
+					else if (usrloc == 1||invite == 1||message == 1) {
 						printf("timeout after %i ms\n", retryAfter);
 						i--;
 					}
-					else if (verbose) printf("** timeout after %i ms**\n", 
+					else if (verbose>0) printf("** timeout after %i ms**\n", 
 										retryAfter);
-					if (randtrash) {
+					if (randtrash == 1) {
 						printf("did not get a response on this request:"
 							"\n%s\n", buff);
 						if (i+1 < nameend) {
@@ -491,8 +490,8 @@ void shoot(char *buff)
 						}
 					}
 					senddiff = deltaT(&starttime, &recvtime);
-					if (senddiff > 64 * SIP_T1) {
-						if (verbose)
+					if (senddiff > (float)64 * (float)SIP_T1) {
+						if (verbose>0)
 							printf("*** giving up, no response after %.3f ms\n",
 								senddiff);
 						exit_code(3);
@@ -514,8 +513,7 @@ void shoot(char *buff)
 				}
 				else if (FD_ISSET(usock, &fd) || ((csock != -1) && FD_ISSET(csock, &fd))) {
 					/* no timeout, no error ... something has happened :-) */
-				 	if (!trace && !usrloc && !invite && !message && !randtrash 
-						&& (verbose > 1))
+				 	if (trace == 0 && usrloc ==0 && invite == 0 && message == 0 && randtrash == 0 && (verbose > 1))
 						printf ("\nmessage received:\n");
 				}
 #ifdef RAW_SUPPORT
@@ -591,7 +589,7 @@ void shoot(char *buff)
 #endif
 				if(ret > 0)
 				{
-					reply[ret] = 0;
+					reply[ret] = '\0';
 					/* store the time of our first send */
 					if (i==0)
 						memcpy(&firstsendt, &sendtime, sizeof(struct timeval));
@@ -604,20 +602,20 @@ void shoot(char *buff)
 						delaytime.tv_usec = 0;
 					}
 					/* check for old CSeq => ignore retransmission */
-					if (!usrloc && !invite && !message)
+					if (usrloc == 0 && invite == 0 && message == 0)
 						cseqcmp = namebeg;
 					cseqtmp = cseq(reply);
 					if ((0 < cseqtmp) && (cseqtmp < cseqcmp)) {
-						if (verbose)
+						if (verbose>0)
 							printf("ignoring retransmission\n");
 						retrans_r_c++;
 						dontsend = 1;
 						continue;
 					}
 					/* lets see if received a redirect */
-					if (redirects && regexec(&redexp, reply, 0, 0, 0)==0) {
+					if (redirects == 1 && regexec(&redexp, reply, 0, 0, 0)==0) {
 						printf("** received redirect ");
-						if (warning_ext) {
+						if (warning_ext == 1) {
 							printf("from ");
 							warning_extract(reply);
 							printf("\n");
@@ -639,8 +637,8 @@ void shoot(char *buff)
 							if ((contact=strchr(foo, '\r'))!=NULL 
 							&& contact<crlf)
 								crlf=contact;
-							bar=malloc(crlf-foo+1);
-							strncpy(bar, foo, crlf-foo);
+							bar=malloc((size_t)(crlf-foo+1));
+							strncpy(bar, foo, (size_t)(crlf-foo));
 							*(bar+(crlf-foo))='\0';
 							if ((contact=strstr(bar, "sip"))==NULL) {
 								printf("error: cannot find sip in the Contact "
@@ -658,7 +656,7 @@ void shoot(char *buff)
 									*foo='\0';
 									foo++;
 									rport = atoi(foo);
-									if (!rport) {
+									if (rport == 0) {
 										printf("error: cannot handle the port "
 											"in the uri in Contact:\n%s\n", 
 											reply);
@@ -673,7 +671,7 @@ void shoot(char *buff)
 								}
 								/* get the new destination IP*/
 								address = getaddress(crlf);
-								if (!address){
+								if (address == 1){
 									printf("error: cannot determine host "
 										"address from Contact of redirect:"
 										"\n%s\n", reply);
@@ -715,7 +713,7 @@ void shoot(char *buff)
 							increase_cseq(buff);
 						}
 					} /* if auth...*/
-					else if (trace) {
+					else if (trace == 1) {
 						if (regexec(&tmhexp, reply, 0, 0, 0)==0) {
 							/* we received 483 to many hops */
 							printf("%i: ", i);
@@ -726,6 +724,10 @@ void shoot(char *buff)
 							else {
 								warning_extract(reply);
 								crlf=strchr(reply, '\n');
+								if (!crlf) {
+									printf("failed to find newline\n");
+									exit_code(254);
+								}
 								*crlf='\0';
 								printf("(%.3f ms) %s\n", 
 									deltaT(&sendtime, &recvtime), reply);
@@ -747,6 +749,10 @@ void shoot(char *buff)
 							else {
 								warning_extract(reply);
 								crlf=strchr(reply, '\n');
+								if (!crlf) {
+									printf("failed to find newline\n");
+									exit_code(254);
+								}
 								*crlf='\0';
 								printf("(%.3f ms) %s\n", 
 									deltaT(&sendtime, &recvtime), reply);
@@ -762,6 +768,10 @@ void shoot(char *buff)
 							else printf("\t");
 							warning_extract(reply);
 							crlf=strchr(reply,'\n');
+							if (!crlf) {
+								printf("failed to find newline\n");
+								exit_code(254);
+							}
 							*crlf='\0';
 							crlf++;
 							contact=strstr(crlf, "Contact");
@@ -783,7 +793,7 @@ void shoot(char *buff)
 								exit_code(1);
 						}
 					} /* if trace ... */
-					else if (usrloc||invite||message) {
+					else if (usrloc == 1||invite == 1||message == 1) {
 						if (regexec(&proexp, reply, 0, 0, 0)==0) {
 							if (verbose > 2)
 								printf("\nignoring provisinal "
@@ -808,23 +818,23 @@ void shoot(char *buff)
 										"above). aborting\n", reply);
 									exit_code(1);
 								}
-								if (!invite && !message) {
+								if (invite == 0 && message == 0) {
 									if (namebeg==nameend) {
-										if (verbose) 
+										if (verbose>0) 
 											printf("\nAll usrloc tests"
 											" completed successful.\nreceived"
 											" last message %.3f ms after first"
 											" request (test duration).\n", 
 											deltaT(&firstsendt, &recvtime));
-										if (big_delay && verbose)
+										if (big_delay>0 && verbose>0)
 											printf("biggest delay between "
 												"request and response was %.3f"
 												" ms\n", big_delay);
-										if (retrans_r_c && verbose)
+										if (retrans_r_c>0 && verbose>0)
 											printf("%i retransmission(s) "
 												"received from server.\n", 
 												retrans_r_c);
-										if (retrans_s_c && verbose) {
+										if (retrans_s_c>0 && verbose>0) {
 											printf("%i time(s) the timeout of "
 												"%i ms exceeded and request was"
 												" retransmitted.\n", 
@@ -837,7 +847,7 @@ void shoot(char *buff)
 									/* lets see if we deceid to remove a 
 									   binding (case 6)*/
 									rem_rand=rand();
-									if (!rand_rem ||
+									if (rand_rem == 0||
 										((float)rem_rand/RAND_MAX) 
 											> USRLOC_REMOVE_PERCENT) {
 										namebeg++;
@@ -857,12 +867,12 @@ void shoot(char *buff)
 										usrlocstep=UNREG_REP;
 									}
 								}
-								else if (invite) {
+								else if (invite == 1) {
 									create_msg(buff, REQ_INV);
 									cseqcmp++;
 									usrlocstep=INV_RECV;
 								}
-								else if (message) {
+								else if (message == 1) {
 									create_msg(buff, REQ_MES);
 									cseqcmp++;
 									usrlocstep=MES_RECV;
@@ -894,7 +904,7 @@ void shoot(char *buff)
 							case INV_OK_RECV:
 								/* did we received our ok ? */
 								if (strncmp(reply, INV_STR, INV_STR_LEN)==0) {
-									if (verbose)
+									if (verbose>0)
 										printf("ignoring INVITE "
 											"retransmission\n");
 									retrans_r_c++;
@@ -932,28 +942,28 @@ void shoot(char *buff)
 										printf("\t\tack received\n");
 									if (verbose > 2)
 										printf("\n%s\n", reply);
-									if (verbose && nameend>0)
+									if (verbose>0 && nameend>0)
 										printf("usrloc for %s%i completed "
 											"successful\n", username, namebeg);
-									else if (verbose)
+									else if (verbose>0)
 										printf("usrloc for %s completed "
 											"successful\n", username);
 									if (namebeg==nameend) {
-										if (verbose)
+										if (verbose>0)
 											printf("\nAll usrloc tests completed "
 												"successful.\nreceived last message"
 												" %.3f ms after first request (test"
 												" duration).\n", deltaT(&firstsendt,
 												 &recvtime));
-										if (big_delay)
+										if (big_delay>0)
 											printf("biggest delay between "
 												"request and response was %.3f"
 												" ms\n", big_delay);
-										if (retrans_r_c)
+										if (retrans_r_c>0)
 											printf("%i retransmission(s) "
 												"received from server.\n", 
 												retrans_r_c);
-										if (retrans_s_c) {
+										if (retrans_s_c>0) {
 											printf("%i time(s) the timeout of "
 												"%i ms exceeded and request was"
 												" retransmitted.\n", 
@@ -963,11 +973,11 @@ void shoot(char *buff)
 										}
 										on_success(reply);
 									}
-									if (usrloc) {
+									if (usrloc == 1) {
 										/* lets see if we deceid to remove a 
 										   binding (case 6)*/
 										rem_rand=rand();
-										if (!rand_rem ||
+										if (rand_rem == 0||
 											((float)rem_rand/RAND_MAX) 
 												> USRLOC_REMOVE_PERCENT) {
 											namebeg++;
@@ -1034,7 +1044,7 @@ void shoot(char *buff)
 								/* we sent our reply on the message and
 								   look if this is also forwarded to us */
 								if (strncmp(reply, MES_STR, MES_STR_LEN)==0) {
-									if (verbose)
+									if (verbose>0)
 										printf("ignoring MESSAGE "
 											"retransmission\n");
 									retrans_r_c++;
@@ -1044,28 +1054,28 @@ void shoot(char *buff)
 								if (regexec(&okexp, reply, 0, 0, 0)==0) {
 									if (verbose > 1)
 										printf("  reply received\n\n");
-									else if (verbose && nameend>0)
+									else if (verbose>0 && nameend>0)
 										printf("usrloc for %s%i completed "
 											"successful\n", username, namebeg);
-									else if (verbose)
+									else if (verbose>0)
 										printf("usrloc for %s completed "
 											"successful\n", username);
 									if (namebeg==nameend) {
-										if (verbose)
+										if (verbose>0)
 											printf("\nAll usrloc tests completed "
 												"successful.\nreceived last message"
 												" %.3f ms after first request (test"
 												" duration).\n", deltaT(&firstsendt,
 												 &recvtime));
-										if (big_delay)
+										if (big_delay>0)
 											printf("biggest delay between "
 												"request and response was %.3f"
 												" ms\n", big_delay);
-										if (retrans_r_c)
+										if (retrans_r_c>0)
 											printf("%i retransmission(s) "
 												"received from server.\n", 
 												retrans_r_c);
-										if (retrans_s_c) {
+										if (retrans_s_c>0) {
 											printf("%i time(s) the timeout of "
 												"%i ms exceeded and request was"
 												" retransmitted.\n", 
@@ -1075,11 +1085,11 @@ void shoot(char *buff)
 										}
 										on_success(reply);
 									}
-									if (usrloc) {
+									if (usrloc == 1) {
 										/* lets see if we deceid to remove a 
 										   binding (case 6)*/
 										rem_rand=rand();
-										if (!rand_rem ||
+										if (rand_rem>0 ||
 											((float)rem_rand/RAND_MAX) 
 												> USRLOC_REMOVE_PERCENT) {
 											namebeg++;
@@ -1108,7 +1118,7 @@ void shoot(char *buff)
 									}
 								}
 								else {
-									if (verbose) {
+									if (verbose>0) {
 										if (mes_body)
 											printf("\nreceived:\n%s\nerror: did"
 												" not received 200 for the "
@@ -1128,7 +1138,7 @@ void shoot(char *buff)
 								break;
 							case UNREG_REP:
 								if (strncmp(reply, MES_STR, MES_STR_LEN)==0) {
-									if (verbose)
+									if (verbose>0)
 										printf("ignoring MESSAGE "
 											"retransmission\n");
 									retrans_r_c++;
@@ -1137,10 +1147,10 @@ void shoot(char *buff)
 								}
 								if (regexec(&okexp, reply, 0, 0, 0)==0) {
 									if (verbose > 1) printf("   OK\n\n");
-									else if (verbose && nameend>0)
+									else if (verbose>0 && nameend>0)
 										printf("Binding removal for %s%i "
 											"successful\n", username, namebeg);
-									else if (verbose)
+									else if (verbose>0)
 										printf("Binding removal for %s "
 											"successful\n", username);
 									namebeg = rem_namebeg;
@@ -1168,7 +1178,7 @@ void shoot(char *buff)
 						}
 						}
 					}
-					else if (randtrash) {
+					else if (randtrash == 1) {
 						/* in randomzing trash we are expexting 4?? error codes
 						   everything else should not be normal */
 						if (regexec(&errexp, reply, 0, 0, 0)==0) {
@@ -1176,7 +1186,7 @@ void shoot(char *buff)
 								printf("received:\n%s\n", reply);
 							if (verbose > 1) {
 								printf("received expected 4xx ");
-								if (warning_ext) {
+								if (warning_ext == 1) {
 									printf ("from ");
 									warning_extract(reply);
 									printf("\n");
@@ -1221,6 +1231,10 @@ void shoot(char *buff)
 										deltaT(&firstsendt, &recvtime), 
 										deltaT(&sendtime, &recvtime));
 								crlf=strchr(reply, '\n');
+								if (!crlf) {
+									printf("failed to find newline\n");
+									exit_code(254);
+								}
 								*crlf='\0';
 								printf("   %s\n   provisional received; still"
 									" waiting for a final response\n", reply);
@@ -1241,10 +1255,14 @@ void shoot(char *buff)
 										deltaT(&firstsendt, &recvtime), 
 										deltaT(&sendtime, &recvtime));
 								crlf=strchr(reply, '\n');
+								if (!crlf) {
+									printf("failed to find newline\n");
+									exit_code(254);
+								}
 								*crlf='\0';
 								printf("   %s\n   final received\n", reply);
 							}
-							else if (verbose) printf("%s\n", reply);
+							else if (verbose>0) printf("%s\n", reply);
 							if (regexec(&okexp, reply, 0, 0, 0)==0)
 								on_success(reply);
 							else
@@ -1254,7 +1272,7 @@ void shoot(char *buff)
 		
 				} /* ret > 0 */
 				else {
-					if (usrloc)
+					if (usrloc == 1)
 						printf("failed\n");
 					perror("socket error");
 					exit_code(3);
@@ -1277,11 +1295,11 @@ void shoot(char *buff)
 		} /* for nretries */
 
 	} /* while redirected */
-	if (randtrash) exit_code(0);
+	if (randtrash == 1) exit_code(0);
 	printf("** give up retransmissioning....\n");
-	if (retrans_r_c && (verbose > 1))
+	if (retrans_r_c>0 && (verbose > 1))
 		printf("%i retransmissions received during test\n", retrans_r_c);
-	if (retrans_s_c && (verbose > 1))
+	if (retrans_s_c>0 && (verbose > 1))
 		printf("sent %i retransmissions during test\n", retrans_s_c);
 	exit_code(3);
 }
