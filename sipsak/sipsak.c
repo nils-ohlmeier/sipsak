@@ -1,5 +1,5 @@
 /*
- * $Id: sipsak.c,v 1.81 2004/12/21 21:22:20 calrissian Exp $
+ * $Id: sipsak.c,v 1.82 2005/03/01 11:39:34 calrissian Exp $
  *
  * Copyright (C) 2002-2004 Fhg Fokus
  * Copyright (C) 2004 Nils Ohlmeier
@@ -37,6 +37,7 @@
 #include <time.h>
 #include <regex.h>
 #include <sys/wait.h>
+#include <sys/types.h>
 
 #include "config.h"
 
