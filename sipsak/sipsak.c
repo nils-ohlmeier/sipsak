@@ -1,5 +1,5 @@
 /*
- * $Id: sipsak.c,v 1.38 2003/02/09 19:43:38 calrissian Exp $
+ * $Id: sipsak.c,v 1.39 2003/02/10 17:50:35 calrissian Exp $
  *
  * Copyright (C) 2002 Fhg Fokus
  *
@@ -1409,7 +1409,7 @@ void shoot(char *buff)
 								   at the response now */
 								if (regexec(&okexp, reply, 0, 0, 0)==0) {
 									if (verbose > 1)
-										printf ("  OK\n");
+										printf ("\tOK\n");
 									if (verbose > 2)
 										printf("\n%s\n", reply);
 									//strcpy(buff, confirm);
@@ -1489,7 +1489,7 @@ void shoot(char *buff)
 								if (!strncmp(reply, messusern, 
 									strlen(messusern))) {
 									if (verbose > 1)
-										printf("received invite\n");
+										printf("\t\treceived invite\n");
 									if (verbose > 2)
 										printf("\n%s\n", reply);
 									cpy_vias(reply, confirm);
@@ -1516,7 +1516,7 @@ void shoot(char *buff)
 								}
 								if (regexec(&okexp, reply, 0, 0, 0)==0) {
 									if (verbose > 1)
-										printf("  reply received\n");
+										printf("\treply received\n");
 									if (verbose > 2)
 										printf("\n%s\n", reply);
 									cpy_to(reply, ack);
@@ -1533,12 +1533,16 @@ void shoot(char *buff)
 								break;
 							case 3:
 								/* did we received our ack */
-								sprintf(messusern, "%s sip:%s%i", ACK_STR, 
-									username, namebeg);
+								if (nameend > 0)
+									sprintf(messusern, "%s sip:%s%i", ACK_STR, 
+										username, namebeg);
+								else
+									sprintf(messusern, "%s sip:%s", ACK_STR, 
+										username);
 								if (strncmp(reply, messusern, 
 									strlen(messusern))==0) {
 									if (verbose > 1)
-										printf(" ack received\n");
+										printf("\t\tack received\n");
 									if (verbose > 2)
 										printf("\n%s\n", reply);
 									if (verbose && nameend>0)
