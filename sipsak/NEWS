@@ -3,3 +3,4 @@
   - added support for proxy authorization (407)
   - new argument -H overwrites automatic hostname detection
   - new argument -o introduces sleeping seconds before sending next request
+  - number of retrys and maximum timeout values are configure options

@@ -1,5 +1,5 @@
 /*
- * $Id: shoot.c,v 1.7 2003/10/06 18:57:17 calrissian Exp $
+ * $Id: shoot.c,v 1.8 2003/10/06 19:16:31 calrissian Exp $
  *
  * Copyright (C) 2002-2003 Fhg Fokus
  *
@@ -38,6 +38,10 @@
 #define DEFAULT_RETRYS 5
 #endif
 
+#ifndef DEFAULT_TIMEOUT
+#define DEFAULT_TIMEOUT 5000
+#endif
+
 /*
 shot written by ashhar farhan, is not bound by any licensing at all.
 you are free to use this code as you deem fit. just dont blame the author
@@ -68,10 +72,12 @@ void shoot(char *buff)
 	socklen_t slen;
 	regex_t redexp, proexp, okexp, tmhexp, errexp, authexp;
 
+	/* the vars are filled by configure */
+	nretries = DEFAULT_RETRYS;
+	retryAfter = DEFAULT_TIMEOUT;
+
 	/* initalize some local vars */
 	redirected = 1;
-	nretries = 5;
-	retryAfter = 5000;
 	usrlocstep=dontsend=retrans_r_c=retrans_s_c = 0;
 	big_delay=tmp_delay = 0;
 	delaytime.tv_sec = 0;
@@ -209,7 +215,7 @@ void shoot(char *buff)
 			namebeg=1;
 			create_msg(buff, REQ_OPT);
 		}
-		retryAfter = 500;
+		retryAfter = retryAfter / 10;
 		if(maxforw!=-1)
 			set_maxforw(buff);
 		if(via_ins)
@@ -379,7 +385,8 @@ void shoot(char *buff)
 						}
 					}
 					retryAfter = retryAfter * 2;
-					if (retryAfter > 5000) retryAfter = 5000;
+					if (retryAfter > DEFAULT_TIMEOUT) 
+						retryAfter = DEFAULT_TIMEOUT;
 					retrans_s_c++;
 					if (delaytime.tv_sec == 0)
 						memcpy(&delaytime, &sendtime, sizeof(struct timeval));
@@ -1039,7 +1046,8 @@ void shoot(char *buff)
 									" waiting for a final response\n", reply);
 							}
 							retryAfter = retryAfter * 2;
-							if (retryAfter > 5000) retryAfter = 5000;
+							if (retryAfter > DEFAULT_TIMEOUT) 
+								retryAfter = DEFAULT_TIMEOUT;
 							dontsend = 1;
 							continue;
 						} else {

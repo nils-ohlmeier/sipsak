@@ -3,6 +3,9 @@
 /* Default number of retrys in default mode. */
 #undef DEFAULT_RETRYS
 
+/* Default maximum timeout on waiting for response. */
+#undef DEFAULT_TIMEOUT
+
 /* Define to 1 if you have the <arpa/inet.h> header file. */
 #undef HAVE_ARPA_INET_H
 

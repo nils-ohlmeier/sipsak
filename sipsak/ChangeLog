@@ -6,3 +6,5 @@
   - ignores provisional responses in usrloc mode
   - added support for proxy authorization (407)
   - fixed missing port from uri in requests
+  - number of retrys is configure option
+  - maximum timeout value is configure option

@@ -853,6 +853,7 @@ Optional Features:
   --disable-dependency-tracking Speeds up one-time builds
   --enable-dependency-tracking  Do not reject slow dependency extractors
   --enable-retrys=NUM     number NUM of retrys in default mode (default 5)
+  --enable-timeout=SEC    maximum timeout in SEC milliseconds (default 5000)
 
 Some influential environment variables:
   CC          C compiler command
@@ -4085,7 +4086,7 @@ fi
 done
 
 
-# Check for internal number of retrys and timeouts
+# Check for default number of retrys
 def_retrys=-1
 # Check whether --enable-retrys or --disable-retrys was given.
 if test "${enable_retrys+set}" = set; then
@@ -4101,6 +4102,25 @@ fi
 
 cat >>confdefs.h <<_ACEOF
 #define DEFAULT_RETRYS $def_retrys
+_ACEOF
+
+
+# Check for default timeout
+def_timeout=-1
+# Check whether --enable-timeout or --disable-timeout was given.
+if test "${enable_timeout+set}" = set; then
+  enableval="$enable_timeout"
+  def_timeout=$enableval
+fi;
+if test "$def_timeout" = yes; then
+  def_timeout=5000
+fi
+if test "$def_timeout" = no; then
+  def_timeout=-1
+fi
+
+cat >>confdefs.h <<_ACEOF
+#define DEFAULT_TIMEOUT $def_timeout
 _ACEOF
 
 
