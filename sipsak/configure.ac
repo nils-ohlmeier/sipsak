@@ -61,7 +61,7 @@ AC_HEADER_TIME
 # Checks for library functions.
 AC_FUNC_MALLOC
 AC_FUNC_SELECT_ARGTYPES
-AC_CHECK_FUNCS([getdomainname gethostbyname gethostname getopt_long gettimeofday inet_ntop memset ntohs regcomp select socket strchr strstr uname])
+AC_CHECK_FUNCS([getchar getdomainname gethostbyname gethostname getopt_long gettimeofday inet_ntop memset ntohs regcomp select socket strchr strstr uname])
 
 AC_CHECK_LIB(crypto, MD5_Init,
  LIBS="$LIBS -lcrypto"
