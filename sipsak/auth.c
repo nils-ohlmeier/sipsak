@@ -1,5 +1,5 @@
 /*
- * $Id: auth.c,v 1.10 2004/07/25 17:13:03 calrissian Exp $
+ * $Id: auth.c,v 1.11 2004/08/07 13:08:37 calrissian Exp $
  *
  * Copyright (C) 2002-2004 Fhg Fokus
  *
@@ -35,7 +35,7 @@
 
 /* converts a hash into hex output
    taken from the RFC 2617 */
-void cvt_hex(char *_b, char *_h)
+void cvt_hex(unsigned char *_b, unsigned char *_h)
 {
         unsigned short i;
         unsigned char j;
@@ -63,8 +63,8 @@ void insert_auth(char *message, char *authreq)
 	char *auth, *begin, *end, *insert, *backup, *realm, *usern, *nonce, 
 		*method, *uri;
 	char *qop_tmp = NULL;
-	char ha1[MD5_HASHLEN], ha2[MD5_HASHLEN], resp[MD5_HASHLEN]; 
-	char ha1_hex[HASHHEXLEN+1], ha2_hex[HASHHEXLEN+1], resp_hex[HASHHEXLEN+1];
+	unsigned char ha1[MD5_HASHLEN], ha2[MD5_HASHLEN], resp[MD5_HASHLEN]; 
+	unsigned char ha1_hex[HASHHEXLEN+1], ha2_hex[HASHHEXLEN+1], resp_hex[HASHHEXLEN+1];
 	int cnonce, qop_auth=0, proxy_auth=0;
 	MD5_CTX Md5Ctx;
 

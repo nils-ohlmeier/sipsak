@@ -1,5 +1,5 @@
 /*
- * $Id: sipsak.c,v 1.71 2004/08/04 21:40:18 calrissian Exp $
+ * $Id: sipsak.c,v 1.72 2004/08/07 13:08:37 calrissian Exp $
  *
  * Copyright (C) 2002-2004 Fhg Fokus
  * Copyright (C) 2004 Nils Ohlmeier
@@ -62,9 +62,11 @@ void print_version() {
 		" flood  : sipsak -F [-c NUMBER] -s SIPURI\n"
 		" random : sipsak -R [-t NUMBER] -s SIPURI\n\n"
 		" additional parameter in every mode:\n"
-		"   [-a PASSWORD] [-d] [-i] [-H HOSTNAME] [-l PORT] [-m NUMBER] [-n] "
+		);
+	printf("   [-a PASSWORD] [-d] [-i] [-H HOSTNAME] [-l PORT] [-m NUMBER] [-n] "
 			"[-N]\n"
-		"   [-r PORT] [-v] [-V] [-w]\n\n");
+		"   [-r PORT] [-v] [-V] [-w]\n\n"
+		);
 }
 
 void print_long_help() {
@@ -76,14 +78,16 @@ void print_long_help() {
 		"  --sip-uri=SIPURI           the destination server uri in form\n"
 		"                               sip:[user@]servername[:port]\n"
 		"  --traceroute               activates the traceroute mode\n"
-		"  --usrloc-mode              activates the usrloc mode\n"
+		);
+	printf("  --usrloc-mode              activates the usrloc mode\n"
 		"  --invite-mode              simulates a successful calls with itself\n"
 		"  --message-mode             sends messages to itself\n"
 		"  --contact=SIPURI           use the given uri as Contact in REGISTER\n"
 		"  --appendix-begin=NUMBER    the starting number appendix to the user name (default: 0)\n"
 		"  --appendix-end=NUMBER      the ending numer of the appendix to the user name\n"
 		"  --sleep=NUMBER             sleep number ms before sending next request\n"
-		"  --expires=NUMBER           the expires header field value (default: 15)\n"
+		);
+	printf("  --expires=NUMBER           the expires header field value (default: 15)\n"
 		"  --remove-bindings          activates randomly removing of user bindings\n"
 		"  --flood-mode               activates the flood mode\n"
 		"  --cseq-max=NUMBER          the maximum CSeq number for flood mode "
@@ -91,13 +95,15 @@ void print_long_help() {
 		"  --random-mode              activates the random modues (dangerous)\n"
 		"  --trash-chars=NUMBER       the maximum number of trashed character in random mode\n"
 		"                               (default: request length)\n"
-		"  --local-port=PORT          the local port to use (default: any)\n"
+		);
+	printf("  --local-port=PORT          the local port to use (default: any)\n"
 		"  --remote-port=PORT         the remote port to use (default: 5060)\n"
 		"  --outbound-proxy=HOSTNAME  request target (outbound proxy)\n"
 		"  --hostname=HOSTNAME        overwrites the local hostname in all headers\n"
 		"  --max-forwards=NUMBER      the value for the max-forwards header field\n"
 		"  --numeric                  use IPs instead of FQDN in the Via-Line\n"
-		"  --no-via                   deactivate the insertion of a Via-Line\n"
+		);
+	printf("  --no-via                   deactivate the insertion of a Via-Line\n"
 		"  --password=PASSWORD        password for authentication\n"
 		"                               (if omitted password=username)\n"
 		"  --ignore-redirects         ignore redirects\n"
@@ -105,7 +111,8 @@ void print_long_help() {
 		"  --extract-ip               extract IP from the warning in reply\n"
 		"  --replace-string=STRING    replacement for a special mark in the message\n"
 		"  --replace                  activates replacement of variables\n"
-		"  --nagios-code              returns exit codes Nagios compliant\n"
+		);
+	printf("  --nagios-code              returns exit codes Nagios compliant\n"
 		"  --nagios-warn=NUMBER       return Nagios warning if retrans > number\n"
 		"  --message-body=STRING      send a message with string as body\n"
 		"  --disposition=STRING       Content-Disposition value\n"

@@ -1,5 +1,5 @@
 /*
- * $Id: auth.h,v 1.2 2004/06/05 17:39:14 calrissian Exp $
+ * $Id: auth.h,v 1.3 2004/08/07 13:08:37 calrissian Exp $
  *
  * Copyright (C) 2002-2004 Fhg Fokus
  *
@@ -19,7 +19,7 @@
 #ifndef SIPSAK_AUTH_H
 #define SIPSAK_AUTH_H
 
-void cvt_hex(char *_b, char *_h);
+void cvt_hex(unsigned char *_b, unsigned char *_h);
 
 void insert_auth(char *message, char *authreq);
 
