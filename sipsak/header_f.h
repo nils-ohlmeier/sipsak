@@ -1,5 +1,5 @@
 /*
- * $Id: header_f.h,v 1.3 2004/06/05 17:39:14 calrissian Exp $
+ * $Id: header_f.h,v 1.4 2005/01/04 16:21:04 calrissian Exp $
  *
  * Copyright (C) 2002-2004 Fhg Fokus
  *
@@ -28,6 +28,10 @@ void cpy_to(char *reply, char *dest);
 void set_maxforw(char *mes);
 
 void uri_replace(char *mes, char *uri);
+
+void set_cl(char* mes, int contentlen);
+
+void build_ack(char *invite, char *reply, char *ack);
 
 void warning_extract(char *message);
 

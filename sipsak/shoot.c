@@ -1,5 +1,5 @@
 /*
- * $Id: shoot.c,v 1.38 2004/12/22 22:11:29 calrissian Exp $
+ * $Id: shoot.c,v 1.39 2005/01/04 16:21:04 calrissian Exp $
  *
  * Copyright (C) 2002-2004 Fhg Fokus
  * Copyright (C) 2004 Nils Ohlmeier
@@ -428,9 +428,11 @@ void shoot(char *buff)
 				else {
 					i--;
 					dontrecv = 0;
-					if (usrlocstep == INV_OK_RECV) {
+					if (strncmp(buff, "ACK", 3) == 0) {
 						swap_buffers(buff, ack);
 						increase_cseq(buff);
+					}
+					if (usrlocstep == INV_OK_RECV) {
 						increase_cseq(confirm);
 						increase_cseq(ack);
 						usrlocstep = INV_RECV;
@@ -712,8 +714,10 @@ void shoot(char *buff)
 						insert_auth(buff, reply);
 						if (verbose > 2)
 							printf("\nreceived:\n%s\n", reply);
-						if (usrlocstep == INV_OK_RECV) {
+						if (strncmp(buff, "INVITE", 6) == 0) {
+							build_ack(buff, reply, ack);
 							swap_buffers(buff, ack);
+							dontrecv = 1;
 						}
 						else {
 							increase_cseq(buff);

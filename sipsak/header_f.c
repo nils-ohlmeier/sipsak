@@ -1,5 +1,5 @@
 /*
- * $Id: header_f.c,v 1.7 2004/12/22 22:11:29 calrissian Exp $
+ * $Id: header_f.c,v 1.8 2005/01/04 16:21:04 calrissian Exp $
  *
  * Copyright (C) 2002-2004 Fhg Fokus
  *
@@ -23,6 +23,7 @@
 #include "header_f.h"
 #include "sipsak.h"
 #include "exit_code.h"
+#include "helper.h"
 
 /* add a Via Header Field in the message. */
 void add_via(char *mes)
@@ -193,7 +194,6 @@ void set_maxforw(char *mes){
 		crlfi=strchr(max,'\n');
 		crlfi++;
 		strncpy(crlfi, backup, strlen(backup)+1);
-		crlfi=crlfi+strlen(backup);
 		free(backup);
 		if (verbose > 1)
 			printf("Max-Forwards set to %i\n", maxforw);
@@ -226,6 +226,57 @@ void uri_replace(char *mes, char *uri)
 	free(backup);
 	if (verbose > 2)
 		printf("Message with modified uri:\n%s\n", mes);
+}
+
+/* replace the Content-Length value with the given value */
+void set_cl(char* mes, int contentlen) {
+	char *cl, *cr, *backup;
+
+	cl = strstr(ack, CON_LEN_STR);
+	if (!cl) {
+		cl = strstr(ack, "l: ");
+	}
+	if (cl) {
+		cr = strchr(cl, '\n');
+		cr++;
+		backup=malloc(strlen(cr)+1);
+		if (!backup) {
+			printf("failed to allocate memory\n");
+			exit_code(255);
+		}
+		strncpy(backup, cr, strlen(cr)+1);
+		if (*cl == 'C')
+			cr=cl + CON_LEN_STR_LEN;
+		else
+			cr=cl + 3;
+		snprintf(cr, 6, "%i\r\n", contentlen);
+		cr=strchr(cr, '\n');
+		cr++;
+		strncpy(cr, backup, strlen(backup)+1);
+		free(backup);
+		if (verbose > 1)
+			printf("Content-Length set to %i\n", contentlen);
+		if (verbose > 2)
+			printf("New message with changed Content-Length:\n%s\n", mes);
+	}
+}
+
+/* build an ACK from the given invite and reply.
+ * NOTE: space has to be allocated allready for the ACK */
+void build_ack(char *invite, char *reply, char *ack) {
+	char *body;
+	int len;
+
+	body = strstr(invite, "\r\n\r\n");
+	if (body) {
+		body++; body++;
+		len = body - invite;
+		memcpy(ack, invite, len);
+		*(ack+len+1) = '\0';
+		replace_string(ack, "INVITE", "ACK");
+		cpy_to(ack,reply);
+		set_cl(ack, 0);
+	}
 }
 
 /* tryes to find the warning header filed and prints out the IP */
