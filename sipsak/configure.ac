@@ -2,7 +2,7 @@
 # Process this file with autoconf to produce a configure script.
 
 AC_PREREQ(2.59)
-AC_INIT([sipsak],[0.8.9],[develop@ohlmeier.org])
+AC_INIT([sipsak],[0.8.pre_10],[develop@ohlmeier.org])
 AM_INIT_AUTOMAKE
 AM_MAINTAINER_MODE
 AC_CONFIG_SRCDIR([sipsak.c])
@@ -30,7 +30,7 @@ AC_SUBST([LIBS])
 
 # Checks for header files.
 AC_HEADER_STDC
-AC_CHECK_HEADERS([arpa/inet.h netdb.h netinet/in.h stdlib.h string.h sys/socket.h sys/time.h unistd.h])
+AC_CHECK_HEADERS([arpa/inet.h netdb.h netinet/in.h netinet/ip.h netinet/ip_icmp.h netinet/udp.h stdlib.h string.h sys/socket.h sys/time.h unistd.h])
 
 # Checks for typedefs, structures, and compiler characteristics.
 AC_TYPE_SIZE_T
@@ -39,7 +39,7 @@ AC_HEADER_TIME
 # Checks for library functions.
 AC_FUNC_MALLOC
 AC_FUNC_SELECT_ARGTYPES
-AC_CHECK_FUNCS([gethostbyname gethostname gettimeofday memset regcomp select socket strchr strstr uname])
+AC_CHECK_FUNCS([gethostbyname gethostname gettimeofday inet_ntop memset regcomp select socket strchr strstr uname])
 
 GCC_STACK_PROTECT_CC
 
