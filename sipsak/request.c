@@ -1,5 +1,5 @@
 /*
- * $Id: request.c,v 1.3 2003/10/09 15:02:28 calrissian Exp $
+ * $Id: request.c,v 1.4 2003/12/30 21:40:54 calrissian Exp $
  *
  * Copyright (C) 2002-2003 Fhg Fokus
  *
@@ -55,7 +55,7 @@ void create_msg(char *buff, int action){
 			   USRLOC on one function call*/
 			sprintf(buff, 
 				"%s sip:%s%s"
-				"%s%s:%i\r\n"
+				"%s%s:%i;rport\r\n"
 				"%s<sip:%s%s>\r\n"
 				"%s<sip:%s%s>\r\n"
 				"%s%u@%s\r\n"
@@ -81,7 +81,7 @@ void create_msg(char *buff, int action){
 		case REQ_REM:
 			sprintf(buff, 
 				"%s sip:%s%s"
-				"%s%s:%i\r\n"
+				"%s%s:%i;rport\r\n"
 				"%s<sip:%s%s>\r\n"
 				"%s<sip:%s%s>\r\n"
 				"%s%u@%s\r\n"
@@ -107,7 +107,7 @@ void create_msg(char *buff, int action){
 		case REQ_INV:
 			sprintf(buff, 
 				"%s sip:%s%s%s"
-				"%s%s:%i\r\n"
+				"%s%s:%i;rport\r\n"
 				"%s<sip:sipsak@%s:%i>\r\n"
 				"%s<sip:%s%s>\r\n"
 				"%s%u@%s\r\n"
@@ -145,7 +145,7 @@ void create_msg(char *buff, int action){
 				UA_STR, SIPSAK_VERSION);
 			sprintf(ack, 
 				"%s sip:%s%s%s"
-				"%s%s:%i\r\n"
+				"%s%s:%i;rport\r\n"
 				"%s<sip:sipsak@%s:%i>\r\n"
 				"%s<sip:%s%s>\r\n"
 				"%s%u@%s\r\n"
@@ -173,7 +173,7 @@ void create_msg(char *buff, int action){
 		case REQ_MES:
 			sprintf(buff, 
 				"%s sip:%s%s%s"
-				"%s%s:%i\r\n"
+				"%s%s:%i;rport\r\n"
 				"%s<sip:sipsak@%s:%i>\r\n"
 				"%s<sip:%s%s>\r\n"
 				"%s%u@%s\r\n"
@@ -269,7 +269,7 @@ void create_msg(char *buff, int action){
 		case REQ_RAND:
 			sprintf(buff, 
 				"%s sip:%s%s"
-				"%s%s:%i\r\n"
+				"%s%s:%i;rport\r\n"
 				"%s<sip:sipsak@%s:%i>\r\n"
 				"%s<sip:%s>\r\n"
 				"%s%u@%s\r\n"
