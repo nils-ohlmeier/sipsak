@@ -6,6 +6,9 @@
 /* Default maximum timeout on waiting for response. */
 #undef DEFAULT_TIMEOUT
 
+/* Define if SSP C support is enabled. */
+#undef ENABLE_SSP_CC
+
 /* Define to 1 if you have the <arpa/inet.h> header file. */
 #undef HAVE_ARPA_INET_H
 
