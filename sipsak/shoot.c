@@ -1,5 +1,5 @@
 /*
- * $Id: shoot.c,v 1.37 2004/12/21 21:22:20 calrissian Exp $
+ * $Id: shoot.c,v 1.38 2004/12/22 22:11:29 calrissian Exp $
  *
  * Copyright (C) 2002-2004 Fhg Fokus
  * Copyright (C) 2004 Nils Ohlmeier
@@ -17,6 +17,8 @@
  * GNU General Public License for more details.
  */
 
+#include "config.h"
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -29,6 +31,10 @@
 #include <sys/poll.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
+#include <sys/select.h>
+#ifdef HAVE_SYS_SELECT_H
+#include <sys/select.h>
+#endif
 
 #include "shoot.h"
 

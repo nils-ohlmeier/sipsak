@@ -1,5 +1,5 @@
 /*
- * $Id: auth.c,v 1.14 2004/12/21 21:22:19 calrissian Exp $
+ * $Id: auth.c,v 1.15 2004/12/22 22:11:29 calrissian Exp $
  *
  * Copyright (C) 2002-2004 Fhg Fokus
  *
@@ -167,19 +167,19 @@ void insert_auth(char *message, char *authreq)
 
 		/* lets start with some basic stuff... username, uri and algorithm */
 		if (proxy_auth == 1) {
-			snprintf(insert, PROXYAUZ_STR_LEN, PROXYAUZ_STR);
-			insert=insert+PROXYAUZ_STR_LEN;
+			snprintf(insert, PROXYAUZ_STR_LEN+1, PROXYAUZ_STR);
+			insert+=PROXYAUZ_STR_LEN;
 		}
 		else {
-			snprintf(insert, AUTH_STR_LEN, AUTH_STR);
-			insert=insert+AUTH_STR_LEN;
+			snprintf(insert, AUTH_STR_LEN+1, AUTH_STR);
+			insert+=AUTH_STR_LEN;
 		}
-		snprintf(insert, strlen(usern)+11, "username=\"%s\", ", usern);
+		snprintf(insert, strlen(usern)+14, "username=\"%s\", ", usern);
 		insert+=strlen(insert);
-		snprintf(insert, strlen(uri)+6, "uri=\"%s\", ", uri);
+		snprintf(insert, strlen(uri)+9, "uri=\"%s\", ", uri);
 		insert+=strlen(insert);
-		snprintf(insert, 15, "algorithm=MD5, ");
-		insert+=15;
+		snprintf(insert, ALGO_MD5_STR_LEN+1, ALGO_MD5_STR);
+		insert+=ALGO_MD5_STR_LEN;
 		/* search for the realm, copy it to request and extract it for hash*/
 		if ((begin=strstr(auth, REALM_STR))!=NULL) {
 			end=strchr(begin, ',');
@@ -189,7 +189,7 @@ void insert_auth(char *message, char *authreq)
 			insert=insert+(end-begin+1);
 			if (*(insert-1) == '\r')
 				*(insert-1)=',';
-			snprintf(insert, 1, " ");
+			snprintf(insert, 2, " ");
 			insert++;
 			begin+=REALM_STR_LEN+1;
 			end--;
@@ -215,7 +215,7 @@ void insert_auth(char *message, char *authreq)
 			insert=insert+(end-begin+1);
 			if (*(insert-1) == '\r')
 				*(insert-1)=',';
-			snprintf(insert, 1, " ");
+			snprintf(insert, 2, " ");
 			insert++;
 		}
 		/* lets see if qop=auth is uspported */
@@ -236,7 +236,7 @@ void insert_auth(char *message, char *authreq)
 			insert=insert+(end-begin+1);
 			if (*(insert-1) == '\r')
 				*(insert-1)=',';
-			snprintf(insert, 1, " ");
+			snprintf(insert, 2, " ");
 			insert++;
 			begin+=NONCE_STR_LEN+1;
 			end--;
@@ -254,14 +254,14 @@ void insert_auth(char *message, char *authreq)
 		}
 		/* if qop is supported we need som additional header */
 		if (qop_auth == 1) {
-			snprintf(insert, QOP_STR_LEN+QOPAUTH_STR_LEN+2, "%s%s, ", QOP_STR, QOPAUTH_STR);
+			snprintf(insert, QOP_STR_LEN+QOPAUTH_STR_LEN+3, "%s%s, ", QOP_STR, QOPAUTH_STR);
 			insert+=strlen(insert);
 			nonce_count++;
-			snprintf(insert, NC_STR_LEN+12, "%s%x, ", NC_STR, nonce_count);
+			snprintf(insert, NC_STR_LEN+13, "%s%x, ", NC_STR, nonce_count);
 			insert+=strlen(insert);
 			cnonce=(unsigned int)rand();
 			/* the random number should at max a length of 5 ?! */
-			snprintf(insert, 11+5, "cnonce=\"%x\", ", cnonce);
+			snprintf(insert, 12+5, "cnonce=\"%x\", ", cnonce);
 			insert+=strlen(insert);
 			/* hopefully 100 is enough */
 			qop_tmp=malloc(100);
@@ -269,7 +269,7 @@ void insert_auth(char *message, char *authreq)
 				printf("failed to allocate memory\n");
 				exit_code(255);
 			}
-			snprintf(qop_tmp, 10+5, "%x:%x:auth:", nonce_count, cnonce);
+			snprintf(qop_tmp, 10+8, "%x:%x:auth:", nonce_count, cnonce);
 		}
 		/* if no password is given we try it with empty password */
 		if (!password)
@@ -303,9 +303,9 @@ void insert_auth(char *message, char *authreq)
 		MD5Final(&resp[0], &Md5Ctx);
 		cvt_hex(&resp[0], &resp_hex[0]);
 
-		snprintf(insert, RESPONSE_STR_LEN, RESPONSE_STR);
+		snprintf(insert, RESPONSE_STR_LEN+1, RESPONSE_STR);
 		insert+=RESPONSE_STR_LEN;
-		snprintf(insert, 20,"\"%s\"\r\n", &resp_hex[0]);
+		snprintf(insert, sizeof(resp_hex)+5,"\"%s\"\r\n", &resp_hex[0]);
 		insert+=strlen(insert);
 		/* the auth header is complete, reinsert the rest of the request */
 		strncpy(insert, backup, strlen(backup));

@@ -1,5 +1,5 @@
 /*
- * $Id: helper.c,v 1.17 2004/12/21 21:22:19 calrissian Exp $
+ * $Id: helper.c,v 1.18 2004/12/22 22:11:29 calrissian Exp $
  *
  * Copyright (C) 2002-2004 Fhg Fokus
  *
@@ -15,6 +15,7 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
  */
+#include "config.h"
 
 #include <stdlib.h>
 #include <stdio.h>
@@ -24,6 +25,9 @@
 #include <string.h>
 #include <ctype.h>
 #include <arpa/inet.h>
+#ifdef HAVE_NETINET_IN_H
+#include <netinet/in.h>
+#endif
 
 #include "helper.h"
 #include "sipsak.h"

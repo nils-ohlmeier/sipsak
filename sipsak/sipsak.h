@@ -1,5 +1,5 @@
 /*
- * $Id: sipsak.h,v 1.20 2004/12/21 21:22:20 calrissian Exp $
+ * $Id: sipsak.h,v 1.21 2004/12/22 22:11:29 calrissian Exp $
  *
  * Copyright (C) 2002-2004 Fhg Fokus
  *
@@ -133,6 +133,9 @@
 
 #define PROXYAUZ_STR "Proxy-Authorization: Digest "
 #define PROXYAUZ_STR_LEN (sizeof(PROXYAUZ_STR) - 1)
+
+#define ALGO_MD5_STR "algorithm=MD5, "
+#define ALGO_MD5_STR_LEN (sizeof(ALGO_MD5_STR) - 1)
 
 #define REALM_STR "realm="
 #define REALM_STR_LEN (sizeof(REALM_STR) - 1)

@@ -1,5 +1,5 @@
 /*
- * $Id: header_f.c,v 1.6 2004/12/21 21:22:19 calrissian Exp $
+ * $Id: header_f.c,v 1.7 2004/12/22 22:11:29 calrissian Exp $
  *
  * Copyright (C) 2002-2004 Fhg Fokus
  *
@@ -35,7 +35,7 @@ void add_via(char *mes)
 		printf("failed to allocate memory\n");
 		exit_code(255);
 	}
-	snprintf(via_line, VIA_STR_LEN+strlen(fqdn)+5+9, "%s%s:%i;rport\r\n", VIA_STR, fqdn, lport);
+	snprintf(via_line, VIA_STR_LEN+strlen(fqdn)+5+10, "%s%s:%i;rport\r\n", VIA_STR, fqdn, lport);
 	if (verbose > 2)
 		printf("our Via-Line: %s\n", via_line);
 
@@ -71,11 +71,12 @@ void add_via(char *mes)
 	}
 	strncpy(backup, via, strlen(via)+1);
 	strncpy(via, via_line, strlen(via_line));
+printf("%s\n", via);
 	strncpy(via+strlen(via_line), backup, strlen(backup)+1);
-	free(via_line);
-	free(backup);
 	if (verbose > 1)
 		printf("New message with Via-Line:\n%s\n", mes);
+	free(via_line);
+	free(backup);
 }
 
 /* copy the via lines from the message to the message 
@@ -167,7 +168,7 @@ void set_maxforw(char *mes){
 			exit_code(255);
 		}
 		strncpy(backup, max, (size_t)(strlen(max)+1));
-		snprintf(max, MAX_FRW_STR_LEN+5, "%s%i\r\n", MAX_FRW_STR, maxforw);
+		snprintf(max, MAX_FRW_STR_LEN+6, "%s%i\r\n", MAX_FRW_STR, maxforw);
 		max=strchr(max,'\n');
 		max++;
 		strncpy(max, backup, strlen(backup)+1);
@@ -188,7 +189,7 @@ void set_maxforw(char *mes){
 		}
 		strncpy(backup, crlfi, strlen(crlfi)+1);
 		crlfi=max + MAX_FRW_STR_LEN;
-		snprintf(crlfi, 7, "%i\r\n", maxforw);
+		snprintf(crlfi, 6, "%i\r\n", maxforw);
 		crlfi=strchr(max,'\n');
 		crlfi++;
 		strncpy(crlfi, backup, strlen(backup)+1);
@@ -285,8 +286,10 @@ void increase_cseq(char *message)
 	char *cs_s, *eol, *backup;
 
 	cs = cseq(message);
-	if ((cs < 1) && (verbose > 1))
+	if ((cs < 1) && (verbose > 1)) {
 		printf("CSeq increase failed because unable to extract CSeq number\n");
+		return;
+	}
 	cs++;
 	cs_s=strstr(message, "CSeq");
 	if (cs_s) {
@@ -299,7 +302,7 @@ void increase_cseq(char *message)
 			exit_code(255);
 		}
 		strncpy(backup, eol, (size_t)(strlen(eol)+1));
-		snprintf(cs_s, 10, "%i ", cs);
+		snprintf(cs_s, 11, "%i ", cs);
 		cs_s+=strlen(cs_s);
 		strncpy(cs_s, backup, strlen(backup));
 		free(backup);
