@@ -1,5 +1,5 @@
 /*
- * $Id: shoot.c,v 1.29 2004/06/29 14:05:17 calrissian Exp $
+ * $Id: shoot.c,v 1.30 2004/07/03 17:47:36 calrissian Exp $
  *
  * Copyright (C) 2002-2004 Fhg Fokus
  * Copyright (C) 2004 Nils Ohlmeier
@@ -67,7 +67,7 @@ bouquets and brickbats to farhan@hotfoon.com
 void shoot(char *buff)
 {
 	struct sockaddr_in	addr;
-	struct timeval	tv, sendtime, recvtime, firstsendt, delaytime;
+	struct timeval	tv, sendtime, recvtime, firstsendt, delaytime, starttime;
 	struct timezone tz;
 	struct timespec sleep_ms_s, sleep_rem;
 	struct pollfd 	sockerr;
@@ -78,7 +78,7 @@ void shoot(char *buff)
 	int randretrys = 0;
 	int cseqcmp = 0;
 	int rem_namebeg = 0;
-	double big_delay, tmp_delay;
+	double big_delay, tmp_delay, senddiff;
 	char *contact, *foo, *bar, *lport_str;
 	char *crlf = NULL;
 	char reply[BUFSIZE];
@@ -101,7 +101,8 @@ void shoot(char *buff)
 
 	/* the vars are filled by configure */
 	nretries = DEFAULT_RETRYS;
-	retryAfter = DEFAULT_TIMEOUT;
+	/* retryAfter = DEFAULT_TIMEOUT; */
+	retryAfter = SIP_T1;
 
 	/* initalize some local vars */
 	redirected = 1;
@@ -268,7 +269,7 @@ void shoot(char *buff)
 			namebeg=1;
 			create_msg(buff, REQ_OPT);
 		}
-		retryAfter = retryAfter / 10;
+		/* retryAfter = retryAfter / 10; */
 		if(maxforw!=-1)
 			set_maxforw(buff);
 		if(via_ins)
@@ -408,6 +409,8 @@ void shoot(char *buff)
 					/* store the time of our first send */
 					if (i==0)
 						memcpy(&firstsendt, &sendtime, sizeof(struct timeval));
+					if (retryAfter == SIP_T1)
+						memcpy(&starttime, &sendtime, sizeof(struct timeval));
 					/* lets see if we at least received an icmp error */
 					if (csock == -1) 
 						sockerr.fd=usock;
@@ -458,9 +461,20 @@ void shoot(char *buff)
 							}
 						}
 					}
-					retryAfter = retryAfter * 2;
-					if (retryAfter > DEFAULT_TIMEOUT) 
-						retryAfter = DEFAULT_TIMEOUT;
+					senddiff = deltaT(&starttime, &recvtime);
+					if (senddiff > 64 * SIP_T1) {
+						if (verbose)
+							printf("*** giving up, no response after %.3f ms\n",
+								senddiff);
+						exit_code(3);
+					}
+					/* set retry time according to RFC3261 */
+					if (retryAfter *2 < SIP_T2)
+						retryAfter = retryAfter * 2;
+					else
+						retryAfter = SIP_T2;
+					/* if (retryAfter > DEFAULT_TIMEOUT) 
+						retryAfter = DEFAULT_TIMEOUT; */
 					retrans_s_c++;
 					if (delaytime.tv_sec == 0)
 						memcpy(&delaytime, &sendtime, sizeof(struct timeval));
@@ -554,6 +568,7 @@ void shoot(char *buff)
 					/* store the time of our first send */
 					if (i==0)
 						memcpy(&firstsendt, &sendtime, sizeof(struct timeval));
+					retryAfter = SIP_T1;
 					/* store the biggest delay if one occured */
 					if (delaytime.tv_sec != 0) {
 						tmp_delay = deltaT(&delaytime, &recvtime);

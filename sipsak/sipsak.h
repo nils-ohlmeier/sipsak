@@ -1,5 +1,5 @@
 /*
- * $Id: sipsak.h,v 1.12 2004/06/17 14:54:03 calrissian Exp $
+ * $Id: sipsak.h,v 1.13 2004/07/03 17:47:36 calrissian Exp $
  *
  * Copyright (C) 2002-2004 Fhg Fokus
  *
@@ -26,6 +26,10 @@
 #define SIPSAK_VERSION PACKAGE_VERSION
 #define BUFSIZE		4096
 #define FQDN_SIZE   200
+
+#define SIP_T1 500
+#define SIP_T2 4000
+
 #define REQ_REG 1
 #define REQ_REM 2
 #define REQ_INV 3
