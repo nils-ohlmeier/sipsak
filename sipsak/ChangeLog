@@ -5,3 +5,4 @@
   - added option -H to overwrite automatic hostname detection
   - ignores provisional responses in usrloc mode
   - added support for proxy authorization (407)
+  - fixed missing port from uri in requests
