@@ -1,4 +1,6 @@
 ToDo List (no order):
+ - increase CSeq number when retrying for authentication
+ - add RFC-conform From tag
  - check all parameters with is[alpha|number]
  - use given Contacts in REGISTER
    (Note: i do not plan a config file for
