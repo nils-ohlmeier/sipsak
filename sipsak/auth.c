@@ -1,5 +1,5 @@
 /*
- * $Id: auth.c,v 1.1 2003/04/04 02:12:18 calrissian Exp $
+ * $Id: auth.c,v 1.2 2003/09/06 20:01:51 calrissian Exp $
  *
  * Copyright (C) 2002-2003 Fhg Fokus
  *
@@ -58,14 +58,15 @@ void insert_auth(char *message, char *authreq)
 	char *qop_tmp = NULL;
 	char ha1[MD5_HASHLEN], ha2[MD5_HASHLEN], resp[MD5_HASHLEN]; 
 	char ha1_hex[HASHHEXLEN+1], ha2_hex[HASHHEXLEN+1], resp_hex[HASHHEXLEN+1];
-	int cnonce, qop_auth=0;
+	int cnonce, qop_auth=0, proxy_auth=0;
 	MD5_CTX Md5Ctx;
 
 	/* prevent double auth insertion */
-	if ((begin=strstr(message, AUTH_STR))!=NULL) {
+	if ((begin=strstr(message, AUTH_STR))!=NULL ||
+			(begin=strstr(message, PROXYAUZ_STR))!=NULL) {
 		printf("\nrequest:\n%s\nresponse:\n%s\nerror: authorization failed\n  "
-			"     request already contains Authorization, but received 401, "
-			"see above\n", message, authreq);
+			"     request already contains (Proxy-) Authorization, but "
+			"received 401, see above\n", message, authreq);
 		exit(2);
 	}
 	/* make a backup of all except the request line because for 
@@ -76,6 +77,10 @@ void insert_auth(char *message, char *authreq)
 	strncpy(backup, insert, strlen(insert)+1);
 
 	begin=strstr(authreq, WWWAUTH_STR);
+	if (begin==NULL) {
+		begin=strstr(authreq, PROXYAUTH_STR);
+		proxy_auth = 1;
+	}
 	if (begin) {
 		/* make a copy of the auth header to prevent that our searches
 		   hit content of other header fields */
@@ -122,8 +127,14 @@ void insert_auth(char *message, char *authreq)
 		*(uri+(end-begin))='\0';
 
 		/* lets start with some basic stuff... username, uri and algorithm */
-		sprintf(insert, AUTH_STR);
-		insert=insert+AUTH_STR_LEN;
+		if (proxy_auth) {
+			sprintf(insert, PROXYAUTH_STR);
+			insert=insert+PROXYAUTH_STR_LEN;
+		}
+		else {
+			sprintf(insert, AUTH_STR);
+			insert=insert+AUTH_STR_LEN;
+		}
 		sprintf(insert, "username=\"%s\", ", usern);
 		insert+=strlen(insert);
 		sprintf(insert, "uri=\"%s\", ", uri);
@@ -243,8 +254,8 @@ void insert_auth(char *message, char *authreq)
 		strncpy(insert, backup, strlen(backup));
 	}
 	else {
-		printf("%s\nerror: couldn't find WWW-Authentication header in the "
-			"401 response above\n",	authreq);
+		printf("%s\nerror: couldn't find Proxy- or WWW-Authentication header"
+			" in the 401 response above\n",	authreq);
 		exit(3);
 	}
 	if (verbose>1) 

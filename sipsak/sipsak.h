@@ -1,5 +1,5 @@
 /*
- * $Id: sipsak.h,v 1.2 2003/04/09 03:41:13 calrissian Exp $
+ * $Id: sipsak.h,v 1.3 2003/09/06 20:01:51 calrissian Exp $
  *
  * Copyright (C) 2002-2003 Fhg Fokus
  *
@@ -73,8 +73,12 @@
 #define USRLOC_REMOVE_PERCENT 0.1
 #define WWWAUTH_STR "WWW-Authenticate: "
 #define WWWAUTH_STR_LEN 18
+#define PROXYAUTH_STR "Proxy-Authenticate: "
+#define PROXYAUTH_STR_LEN 20
 #define AUTH_STR "Authorization: Digest "
 #define AUTH_STR_LEN 22
+#define PROXYAUZ_STR "Proxy-Authorization: Digest "
+#define PROXYAUZ_STR_LEN 28
 #define REALM_STR "realm="
 #define REALM_STR_LEN 6
 #define OPAQUE_STR "opaque="
