@@ -1,5 +1,5 @@
 /*
- * $Id: sipsak.c,v 1.48 2003/07/30 03:19:19 calrissian Exp $
+ * $Id: sipsak.c,v 1.49 2003/09/06 20:38:26 calrissian Exp $
  *
  * Copyright (C) 2002-2003 Fhg Fokus
  *
@@ -27,12 +27,6 @@
    and 1 for remote error -- ICMP/timeout; can be used to test if
    a server is alive; 1xx messages are now ignored; windows support
    dropped
-*/
-
-/* TO-DO:
-   - multiple contacts in usrloc mode
-   - endless randtrash mode with logfile
-   - support for IPv6
 */
 
 #include <unistd.h>
