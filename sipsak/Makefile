@@ -20,12 +20,14 @@ RM = rm -f
 
 RM_CMD = $(RM) *.BAK *.bak *.o ,* *~ *.a *.orig *.rej
 
+DEFS =
+
 all:: $(PROGS)
 
 %: %.o
 	$(CC) -o $@ $^
 %.o: %.c
-	$(CC) -c $<
+	$(CC) $(DEFS) -c $<
 
 sipsak: sipsak.o
 
