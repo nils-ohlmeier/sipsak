@@ -1,5 +1,5 @@
 /*
- * $Id: sipsak.c,v 1.66 2004/06/24 17:47:46 calrissian Exp $
+ * $Id: sipsak.c,v 1.67 2004/06/26 22:51:13 calrissian Exp $
  *
  * Copyright (C) 2002-2004 Fhg Fokus
  * Copyright (C) 2004 Nils Ohlmeier
@@ -35,7 +35,12 @@
 #include <stdio.h>
 #include <string.h>
 #include <time.h>
+
+#include "config.h"
+
+#ifdef HAVE_GETOPT_H
 #include <getopt.h>
+#endif
 
 #include "sipsak.h"
 #include "helper.h"
@@ -120,7 +125,7 @@ int main(int argc, char *argv[])
 	char	buff[BUFSIZE];
 	int		length, c;
 	char	*delim, *delim2;
-#ifdef _GETOPT_H
+#ifdef HAVE_GETOPT_LONG
 	int option_index = 0;
 	static struct option l_opts[] = {
 		{"help", 0, 0, 'h'},
@@ -179,7 +184,7 @@ int main(int argc, char *argv[])
 	if (argc==1) print_help();
 
 	/* lots of command line switches to handle*/
-#ifdef _GETOPT_H
+#ifdef HAVE_GETOPT_LONG
 	while ((c=getopt_long(argc, argv, "a:B:b:C:c:de:f:Fg:GhH:iIl:m:MnNo:O:p:r:Rs:t:TUvVwW:x:z", l_opts, &option_index)) != EOF){
 #else
 	while ((c=getopt(argc,argv,"a:B:b:C:c:de:f:Fg:GhH:iIl:m:MnNo:O:p:r:Rs:t:TUvVwW:x:z")) != EOF){
@@ -418,6 +423,15 @@ int main(int argc, char *argv[])
 				printf("sipsak %s  by Nils Ohlmeier\n Copyright (C) 2002-2004"
 						" FhG Fokus\n Copyright (C) 2004 Nils Ohlmeier\n", 
 						SIPSAK_VERSION);
+				printf(" compiled with DEFAULT_RETRYS=%i, DEFAULT_TIMEOUT=%i",
+						DEFAULT_RETRYS, DEFAULT_TIMEOUT);
+#ifdef RAW_SUPPORT
+				printf(", RAW_SUPPORT");
+#endif
+#ifdef HAVE_GETOPT_LONG
+				printf(", LONG_OPTS");
+#endif
+				printf("\n");
 				exit_code(0);
 				break;
 			case 'w':
