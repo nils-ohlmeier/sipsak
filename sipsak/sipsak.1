@@ -27,17 +27,37 @@ sipsak \- a utility for various tests on sip server
 .I sip-uri
 .SH DESCRIPTION
 .B sipsak
-is a utility which is able to create and manipulate the header of sip
-requests. This request are sent to the server within the 
-.BR sip:uri 
-and the received response is examined.
-
+is a SIP stress and diagnostics utility. 
+It sends SIP requests to the server within the 
+.BR sip-uri 
+and examines received responses.
+It runs in one of the following modes:
+.IP "- default mode"
+A SIP message is sent to destination in 
+.BR sip-uri
+and reply status is displayed. 
+The request is either taken from
+.BR filename
+or generated as a new OPTIONS message.  
+.IP "- traceroute mode (-T)"
+This mode is useful for learning request's path. It
+operates similarly to IP-layer utility
+.BR traceroute (8).
+.IP "- randtrash mode (-R)"
+Parser torture mode. 
+.B sipsak 
+keeps sending randomly corrupted messages to torture a SIP server's
+parser.
+.IP "- usrloc mode (-U)"
+stress mode for SIP registrar. 
 .B sipsak
-can run in five different modes. The default mode sends only an OPTIONS
-request or the content of the given 
-.BR filename 
-to the server and waits on a final response. For explanation of the four
-additional mode see the description at their activating options.
+keeps registering and sending requests to a SIP server at high pace.
+.IP "- flood mode (-F)"
+stress mode for SIP servers.
+.B sipsak 
+keeps sending requests to a SIP server at high pace.
+
+
 .SH OPTIONS
 .IP "-b number"
 The starting number which is appended to the user name in the USRLOC mode.
@@ -67,9 +87,8 @@ the manipulation functions (e.g. inserting Via header) are only tested
 with RFC conform requests.
 .IP -F
 This options activates the flood mode. In this mode OPTIONS requests with
-increasing CSeq numbers are sent to the server. As source port 9 (discard)
-of the localhost is specified. As consequence as much as possible packets will
-be sent to the server and all responses will be ignored.
+increasing CSeq numbers are sent to the server. Replies are ignored --
+source port 9 (discard) of localhost is advertised in topmost Via.
 .IP -h
 Prints out a simple usage help message.
 .IP -i
@@ -162,13 +181,36 @@ Multiple removing of bindings is possible, and can not be prevented.
 The return value 0 means that no error occurred. 1 will be returned on remote
 errors like no response or unexpected answers. 2 will be returned on local
 errors like non resolvable names or errors on socket.
+
+.SH CAUTION
+Use
+.B sipsak
+responsibly. Running it in any of the stress modes puts
+substantial burden on network and server under test.
+
+.SH EXAMPLES
+.IP "sipsak -v -s sip:nobody@foo.bar" 
+displays received replies.
+.IP "sipsak -T -s sip:nobody@foo.bar" 
+traces SIP path.
+
 .SH LIMITATIONS / NOT IMPLEMENTED
+Many servers may decide NOT to include SIP "Warning" header fields.
+Unfortunately, this makes displaying IP addresses of SIP servers
+in traceroute mode impossible.
+
 The short notation is not supported.
 
 IPv6 is not supported.
+
+DNS/SRV is not supported.
+
+Currently, sipsak has only been ported to Linux.
 .SH BUGS
 sipsak is only tested against the sip express router (ser) though their could
 be various bugs. Please feel free to mail them to the author.
+
+
 .SH AUTHOR
 Nils Ohlmeier <ohlmeier at fokus dot fhg dot de>
 .SH "SEE ALSO"
