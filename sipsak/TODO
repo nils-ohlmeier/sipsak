@@ -1,4 +1,6 @@
 ToDo List (no order):
+ - fix asynchron signaling handling with connected sockets
+ - use sscanf for the input parameters
  - parse the complete DNS resonses in util
  - Nagios compliance
  - add RFC-conform From tag
