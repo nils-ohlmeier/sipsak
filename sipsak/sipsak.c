@@ -1,5 +1,5 @@
 /*
- * $Id: sipsak.c,v 1.32 2003/01/07 19:06:31 calrissian Exp $
+ * $Id: sipsak.c,v 1.33 2003/01/17 04:54:45 calrissian Exp $
  *
  * Copyright (C) 2002 Fhg Fokus
  *
@@ -132,8 +132,8 @@ bouquets and brickbats to farhan@hotfoon.com
 long address;
 int verbose, nameend, namebeg, expires_t, flood, warning_ext;
 int maxforw, lport, rport, randtrash, trashchar, numeric, nonce_count;
-int file_b, uri_b, trace, via_ins, usrloc, redirects, rand_rem;
-char *username, *domainname, *password;
+int file_b, uri_b, trace, via_ins, usrloc, redirects, rand_rem, replace_b;
+char *username, *domainname, *password, *replace_str;
 char fqdn[FQDN_SIZE], messusern[FQDN_SIZE];
 char message[BUFSIZE], mes_reply[BUFSIZE];
 
@@ -264,7 +264,7 @@ void get_fqdn(){
 /* add a Via Header Field in the message. */
 void add_via(char *mes)
 {
-	char *via_line, *via, *backup; 
+	char *via_line, *via, *via2, *backup; 
 
 	/* first build our own Via-header-line */
 	via_line = malloc(VIA_STR_LEN+strlen(fqdn)+9);
@@ -276,13 +276,23 @@ void add_via(char *mes)
 		printf("can't add our Via Header Line because file is too big\n");
 		exit(2);
 	}
-	if ((via=strstr(mes, "Via:"))==NULL &&
-		(via=strstr(mes, "\nv:"))==NULL ){
+	via=strstr(mes, "\nVia");
+	via2=strstr(mes, "\nv:");
+	if (via==NULL && via2==NULL ){
 		/* We doesn't find a Via so we insert our via
 		   direct after the first line. */
 		via=strchr(mes,'\n');
 		via++;
 	}
+	else if (via!=NULL && via2!=NULL && via2<via){
+		/* the short via is above the long version */
+		via = via2;
+	}
+	else if (via==NULL && via2!=NULL){
+		/* their is only a short via */
+		via = via2;
+	}
+	via=via+1;
 	/* finnaly make a backup, insert our via and append the backup */
 	backup=malloc(strlen(via)+1);
 	strncpy(backup, via, strlen(via)+1);
@@ -324,6 +334,29 @@ void cpy_vias(char *reply){
 	free(backup);
 	if (verbose > 2)
 		printf("message reply with vias included:\n%s\n", mes_reply);
+}
+
+/* this function searches for search in mess and replaces it with
+   replacement */
+void replace_string(char *mess, char *search, char *replacement){
+	char *backup, *insert;
+
+	insert=strstr(mess, search);
+	if (insert==NULL){
+		if (verbose > 2)
+			printf("warning: could not find this '%s' replacement string in "
+					"message\n", search);
+	}
+	else {
+		while (insert){
+			backup=malloc(strlen(insert)+1);
+			strcpy(backup, insert+strlen(search));
+			strcpy(insert, replacement);
+			strcpy(insert+strlen(replacement), backup);
+			free(backup);
+			insert=strstr(mess, search);
+		}
+	}
 }
 
 /* create a valid sip header for the different modes */
@@ -775,7 +808,7 @@ void shoot(char *buff)
 	int dontsend, cseqcmp, cseqtmp;
 	int rem_rand, rem_namebeg, retrans_r_c, retrans_s_c;
 	double big_delay, tmp_delay;
-	char *contact, *crlf, *foo, *bar;
+	char *contact, *crlf, *foo, *bar, *lport_str;
 	char reply[BUFSIZE];
 	fd_set	fd;
 	socklen_t slen;
@@ -819,6 +852,16 @@ void shoot(char *buff)
 		getsockname(ssock, (struct sockaddr *)&sockname, &slen);
 		lport=ntohs(sockname.sin_port);
 	}
+
+	if (replace_b){
+		replace_string(buff, "$host$", fqdn);
+		lport_str=malloc(6);
+		sprintf(lport_str, "%i", lport);
+		replace_string(buff, "$port$", lport_str);
+		free(lport_str);
+	}
+	if (replace_str)
+		replace_string(buff, "$replace$", replace_str);
 
 	/* set all regular expression to simplfy the result code indetification */
 	regcomp(&proexp, "^SIP/[0-9]\\.[0-9] 1[0-9][0-9] ", 
@@ -1467,7 +1510,7 @@ void shoot(char *buff)
 							dontsend = 1;
 							continue;
 						} else {
-							printf("   final received\n ");
+							printf("   final received\n");
 							if (regexec(&okexp, reply, 0, 0, 0)==0)
 								exit(0);
 							else
@@ -1560,7 +1603,9 @@ void print_help() {
 #endif
 		"   -d           ignore redirects\n"
 		"   -v           each v's produces more verbosity (max. 3)\n"
-		"   -w           extract IP from the warning in reply\n");
+		"   -w           extract IP from the warning in reply\n"
+		"   -g string    replacement for a special mark in the message\n"
+		"   -G           avtivates replacement of variables\n");
 	exit(0);
 };
 
@@ -1573,10 +1618,10 @@ int main(int argc, char *argv[])
 
 	/* some initialisation to be shure */
 	file_b=uri_b=trace=lport=usrloc=flood=verbose=randtrash=trashchar = 0;
-	numeric=warning_ext=rand_rem=nonce_count= 0;
+	numeric=warning_ext=rand_rem=nonce_count=replace_b = 0;
 	namebeg=nameend=maxforw = -1;
 	via_ins=redirects = 1;
-	username=password = NULL;
+	username=password=replace_str = NULL;
 	address = 0;
     rport = 5060;
 	expires_t = USRLOC_EXP_DEF;
@@ -1590,9 +1635,9 @@ int main(int argc, char *argv[])
 
 	/* lots of command line switches to handle*/
 #ifdef AUTH
-	while ((c=getopt(argc,argv,"a:b:c:de:f:Fhil:m:nr:Rs:t:TUvVwx:z")) != EOF){
+	while ((c=getopt(argc,argv,"a:b:c:de:f:Fg:Ghil:m:nr:Rs:t:TUvVwx:z")) != EOF){
 #else
-	while ((c=getopt(argc,argv,"b:c:de:f:Fhil:m:nr:Rs:t:TUvVwx:z")) != EOF){
+	while ((c=getopt(argc,argv,"b:c:de:f:Fg:Ghil:m:nr:Rs:t:TUvVwx:z")) != EOF){
 #endif
 		switch(c){
 #ifdef AUTH
@@ -1646,6 +1691,12 @@ int main(int argc, char *argv[])
 				fclose(pf);
 				buff[length] = '\0';
 				file_b=1;
+				break;
+			case 'g':
+				replace_str=optarg;
+				break;
+			case 'G':
+				replace_b=1;
 				break;
 			case 'h':
 				print_help();
