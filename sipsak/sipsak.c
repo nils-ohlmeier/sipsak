@@ -1,5 +1,5 @@
 /*
- * $Id: sipsak.c,v 1.49 2003/09/06 20:38:26 calrissian Exp $
+ * $Id: sipsak.c,v 1.50 2003/09/06 21:41:03 calrissian Exp $
  *
  * Copyright (C) 2002-2003 Fhg Fokus
  *
@@ -248,6 +248,9 @@ int main(int argc, char *argv[])
 							delim=delim2;
 						}
 						if ((delim2=strchr(delim,':'))!=NULL){
+							domainname=malloc(strlen(delim)+1);
+							strncpy(domainname, delim, strlen(delim));
+							*(domainname+strlen(delim)) = '\0';
 							*delim2 = '\0';
 							delim2++;
 							rport = atoi(delim2);
@@ -257,9 +260,11 @@ int main(int argc, char *argv[])
 								exit(2);
 							}
 						}
-						domainname=malloc(strlen(delim)+1);
-						strncpy(domainname, delim, strlen(delim));
-						*(domainname+strlen(delim)) = '\0';
+						else {
+							domainname=malloc(strlen(delim)+1);
+							strncpy(domainname, delim, strlen(delim));
+							*(domainname+strlen(delim)) = '\0';
+						}
 						address = getaddress(delim);
 						if (!address){
 							printf("error:unable to determine the remote host "
