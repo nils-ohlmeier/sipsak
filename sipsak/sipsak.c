@@ -1,5 +1,5 @@
 /*
- * $Id: sipsak.c,v 1.19 2002/09/13 08:12:44 calrissian Exp $
+ * $Id: sipsak.c,v 1.20 2002/09/13 13:02:47 calrissian Exp $
  *
  * Copyright (C) 2002 Fhg Fokus
  *
@@ -38,7 +38,6 @@ bouquets and brickbats to farhan@hotfoon.com
    - multiple contacts in USRLOC mode
    - endless randtrash mode with logfile
    - support for short notation
-   - digest auth support
    - support for IPv6
 */
 
@@ -63,7 +62,7 @@ bouquets and brickbats to farhan@hotfoon.com
 
 #include <openssl/md5.h>
 
-#define SIPSAK_VERSION "v0.7.3"
+#define SIPSAK_VERSION "v0.7.5"
 #define RESIZE		1024
 #define BUFSIZE		4096
 #define FQDN_SIZE   200
@@ -121,13 +120,17 @@ bouquets and brickbats to farhan@hotfoon.com
 #define NONCE_STR_LEN 6
 #define RESPONSE_STR "response="
 #define RESPONSE_STR_LEN 9
+#define QOP_STR "qop="
+#define QOP_STR_LEN 4
+#define QOPAUTH_STR "\"auth\""
+#define NC_STR "nc="
 
 #define HASHHEXLEN 2*MD5_DIGEST_LENGTH
 
 /* lots of global variables. ugly but makes life easier. */
 long address;
 int verbose, nameend, namebeg, expires_t, flood, warning_ext;
-int maxforw, lport, rport, randtrash, trashchar, numeric;
+int maxforw, lport, rport, randtrash, trashchar, numeric, nonce_count;
 int file_b, uri_b, trace, via_ins, usrloc, redirects, rand_rem;
 char *username, *domainname, *password;
 char fqdn[FQDN_SIZE], messusern[FQDN_SIZE];
@@ -494,6 +497,8 @@ void warning_extract(char *message)
 	}
 }
 
+/* converts a hash into hex output
+   taken from the RFC 2617 */
 void cvt_hex(char *_b, char *_h)
 {
         unsigned short i;
@@ -516,15 +521,17 @@ void cvt_hex(char *_b, char *_h)
         _h[HASHHEXLEN] = '\0';
 }
 
-/* create an insert a auth header into the message */
+/* check for, create and insert a auth header into the message */
 void insert_auth(char *message, char *authreq)
 {
 	char *auth, *begin, *end, *insert, *backup, *realm, *usern, *nonce, 
-		*method, *uri, *ha1_tmp, *ha2_tmp, *resp_tmp;
+		*method, *uri, *ha1_tmp, *ha2_tmp, *resp_tmp, *qop_tmp;
 	char ha1[MD5_DIGEST_LENGTH], ha2[MD5_DIGEST_LENGTH], 
 		resp[MD5_DIGEST_LENGTH]; 
 	char ha1_hex[HASHHEXLEN], ha2_hex[HASHHEXLEN], resp_hex[HASHHEXLEN];
+	int cnonce, qop_auth=0;
 
+	/* prevent double auth insertion */
 	if ((begin=strstr(message, AUTH_STR))!=NULL) {
 		printf("\nrequest:\n%s\nresponse:\n%s\nerror: authorization failed\n  "
 			"     request already contains Authorization, but received 401, "
@@ -537,15 +544,16 @@ void insert_auth(char *message, char *authreq)
 	insert++;
 	backup=malloc(strlen(insert)+1);
 	strncpy(backup, insert, strlen(insert)+1);
-//printf("\nbackup:\n%s\n", backup);
 
 	begin=strstr(authreq, WWWAUTH_STR);
 	if (begin) {
+		/* make a copy of the auth header to prevent that our searches
+		   hit content of other header fields */
 		end=strchr(begin, '\n');
 		auth=malloc((end-begin)+1);
 		strncpy(auth, begin, (end-begin));
 		*(auth+(end-begin))='\0';
-//printf("auth:\n%s\n", auth);
+		/* we support Digest nad MD5 only */
 		if ((begin=strstr(auth, "Basic"))!=NULL) {
 			printf("%s\nerror: authentication method Basic is deprecated since"
 				" RFC 3261 and not supported by sipsak\n", authreq);
@@ -564,15 +572,18 @@ void insert_auth(char *message, char *authreq)
 				exit(2);
 			}
 		}
+		/* we need the username at some points */
 		usern=malloc(strlen(username)+10);
 		if (nameend>0)
 			sprintf(usern, "%s%i", username, namebeg);
 		else
 			sprintf(usern, "%s", username);
+		/* extract the method from teh original request */
 		end=strchr(message, ' ');
 		method=malloc(end-message+1);
 		strncpy(method, message, (end-message));
 		*(method+(end-message))='\0';
+		/* extract the uri also */
 		begin=end++;
 		begin++;
 		end=strchr(end, ' ');
@@ -580,12 +591,16 @@ void insert_auth(char *message, char *authreq)
 		strncpy(uri, begin, (end-begin));
 		*(uri+(end-begin))='\0';
 
+		/* lets start with some basic stuff... username, uri and algorithm */
 		sprintf(insert, AUTH_STR);
 		insert=insert+AUTH_STR_LEN;
 		sprintf(insert, "username=\"%s\", ", usern);
 		insert+=strlen(insert);
 		sprintf(insert, "uri=\"%s\", ", uri);
 		insert+=strlen(insert);
+		sprintf(insert, "algorithm=MD5, ");
+		insert+=15;
+		/* search for the realm, copy it to request and extract it for hash*/
 		if ((begin=strstr(auth, REALM_STR))!=NULL) {
 			end=strchr(begin, ',');
 			strncpy(insert, begin, end-begin+1);
@@ -602,6 +617,7 @@ void insert_auth(char *message, char *authreq)
 			printf("%s\nerror: realm not found in 401 above\n", authreq);
 			exit(3);
 		}
+		/* copy opaque if needed */
 		if ((begin=strstr(auth, OPAQUE_STR))!=NULL) {
 			end=strchr(begin, ',');
 			strncpy(insert, begin, end-begin+1);
@@ -609,6 +625,16 @@ void insert_auth(char *message, char *authreq)
 			sprintf(insert, " ");
 			insert++;
 		}
+		/* lets see if qop=auth is uspported */
+		if ((begin=strstr(auth, QOP_STR))!=NULL) {
+			if (strstr(begin, QOPAUTH_STR)==NULL) {
+				printf("\nresponse\n%s\nerror: qop \"auth\" not supported by"
+					" server\n", authreq);
+				exit(3);
+			}
+			qop_auth=1;
+		}
+		/* search, copy and extract the nonce */
 		if ((begin=strstr(auth, NONCE_STR))!=NULL) {
 			end=strchr(begin, ',');
 			strncpy(insert, begin, end-begin+1);
@@ -625,32 +651,45 @@ void insert_auth(char *message, char *authreq)
 			printf("%s\nerror: nonce not found in 401 above\n", authreq);
 			exit(3);
 		}
-//printf("\nusername: %s\npassword: %s\nrealm: %s\nnonce: %s\nmethod: %s\nuri: %s\n", usern, password, realm, nonce, method, uri);
+		/* if qop is supported we need som additional header */
+		if (qop_auth) {
+			sprintf(insert, "%s%s, ", QOP_STR, QOPAUTH_STR);
+			insert+=strlen(insert);
+			nonce_count++;
+			sprintf(insert, "%s%x, ", NC_STR, nonce_count);
+			insert+=strlen(insert);
+			cnonce=rand();
+			sprintf(insert, "cnonce=\"%x\", ", cnonce);
+			insert+=strlen(insert);
+			/* hopefully 100 is enough */
+			qop_tmp=malloc(100);
+			sprintf(qop_tmp, "%x:%x:auth:", nonce_count, cnonce);
+		}
+		/* if no password is given we try it with the username */
 		if (!password)
 			password=usern;
 		ha1_tmp=malloc(strlen(usern)+strlen(realm)+strlen(password)+3);
-		resp_tmp=malloc(2*HASHHEXLEN+strlen(nonce)+3);
+		resp_tmp=malloc(2*HASHHEXLEN+strlen(nonce)+strlen(qop_tmp)+3);
 		sprintf(ha1_tmp, "%s:%s:%s", usern, realm, password);
 		MD5(ha1_tmp, strlen(ha1_tmp), ha1);
 		cvt_hex(ha1, ha1_hex);
-//printf("ha1: %s\n", ha1_hex);
+		/* later ha1_hex is empty.. why th f***.. let's do it here */
 		sprintf(resp_tmp, "%s:%s:", ha1_hex, nonce);
+		if (qop_auth)
+			sprintf(resp_tmp+strlen(resp_tmp), "%s", qop_tmp);
 		ha2_tmp=malloc(strlen(method)+strlen(uri)+2);
 		sprintf(ha2_tmp, "%s:%s", method, uri);
 		MD5(ha2_tmp, strlen(ha2_tmp), ha2);
 		cvt_hex(ha2, ha2_hex);
-//printf("ha2: %s\n", ha2_hex);
 		sprintf(resp_tmp+strlen(resp_tmp), "%s", ha2_hex);
-//printf("temp: %s\n", resp_tmp);
 		MD5(resp_tmp, strlen(resp_tmp), resp);
 		cvt_hex(resp, resp_hex);
-//printf("response: %s\n", resp_hex);
 		sprintf(insert, RESPONSE_STR);
 		insert+=RESPONSE_STR_LEN;
 		sprintf(insert, "\"%s\"\r\n", resp_hex);
 		insert+=strlen(insert);
+		/* the auth header is complete, reinsert the rest of the request */
 		strncpy(insert, backup, strlen(backup));
-//printf("message:\n%s\n", message);
 	}
 	else {
 		printf("%s\nerror: couldn't find WWW-Authentication header in the "
@@ -659,8 +698,10 @@ void insert_auth(char *message, char *authreq)
 	}
 	if (verbose>1) 
 		printf("authorizing\n");
-	free(backup); free(auth); free(usern); free(method); free(uri);
-	free(realm); free(nonce); free(ha1_tmp); free(ha2_tmp); free(resp_tmp);
+	/* hopefully we free all here */
+	free(backup); free(auth); free(usern); free(method); free(uri); 
+	free(qop_tmp); free(realm); free(nonce); free(ha1_tmp); free(ha2_tmp); 
+	free(resp_tmp);
 }
 
 int cseq(char *message)
@@ -1438,7 +1479,7 @@ void print_help() {
 		" flood : sipsak -F [-c number] -s sip:uri\n"
 		" random: sipsak -R [-t number] -s sip:uri\n\n"
 		" additional parameter in every mode:\n"
-		"               [-a password] [-d] [-i] [-l port] [-m number] [-n] [-r port] [-v] "
+		"   [-a password] [-d] [-i] [-l port] [-m number] [-n] [-r port] [-v] "
 			"[-V] [-w]\n"
 		"   -h           displays this help message\n"
 		"   -V           prints version string only\n"
@@ -1467,7 +1508,8 @@ void print_help() {
 		"   -m number    the value for the max-forwards header field\n"
 		"   -n           use IPs instead of fqdn in the Via-Line\n"
 		"   -i           deactivate the insertion of a Via-Line\n"
-		"   -a password  use the given password for authentication\n"
+		"   -a password  password for authentication\n"
+		"                (if omitted password=username)\n"
 		"   -d           ignore redirects\n"
 		"   -v           each v's produces more verbosity (max. 3)\n"
 		"   -w           extract IP from the warning in reply\n\n"
@@ -1486,7 +1528,7 @@ int main(int argc, char *argv[])
 
 	/* some initialisation to be shure */
 	file_b=uri_b=trace=lport=usrloc=flood=verbose=randtrash=trashchar = 0;
-	numeric=warning_ext=rand_rem = 0;
+	numeric=warning_ext=rand_rem=nonce_count= 0;
 	namebeg=nameend=maxforw = -1;
 	via_ins=redirects = 1;
 	username=password = NULL;

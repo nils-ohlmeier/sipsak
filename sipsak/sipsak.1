@@ -217,17 +217,19 @@ Many servers may decide NOT to include SIP "Warning" header fields.
 Unfortunately, this makes displaying IP addresses of SIP servers
 in traceroute mode impossible.
 
+.B sipsak
+is case sensitive (not RFC conform). So all the header fields are only found
+if they are written like in the RFC.
+
 The short notation is not supported.
 
 IPv6 is not supported.
 
 DNS/SRV is not supported.
 
-Authentication is not supported.
-
 Currently, sipsak has only been ported to Linux.
 .SH BUGS
-sipsak is only tested against the sip express router (ser) though their could
+sipsak is only tested against the SIP Express Router (ser) though their could
 be various bugs. Please feel free to mail them to the author.
 
 
