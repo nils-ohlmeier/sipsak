@@ -1,5 +1,5 @@
 /*
- * $Id: sipsak.c,v 1.60 2004/06/06 15:20:20 calrissian Exp $
+ * $Id: sipsak.c,v 1.61 2004/06/06 18:13:19 calrissian Exp $
  *
  * Copyright (C) 2002-2004 Fhg Fokus
  * Copyright (C) 2004 Nils Ohlmeier
@@ -146,7 +146,7 @@ int main(int argc, char *argv[])
 				}
 				break;
 			case 'C':
-				if (!strncmp(optarg, "empty", 5)) {
+				if (!strncmp(optarg, "empty", 5) || !strncmp(optarg, "none", 4)) {
 					empty_contact = 1;
 				}
 				else if (!strncmp(optarg,"sip",3)){
