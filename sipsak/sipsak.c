@@ -1,5 +1,5 @@
 /*
- * $Id: sipsak.c,v 1.9 2002/08/27 22:20:58 calrissian Exp $
+ * $Id: sipsak.c,v 1.10 2002/08/28 00:26:35 calrissian Exp $
  *
  * Copyright (C) 2002-2003 Fhg Fokus
  *
@@ -531,7 +531,7 @@ void shoot(char *buff)
 	int ssock, redirected, retryAfter, nretries;
 	int sock, i, len, ret, usrlocstep, randretrys;
 	int dontsend, cseqcmp, cseqtmp;
-	int rem_rand, rem_namebeg;
+	int rem_rand, rem_namebeg, retrans_c;
 	char *contact, *crlf, *foo, *bar;
 	char reply[BUFSIZE];
 	fd_set	fd;
@@ -542,7 +542,7 @@ void shoot(char *buff)
 	redirected = 1;
 	nretries = 5;
 	retryAfter = 5000;
-	usrlocstep=dontsend = 0;
+	usrlocstep=dontsend=retrans_c = 0;
 
 	/* create a sending socket */
 	sock = (int)socket(PF_INET, SOCK_DGRAM, IPPROTO_UDP);
@@ -705,6 +705,7 @@ void shoot(char *buff)
 				}
 			}
 			else {
+				i--;
 				dontsend = 0;
 			}
 
@@ -814,8 +815,8 @@ void shoot(char *buff)
 					cseqtmp = cseq(reply);
 					if ((0 < cseqtmp) && (cseqtmp < cseqcmp)) {
 						printf("irgnoring retransmission\n");
+						retrans_c++;
 						dontsend = 1;
-						i--;
 						continue;
 					}
 					/* lets see if received a redirect */
@@ -933,7 +934,6 @@ void shoot(char *buff)
 								deltaT(&sendtime, &recvtime), reply);
 #endif
 							dontsend=1;
-							i--;
 							continue;
 						}
 						else {
@@ -1016,7 +1016,7 @@ void shoot(char *buff)
 								if (strncmp(reply, MES_STR, MES_STR_LEN)==0) {
 									printf("ignoring MESSAGE "
 										"retransmission\n");
-									i--;
+									retrans_c++;
 									dontsend=1;
 									continue;
 								}
@@ -1029,6 +1029,10 @@ void shoot(char *buff)
 									if (namebeg==nameend) {
 										printf("All USRLOC tests completed "
 											"successful.\n");
+										if (retrans_c)
+											printf("%i retransmissions "
+												"received during test.\n", 
+												retrans_c);
 										exit(0);
 									}
 									/* lets see if we deceid to remove a 
@@ -1077,7 +1081,7 @@ void shoot(char *buff)
 										printf("\nreceived:\n%s\n", reply);
 									printf("error: didn't received the "
 										"expected 200 on the remove bindings "
-										"request for %s%n\n", username, 
+										"request for %s%i\n", username, 
 										namebeg);
 									exit(1);
 								}
@@ -1147,7 +1151,6 @@ void shoot(char *buff)
 							retryAfter = retryAfter * 2;
 							if (retryAfter > 5000) retryAfter = 5000;
 							dontsend = 1;
-							i--;
 							continue;
 						} else {
 							printf("   final received\n ");
@@ -1177,6 +1180,8 @@ void shoot(char *buff)
 	} /* while redirected */
 	if (randtrash) exit(0);
 	printf("** I give up retransmission....\n");
+	if (retrans_c)
+		printf("%i retransmissions received during test\n", retrans_c);
 	exit(1);
 }
 
