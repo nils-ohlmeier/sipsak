@@ -1,5 +1,5 @@
 /*
- * $Id: sipsak.c,v 1.34 2003/01/20 07:53:11 calrissian Exp $
+ * $Id: sipsak.c,v 1.35 2003/01/24 14:17:42 calrissian Exp $
  *
  * Copyright (C) 2002 Fhg Fokus
  *
@@ -64,7 +64,7 @@ bouquets and brickbats to farhan@hotfoon.com
 #include <openssl/md5.h>
 #endif
 
-#define SIPSAK_VERSION "v0.7.7"
+#define SIPSAK_VERSION "v0.7.8"
 #define RESIZE		1024
 #define BUFSIZE		4096
 #define FQDN_SIZE   200
@@ -1081,7 +1081,7 @@ void shoot(char *buff)
 				}
 				else if (FD_ISSET(ssock, &fd)) {
 					/* no timeout, no error ... something has happened :-) */
-				 	if (!trace && !usrloc && !randtrash && verbose)
+				 	if (!trace && !usrloc && !randtrash && (verbose > 1))
 						printf ("\nmessage received\n");
 				}
 				else {
@@ -1487,32 +1487,32 @@ void shoot(char *buff)
 					else {
 						/* in the normal send and reply case anything other 
 						   then 1xx will be treated as final response*/
-						if (verbose) {
+						if (verbose > 1) {
+							printf("%s\n\n", reply);
 							printf("** reply received ");
 							if (i==0) 
 								printf("after %.3f ms **\n", 
 									deltaT(&sendtime, &recvtime));
 							else 
-								printf("%.3f ms after first send\n   and %.3f ms "
-									"after last send **\n", 
+								printf("%.3f ms after first send\n   and "
+									"%.3f ms after last send **\n", 
 									deltaT(&firstsendt, &recvtime), 
 									deltaT(&sendtime, &recvtime));
-						}
-						if (verbose > 1) printf("%s\n", reply);
-						else if (verbose) {
 							crlf=strchr(reply, '\n');
 							*crlf='\0';
 							printf("   %s\n", reply);
 						}
+						else if (verbose) printf("%s\n", reply);
 						if (regexec(&proexp, reply, 0, 0, 0)==0) {
-							printf("   provisional received; still waiting "
-								"for a final response\n");
+							if (verbose > 1) 
+								printf("   provisional received; still waiting"
+								" for a final response\n");
 							retryAfter = retryAfter * 2;
 							if (retryAfter > 5000) retryAfter = 5000;
 							dontsend = 1;
 							continue;
 						} else {
-							printf("   final received\n");
+							if (verbose > 1) printf("   final received\n");
 							if (regexec(&okexp, reply, 0, 0, 0)==0)
 								exit(0);
 							else
@@ -1544,10 +1544,10 @@ void shoot(char *buff)
 
 	} /* while redirected */
 	if (randtrash) exit(0);
-	printf("** I give up retransmission....\n");
-	if (retrans_r_c)
+	printf("** give up retransmissioning....\n");
+	if (retrans_r_c && (verbose > 1))
 		printf("%i retransmissions received during test\n", retrans_r_c);
-	if (retrans_s_c)
+	if (retrans_s_c && (verbose > 1))
 		printf("sent %i retransmissions during test\n", retrans_s_c);
 	exit(3);
 }
