@@ -1,5 +1,5 @@
 /*
- * $Id: sipsak.c,v 1.68 2004/06/26 23:42:39 calrissian Exp $
+ * $Id: sipsak.c,v 1.69 2004/07/15 12:23:41 calrissian Exp $
  *
  * Copyright (C) 2002-2004 Fhg Fokus
  * Copyright (C) 2004 Nils Ohlmeier
@@ -499,12 +499,12 @@ int main(int argc, char *argv[])
 						}
 					}
 					else{
-						printf("error: sip:uri doesn't contain a : ?!\n");
+						printf("error: SIPURI doesn't contain a : ?!\n");
 						exit_code(2);
 					}
 				}
 				else{
-					printf("error: sip:uri doesn't not begin with sip\n");
+					printf("error: SIPURI doesn't not begin with sip\n");
 					exit_code(2);
 				}
 				uri_b=1;
@@ -568,14 +568,14 @@ int main(int argc, char *argv[])
 			exit_code(2);
 		}
 		if (!uri_b) {
-			printf("error: for trace mode a sip:uri is realy needed\n");
+			printf("error: for trace mode a SIPURI is realy needed\n");
 			exit_code(2);
 		}
 		if (file_b) {
 			printf("warning: file will be ignored for tracing.");
 		}
 		if (!username) {
-			printf("error: for trace mode without a file the sip:uir have to "
+			printf("error: for trace mode without a file the SIPURI have to "
 				"contain a username\n");
 			exit_code(2);
 		}
@@ -597,7 +597,7 @@ int main(int argc, char *argv[])
 			exit_code(2);
 		}
 		if (!username || !uri_b) {
-			printf("error: for the USRLOC mode you have to give a sip:uri with "
+			printf("error: for the USRLOC mode you have to give a SIPURI with "
 				"a username\n       at least\n");
 			exit_code(2);
 		}
