@@ -1,5 +1,5 @@
 /*
- * $Id: sipsak.c,v 1.36 2003/02/01 16:16:34 calrissian Exp $
+ * $Id: sipsak.c,v 1.37 2003/02/01 20:08:36 calrissian Exp $
  *
  * Copyright (C) 2002 Fhg Fokus
  *
@@ -320,7 +320,7 @@ void cpy_vias(char *reply){
 	last_via=first_via+4;
 	middle_via=last_via;
 	/* proceed additional via lines */
-	while ((middle_via=strstr(last_via, "Via:"))!=NULL &&
+	while ((middle_via=strstr(last_via, "Via:"))!=NULL ||
 		   (middle_via=strstr(last_via, "\nv:"))!=NULL )
 		last_via=middle_via+4;
 	last_via=strchr(last_via, '\n');
