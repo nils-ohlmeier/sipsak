@@ -1,5 +1,5 @@
 /*
- * $Id: sipsak.c,v 1.64 2004/06/17 14:54:03 calrissian Exp $
+ * $Id: sipsak.c,v 1.65 2004/06/21 16:35:32 calrissian Exp $
  *
  * Copyright (C) 2002-2004 Fhg Fokus
  * Copyright (C) 2004 Nils Ohlmeier
@@ -35,6 +35,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <time.h>
+#include <getopt.h>
 
 #include "sipsak.h"
 #include "helper.h"
@@ -87,7 +88,7 @@ void print_help() {
 		"                (default: request length)\n"
 		"   -l port      the local port to use (default: any)\n"
 		"   -r port      the remote port to use (default: 5060)\n"
-		"   -p hostname  request target (outgoing proxy)\n"
+		"   -p hostname  request target (outbound proxy)\n"
 		"   -H hostname  overwrites the hostname in all headers\n"
 		"                (usefull if the detection of the hostname fails)\n"
 		"   -m number    the value for the max-forwards header field\n"
@@ -114,7 +115,45 @@ int main(int argc, char *argv[])
 	char	buff[BUFSIZE];
 	int		length, c;
 	char	*delim, *delim2;
-
+#ifdef _GETOPT_H
+	int option_index = 0;
+	static struct option l_opts[] = {
+		{"help", 0, 0, 'h'},
+		{"version", 0, 0, 'V'},
+		{"filename", 1, 0, 'f'},
+		{"sip-uri", 1, 0, 's'},
+		{"traceroute-mode", 0, 0, 'T'},
+		{"usrloc-mode", 0, 0, 'U'},
+		{"invite-mode", 0, 0, 'I'},
+		{"message-mode", 0, 0, 'M'},
+		{"contact", 1, 0, 'C'},
+		{"appendix-begin-number", 1, 0, 'b'},
+		{"appendix-end-number", 1, 0, 'e'},
+		{"sleep", 1, 0, 'o'},
+		{"expires", 1, 0, 'x'},
+		{"remove-bindings", 0, 0, 'z'},
+		{"flood-mode", 0, 0, 'F'},
+		{"cseq-max", 1, 0, 'c'},
+		{"random-mode", 0, 0, 'R'},
+		{"trash-chars", 1, 0, 't'},
+		{"local-port", 1, 0, 'l'},
+		{"remote-port", 1, 0, 'r'},
+		{"outbound-proxy", 1, 0, 'p'},
+		{"hostname", 1, 0, 'H'},
+		{"max-fowards", 1, 0, 'm'},
+		{"numeric", 0, 0, 'n'},
+		{"no-via", 0, 0, 'i'},
+		{"password", 1, 0, 'a'},
+		{"ignore-redirects", 0, 0, 'd'},
+		{"extract-ip", 0, 0, 'w'},
+		{"replace", 0, 0, 'G'},
+		{"nagios-code", 0, 0, 'N'},
+		{"nagios-warn", 1, 0, 'W'},
+		{"message-body", 1, 0, 'B'},
+		{"disposition", 1, 0, 'O'},
+		{0, 0, 0, 0}
+	};
+#endif
 	/* some initialisation to be shure */
 	file_b=uri_b=trace=lport=usrloc=flood=verbose=randtrash=trashchar = 0;
 	numeric=warning_ext=rand_rem=nonce_count=replace_b=invite=message = 0;
@@ -135,7 +174,11 @@ int main(int argc, char *argv[])
 	if (argc==1) print_help();
 
 	/* lots of command line switches to handle*/
+#ifdef _GETOPT_H
+	while ((c=getopt_long(argc, argv, "a:B:b:C:c:de:f:Fg:GhH:iIl:m:MnNo:O:p:r:Rs:t:TUvVwW:x:z", l_opts, &option_index)) != EOF){
+#else
 	while ((c=getopt(argc,argv,"a:B:b:C:c:de:f:Fg:GhH:iIl:m:MnNo:O:p:r:Rs:t:TUvVwW:x:z")) != EOF){
+#endif
 		switch(c){
 			case 'a':
 				password=malloc(strlen(optarg));
@@ -367,8 +410,9 @@ int main(int argc, char *argv[])
 				verbose++;
 				break;
 			case 'V':
-				printf("sipsak %s   by Nils Ohlmeier\n Copyright (C) 2002-2003"
-						" FhG Fokus\n", SIPSAK_VERSION);
+				printf("sipsak %s  by Nils Ohlmeier\n Copyright (C) 2002-2004"
+						" FhG Fokus\n Copyright (C) 2004 Nils Ohlmeier\n", 
+						SIPSAK_VERSION);
 				exit_code(0);
 				break;
 			case 'w':
