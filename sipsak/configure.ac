@@ -35,7 +35,24 @@ fi
 
 # Checks for header files.
 AC_HEADER_STDC
-AC_CHECK_HEADERS([arpa/inet.h netdb.h netinet/in.h netinet/ip.h netinet/ip_icmp.h netinet/udp.h stdlib.h string.h sys/socket.h sys/time.h unistd.h])
+AC_CHECK_HEADERS([arpa/inet.h getopt.h netdb.h netinet/in.h netinet/in_systm.h stdlib.h string.h sys/socket.h sys/time.h unistd.h])
+AC_CHECK_HEADERS([netinet/ip.h netinet/udp.h],,,
+[[#ifdef HAVE_NETINET_IN_SYSTM_H
+#include <sys/types.h>
+#include <netinet/in.h>
+#include <netinet/in_systm.h>
+#endif
+]])
+AC_CHECK_HEADERS([netinet/ip_icmp.h],,,
+[[#ifdef HAVE_NETINET_IN_SYSTM_H
+#include <sys/types.h>
+#include <netinet/in.h>
+#include <netinet/in_systm.h>
+#endif
+#ifdef HAVE_NETINET_IP_H
+#include <netinet/ip.h>
+#endif
+]])
 
 # Checks for typedefs, structures, and compiler characteristics.
 AC_TYPE_SIZE_T
@@ -44,7 +61,7 @@ AC_HEADER_TIME
 # Checks for library functions.
 AC_FUNC_MALLOC
 AC_FUNC_SELECT_ARGTYPES
-AC_CHECK_FUNCS([gethostbyname gethostname gettimeofday inet_ntop memset regcomp select socket strchr strstr uname])
+AC_CHECK_FUNCS([getdomainname gethostbyname gethostname getopt_long gettimeofday inet_ntop memset ntohs regcomp select socket strchr strstr uname])
 
 GCC_STACK_PROTECT_CC
 

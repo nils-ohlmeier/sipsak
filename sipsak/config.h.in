@@ -12,11 +12,20 @@
 /* Define to 1 if you have the <arpa/inet.h> header file. */
 #undef HAVE_ARPA_INET_H
 
+/* Define to 1 if you have the `getdomainname' function. */
+#undef HAVE_GETDOMAINNAME
+
 /* Define to 1 if you have the `gethostbyname' function. */
 #undef HAVE_GETHOSTBYNAME
 
 /* Define to 1 if you have the `gethostname' function. */
 #undef HAVE_GETHOSTNAME
+
+/* Define to 1 if you have the <getopt.h> header file. */
+#undef HAVE_GETOPT_H
+
+/* Define to 1 if you have the `getopt_long' function. */
+#undef HAVE_GETOPT_LONG
 
 /* Define to 1 if you have the `gettimeofday' function. */
 #undef HAVE_GETTIMEOFDAY
@@ -43,6 +52,9 @@
 /* Define to 1 if you have the <netinet/in.h> header file. */
 #undef HAVE_NETINET_IN_H
 
+/* Define to 1 if you have the <netinet/in_systm.h> header file. */
+#undef HAVE_NETINET_IN_SYSTM_H
+
 /* Define to 1 if you have the <netinet/ip.h> header file. */
 #undef HAVE_NETINET_IP_H
 
@@ -51,6 +63,9 @@
 
 /* Define to 1 if you have the <netinet/udp.h> header file. */
 #undef HAVE_NETINET_UDP_H
+
+/* Define to 1 if you have the `ntohs' function. */
+#undef HAVE_NTOHS
 
 /* Define to 1 if you have the `regcomp' function. */
 #undef HAVE_REGCOMP
