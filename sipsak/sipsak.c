@@ -1,7 +1,7 @@
 /*
- * $Id: sipsak.c,v 1.18 2002/08/30 16:55:28 calrissian Exp $
+ * $Id: sipsak.c,v 1.19 2002/09/13 08:12:44 calrissian Exp $
  *
- * Copyright (C) 2002-2003 Fhg Fokus
+ * Copyright (C) 2002 Fhg Fokus
  *
  * This file is sipsak, a free sip testing tool.
  *
@@ -42,7 +42,7 @@ bouquets and brickbats to farhan@hotfoon.com
    - support for IPv6
 */
 
-//set ts=4 :-)
+//set ts=4
 
 #include <stdlib.h>
 #include <stdio.h>
@@ -60,6 +60,8 @@ bouquets and brickbats to farhan@hotfoon.com
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <sys/poll.h>
+
+#include <openssl/md5.h>
 
 #define SIPSAK_VERSION "v0.7.3"
 #define RESIZE		1024
@@ -108,13 +110,26 @@ bouquets and brickbats to farhan@hotfoon.com
 #define USRLOC_EXP_DEF 15
 #define FLOOD_METH "OPTIONS"
 #define USRLOC_REMOVE_PERCENT 0.1
+#define WWWAUTH_STR "WWW-Authenticate: "
+#define WWWAUTH_STR_LEN 18
+#define AUTH_STR "Authorization: Digest "
+#define AUTH_STR_LEN 22
+#define REALM_STR "realm="
+#define REALM_STR_LEN 6
+#define OPAQUE_STR "opaque="
+#define NONCE_STR "nonce="
+#define NONCE_STR_LEN 6
+#define RESPONSE_STR "response="
+#define RESPONSE_STR_LEN 9
+
+#define HASHHEXLEN 2*MD5_DIGEST_LENGTH
 
 /* lots of global variables. ugly but makes life easier. */
 long address;
 int verbose, nameend, namebeg, expires_t, flood, warning_ext;
 int maxforw, lport, rport, randtrash, trashchar, numeric;
 int file_b, uri_b, trace, via_ins, usrloc, redirects, rand_rem;
-char *username, *domainname;
+char *username, *domainname, *password;
 char fqdn[FQDN_SIZE], messusern[FQDN_SIZE];
 char message[BUFSIZE], mes_reply[BUFSIZE];
 
@@ -303,8 +318,14 @@ void create_msg(char *buff, int action){
 			if (verbose > 2)
 				printf("username: %s\ndomainname: %s\n", username, domainname);
 			usern=malloc(strlen(username)+10);
-			sprintf(messusern, "%s sip:%s%i", MES_STR, username, namebeg);
-			sprintf(usern, "%s%i", username, namebeg);
+			if (nameend>0) {
+				sprintf(messusern, "%s sip:%s%i", MES_STR, username, namebeg);
+				sprintf(usern, "%s%i", username, namebeg);
+			}
+			else {
+				sprintf(messusern, "%s sip:%s", MES_STR, username);
+				sprintf(usern, "%s", username);
+			}
 			/* build the register, message and the 200 we need in for 
 			   USRLOC on one function call*/
 			sprintf(buff, "%s sip:%s%s%s%s:%i\r\n%s<sip:%s@%s>\r\n"
@@ -473,6 +494,175 @@ void warning_extract(char *message)
 	}
 }
 
+void cvt_hex(char *_b, char *_h)
+{
+        unsigned short i;
+        unsigned char j;
+
+        for (i = 0; i < MD5_DIGEST_LENGTH; i++) {
+                j = (_b[i] >> 4) & 0xf;
+                if (j <= 9) {
+                        _h[i * 2] = (j + '0');
+                } else {
+                        _h[i * 2] = (j + 'a' - 10);
+                }
+                j = _b[i] & 0xf;
+                if (j <= 9) {
+                        _h[i * 2 + 1] = (j + '0');
+                } else {
+                        _h[i * 2 + 1] = (j + 'a' - 10);
+                }
+        };
+        _h[HASHHEXLEN] = '\0';
+}
+
+/* create an insert a auth header into the message */
+void insert_auth(char *message, char *authreq)
+{
+	char *auth, *begin, *end, *insert, *backup, *realm, *usern, *nonce, 
+		*method, *uri, *ha1_tmp, *ha2_tmp, *resp_tmp;
+	char ha1[MD5_DIGEST_LENGTH], ha2[MD5_DIGEST_LENGTH], 
+		resp[MD5_DIGEST_LENGTH]; 
+	char ha1_hex[HASHHEXLEN], ha2_hex[HASHHEXLEN], resp_hex[HASHHEXLEN];
+
+	if ((begin=strstr(message, AUTH_STR))!=NULL) {
+		printf("\nrequest:\n%s\nresponse:\n%s\nerror: authorization failed\n  "
+			"     request already contains Authorization, but received 401, "
+			"see above\n", message, authreq);
+		exit(2);
+	}
+	/* make a backup of all except the request line because for 
+	   simplicity we insert the auth header direct behind the request line */
+	insert=strchr(message, '\n');
+	insert++;
+	backup=malloc(strlen(insert)+1);
+	strncpy(backup, insert, strlen(insert)+1);
+//printf("\nbackup:\n%s\n", backup);
+
+	begin=strstr(authreq, WWWAUTH_STR);
+	if (begin) {
+		end=strchr(begin, '\n');
+		auth=malloc((end-begin)+1);
+		strncpy(auth, begin, (end-begin));
+		*(auth+(end-begin))='\0';
+//printf("auth:\n%s\n", auth);
+		if ((begin=strstr(auth, "Basic"))!=NULL) {
+			printf("%s\nerror: authentication method Basic is deprecated since"
+				" RFC 3261 and not supported by sipsak\n", authreq);
+			exit(3);
+		}
+		if ((begin=strstr(auth, "Digest"))==NULL) {
+			printf("%s\nerror: couldn't find authentication method Digest in "
+				"the 402 response above\n", authreq);
+			exit(3);
+		}
+		if ((begin=strstr(auth, "algorithm="))!=NULL) {
+			begin+=10;
+			if ((strncmp(begin, "MD5", 3))!=0) {
+				printf("%s\nerror: unsupported authentication algorithm\n", 
+					authreq);
+				exit(2);
+			}
+		}
+		usern=malloc(strlen(username)+10);
+		if (nameend>0)
+			sprintf(usern, "%s%i", username, namebeg);
+		else
+			sprintf(usern, "%s", username);
+		end=strchr(message, ' ');
+		method=malloc(end-message+1);
+		strncpy(method, message, (end-message));
+		*(method+(end-message))='\0';
+		begin=end++;
+		begin++;
+		end=strchr(end, ' ');
+		uri=malloc(end-begin+1);
+		strncpy(uri, begin, (end-begin));
+		*(uri+(end-begin))='\0';
+
+		sprintf(insert, AUTH_STR);
+		insert=insert+AUTH_STR_LEN;
+		sprintf(insert, "username=\"%s\", ", usern);
+		insert+=strlen(insert);
+		sprintf(insert, "uri=\"%s\", ", uri);
+		insert+=strlen(insert);
+		if ((begin=strstr(auth, REALM_STR))!=NULL) {
+			end=strchr(begin, ',');
+			strncpy(insert, begin, end-begin+1);
+			insert=insert+(end-begin+1);
+			sprintf(insert, " ");
+			insert++;
+			begin+=REALM_STR_LEN+1;
+			end--;
+			realm=malloc(end-begin+1);
+			strncpy(realm, begin, (end-begin));
+			*(realm+(end-begin))='\0';
+		}
+		else {
+			printf("%s\nerror: realm not found in 401 above\n", authreq);
+			exit(3);
+		}
+		if ((begin=strstr(auth, OPAQUE_STR))!=NULL) {
+			end=strchr(begin, ',');
+			strncpy(insert, begin, end-begin+1);
+			insert=insert+(end-begin+1);
+			sprintf(insert, " ");
+			insert++;
+		}
+		if ((begin=strstr(auth, NONCE_STR))!=NULL) {
+			end=strchr(begin, ',');
+			strncpy(insert, begin, end-begin+1);
+			insert=insert+(end-begin+1);
+			sprintf(insert, " ");
+			insert++;
+			begin+=NONCE_STR_LEN+1;
+			end--;
+			nonce=malloc(end-begin+1);
+			strncpy(nonce, begin, (end-begin));
+			*(nonce+(end-begin))='\0';
+		}
+		else {
+			printf("%s\nerror: nonce not found in 401 above\n", authreq);
+			exit(3);
+		}
+//printf("\nusername: %s\npassword: %s\nrealm: %s\nnonce: %s\nmethod: %s\nuri: %s\n", usern, password, realm, nonce, method, uri);
+		if (!password)
+			password=usern;
+		ha1_tmp=malloc(strlen(usern)+strlen(realm)+strlen(password)+3);
+		resp_tmp=malloc(2*HASHHEXLEN+strlen(nonce)+3);
+		sprintf(ha1_tmp, "%s:%s:%s", usern, realm, password);
+		MD5(ha1_tmp, strlen(ha1_tmp), ha1);
+		cvt_hex(ha1, ha1_hex);
+//printf("ha1: %s\n", ha1_hex);
+		sprintf(resp_tmp, "%s:%s:", ha1_hex, nonce);
+		ha2_tmp=malloc(strlen(method)+strlen(uri)+2);
+		sprintf(ha2_tmp, "%s:%s", method, uri);
+		MD5(ha2_tmp, strlen(ha2_tmp), ha2);
+		cvt_hex(ha2, ha2_hex);
+//printf("ha2: %s\n", ha2_hex);
+		sprintf(resp_tmp+strlen(resp_tmp), "%s", ha2_hex);
+//printf("temp: %s\n", resp_tmp);
+		MD5(resp_tmp, strlen(resp_tmp), resp);
+		cvt_hex(resp, resp_hex);
+//printf("response: %s\n", resp_hex);
+		sprintf(insert, RESPONSE_STR);
+		insert+=RESPONSE_STR_LEN;
+		sprintf(insert, "\"%s\"\r\n", resp_hex);
+		insert+=strlen(insert);
+		strncpy(insert, backup, strlen(backup));
+//printf("message:\n%s\n", message);
+	}
+	else {
+		printf("%s\nerror: couldn't find WWW-Authentication header in the "
+			"401 response above\n",	authreq);
+		exit(3);
+	}
+	if (verbose>1) 
+		printf("authorizing\n");
+	free(backup); free(auth); free(usern); free(method); free(uri);
+	free(realm); free(nonce); free(ha1_tmp); free(ha2_tmp); free(resp_tmp);
+}
+
 int cseq(char *message)
 {
 	char *cseq;
@@ -522,7 +712,7 @@ void shoot(char *buff)
 	char reply[BUFSIZE];
 	fd_set	fd;
 	socklen_t slen;
-	regex_t redexp, proexp, okexp, tmhexp, errexp;
+	regex_t redexp, proexp, okexp, tmhexp, errexp, authexp;
 
 	/* initalize some local vars */
 	redirected = 1;
@@ -569,6 +759,8 @@ void shoot(char *buff)
 	regcomp(&okexp, "^SIP/[0-9]\\.[0-9] 200 ", 
 		REG_EXTENDED|REG_NOSUB|REG_ICASE); 
 	regcomp(&redexp, "^SIP/[0-9]\\.[0-9] 3[0-9][0-9] ", 
+		REG_EXTENDED|REG_NOSUB|REG_ICASE);
+	regcomp(&authexp, "^SIP/[0-9]\\.[0-9] 401 ", 
 		REG_EXTENDED|REG_NOSUB|REG_ICASE);
 	regcomp(&errexp, "^SIP/[0-9]\\.[0-9] 4[0-9][0-9] ", 
 		REG_EXTENDED|REG_NOSUB|REG_ICASE); 
@@ -646,7 +838,7 @@ void shoot(char *buff)
 			exit(2);
 		}
 
-		/* here we go for the number of nretries which healily depends on the 
+		/* here we go for the number of nretries which strongly depends on the 
 		   mode */
 		for (i = 0; i <= nretries; i++)
 		{
@@ -657,7 +849,11 @@ void shoot(char *buff)
 			else if (usrloc && (verbose > 1) && !dontsend) {
 				switch (usrlocstep) {
 					case 0:
-						printf("registering user %s%i... ", username, namebeg);
+						if (nameend>0)
+							printf("registering user %s%i... ", username, 
+								namebeg);
+						else
+							printf("registering user %s... ", username);
 						break;
 					case 1:
 						printf("sending message... ");
@@ -666,7 +862,11 @@ void shoot(char *buff)
 						printf("sending message reply... ");
 						break;
 					case 3:
-						printf("remove binding for %s%i...", username, namebeg);
+						if (nameend>0)
+							printf("remove binding for %s%i...", username, 
+								namebeg);
+						else
+							printf("remove binding for %s...", username);
 						break;
 				}
 			}
@@ -902,6 +1102,15 @@ void shoot(char *buff)
 								"\n%s\n", reply);
 							exit(2);
 						}
+					} /* if redircts... */
+					else if (regexec(&authexp, reply, 0, 0, 0)==0) {
+						if (!username) {
+							printf("error: received 401 but can not "
+								"authentication without a username\n");
+							exit(2);
+						}
+						insert_auth(buff, reply);
+						i--;
 					}
 					else if (trace) {
 						if (regexec(&tmhexp, reply, 0, 0, 0)==0) {
@@ -1025,9 +1234,12 @@ void shoot(char *buff)
 								if (regexec(&okexp, reply, 0, 0, 0)==0) {
 									if (verbose > 1)
 										printf("  reply received\n\n");
-									else if (verbose)
+									else if (verbose && nameend>0)
 										printf("USRLOC for %s%i completed "
 											"successful\n", username, namebeg);
+									else if (verbose)
+										printf("USRLOC for %s completed "
+											"successful\n", username);
 									if (namebeg==nameend) {
 										printf("\nAll USRLOC tests completed "
 											"successful.\nreceived last message"
@@ -1089,9 +1301,12 @@ void shoot(char *buff)
 								}
 								if (regexec(&okexp, reply, 0, 0, 0)==0) {
 									if (verbose > 1) printf("   OK\n\n");
-									else if (verbose)
+									else if (verbose && nameend>0)
 										printf("Binding removal for %s%i "
 											"successful\n", username, namebeg);
+									else if (verbose)
+										printf("Binding removal for %s "
+											"successful\n", username);
 									namebeg = rem_namebeg;
 									namebeg++;
 									create_msg(buff, REQ_REG);
@@ -1184,7 +1399,7 @@ void shoot(char *buff)
 							else
 								exit(1);
 						}
-					}
+					} /* redirect, auth, and modes */
 		
 				} /* ret > 0 */
 				else {
@@ -1218,11 +1433,12 @@ void print_help() {
 	printf("\n"
 		" shoot : sipsak [-f filename] -s sip:uri\n"
 		" trace : sipsak -T -s sip:uri\n"
-		" USRLOC: sipsak -U [-b number] -e number [-x number] [-z] -s sip:uri\n"
+		" USRLOC: sipsak -U [-b number] [-e number] [-x number] [-z] -s "
+			"sip:uri\n"
 		" flood : sipsak -F [-c number] -s sip:uri\n"
 		" random: sipsak -R [-t number] -s sip:uri\n\n"
 		" additional parameter in every mode:\n"
-		"                [-d] [-i] [-l port] [-m number] [-n] [-r port] [-v] "
+		"               [-a password] [-d] [-i] [-l port] [-m number] [-n] [-r port] [-v] "
 			"[-V] [-w]\n"
 		"   -h           displays this help message\n"
 		"   -V           prints version string only\n"
@@ -1251,6 +1467,7 @@ void print_help() {
 		"   -m number    the value for the max-forwards header field\n"
 		"   -n           use IPs instead of fqdn in the Via-Line\n"
 		"   -i           deactivate the insertion of a Via-Line\n"
+		"   -a password  use the given password for authentication\n"
 		"   -d           ignore redirects\n"
 		"   -v           each v's produces more verbosity (max. 3)\n"
 		"   -w           extract IP from the warning in reply\n\n"
@@ -1272,7 +1489,7 @@ int main(int argc, char *argv[])
 	numeric=warning_ext=rand_rem = 0;
 	namebeg=nameend=maxforw = -1;
 	via_ins=redirects = 1;
-	username = NULL;
+	username=password = NULL;
 	address = 0;
     rport = 5060;
 	expires_t = USRLOC_EXP_DEF;
@@ -1285,8 +1502,12 @@ int main(int argc, char *argv[])
 	if (argc==1) print_help();
 
 	/* lots of command line switches to handle*/
-	while ((c=getopt(argc,argv,"b:c:de:f:Fhil:m:nr:Rs:t:TUvVwx:z")) != EOF){
+	while ((c=getopt(argc,argv,"a:b:c:de:f:Fhil:m:nr:Rs:t:TUvVwx:z")) != EOF){
 		switch(c){
+			case 'a':
+				password=malloc(strlen(optarg));
+				strncpy(password, optarg, strlen(optarg));
+				break;
 			case 'b':
 				if ((namebeg=atoi(optarg))==-1) {
 					printf("error: non-numerical appendix begin for the "
@@ -1480,9 +1701,14 @@ int main(int argc, char *argv[])
 				"flood\n");
 			exit(2);
 		}
-		if (!username || !uri_b || nameend==-1) {
+		if (!username || !uri_b) {
 			printf("error: for the USRLOC mode you have to give a sip:uri with "
-				"a username and the\n       username appendix end at least\n");
+				"a username\n       at least\n");
+			exit(2);
+		}
+		if (namebeg>0 && nameend==-1) {
+			printf("error: if a starting numbers is given also an ending "
+				"number have to be specified\n");
 			exit(2);
 		}
 		if (via_ins) {
@@ -1493,6 +1719,8 @@ int main(int argc, char *argv[])
 				"disableing\n");
 			redirects=0;
 		}
+		if (nameend==-1)
+			nameend=0;
 		if (namebeg==-1)
 			namebeg=0;
 	}

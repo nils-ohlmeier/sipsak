@@ -28,7 +28,7 @@ FLAGS = $(WARNING) $(DEFS)
 all:: $(PROGS)
 
 %: %.o
-	$(CC) -o $@ $^
+	$(CC) -lssl -o $@ $^
 %.o: %.c
 	$(CC) $(FLAGS) -c $<
 

@@ -5,7 +5,9 @@
 .SH NAME
 sipsak \- a utility for various tests on sip server
 .SH SYNOPSIS
-.B sipsak [-dFhinRTUVvwz] [-b
+.B sipsak [-dFhinRTUVvwz] [-a
+.I password
+.B ] [-b
 .I number 
 .B ] [-c 
 .I number 
@@ -59,6 +61,12 @@ keeps sending requests to a SIP server at high pace.
 
 
 .SH OPTIONS
+.IP "-a password"
+With the given 
+.I password
+an authentication will be tryed on received '401 Unauthorized'. Authorization
+will be tryed on time. If no this option is omitted an authorization with the
+username as password will be tryed.
 .IP "-b number"
 The starting number which is appended to the user name in the USRLOC mode.
 This 
@@ -163,7 +171,12 @@ parameter. The number starting from the
 .BR -b
 parameter to the 
 .BR -e
-parameter is appended the user name.
+parameter is appended the user name. If the 
+.BR -b
+and the
+.BR -e
+parameter are omitted, only one runs with the given username, but without 
+append number to the usernames is done.
 .IP -v
 This parameter increases the output verbosity. No
 .BR -v
@@ -194,7 +207,7 @@ responsibly. Running it in any of the stress modes puts
 substantial burden on network and server under test.
 
 .SH EXAMPLES
-.IP "sipsak -v -s sip:nobody@foo.bar" 
+.IP "sipsak -vv -s sip:nobody@foo.bar" 
 displays received replies.
 .IP "sipsak -T -s sip:nobody@foo.bar" 
 traces SIP path.
