@@ -1,5 +1,5 @@
 /*
- * $Id: header_f.c,v 1.9 2005/01/05 23:37:24 calrissian Exp $
+ * $Id: header_f.c,v 1.10 2005/03/27 15:33:10 calrissian Exp $
  *
  * Copyright (C) 2002-2004 Fhg Fokus
  *
@@ -77,7 +77,6 @@ void add_via(char *mes)
 	}
 	strncpy(backup, via, strlen(via)+1);
 	strncpy(via, via_line, strlen(via_line));
-printf("%s\n", via);
 	strncpy(via+strlen(via_line), backup, strlen(backup)+1);
 	if (verbose > 1)
 		printf("New message with Via-Line:\n%s\n", mes);
