@@ -2,7 +2,6 @@ ToDo List (no order):
  - parse the complete DNS resonses in util
  - check all parameters with is[alpha|number]
  - increase hostname detection for the Via line
- - multiple contacts in usrloc mode
  - endless randtrash mode with logfile
  - support for IPv6
  - DNS SRV support
