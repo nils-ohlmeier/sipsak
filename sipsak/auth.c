@@ -1,5 +1,5 @@
 /*
- * $Id: auth.c,v 1.16 2005/01/05 23:37:24 calrissian Exp $
+ * $Id: auth.c,v 1.17 2005/03/01 12:05:35 calrissian Exp $
  *
  * Copyright (C) 2002-2004 Fhg Fokus
  *
@@ -265,8 +265,8 @@ void insert_auth(char *message, char *authreq)
 			snprintf(insert, NC_STR_LEN+13, "%s%x, ", NC_STR, nonce_count);
 			insert+=strlen(insert);
 			cnonce=(unsigned int)rand();
-			/* the random number should at max a length of 5 ?! */
-			snprintf(insert, 12+5, "cnonce=\"%x\", ", cnonce);
+			/* FIXME: RANDMAX has probably 4 bytes on 32 arch, but 64 bits..? */
+			snprintf(insert, 12+8, "cnonce=\"%x\", ", cnonce);
 			insert+=strlen(insert);
 			/* hopefully 100 is enough */
 			qop_tmp=malloc(100);
