@@ -1,5 +1,5 @@
 /*
- * $Id: helper.c,v 1.6 2003/12/08 20:02:04 calrissian Exp $
+ * $Id: helper.c,v 1.7 2003/12/18 04:08:06 calrissian Exp $
  *
  * Copyright (C) 2002-2003 Fhg Fokus
  *
@@ -77,7 +77,8 @@ long getaddress(char *host)
 	*/
 	pent = gethostbyname(host);
 	if (!pent) {
-		perror("gethostbyname error");
+		//perror("gethostbyname error");
+		printf("'%s' is unresolveable\n", host);
 		exit(2);
 	}
 	lp = (long *) (pent->h_addr);
