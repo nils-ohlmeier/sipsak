@@ -37,6 +37,7 @@ sipsak \- a utility for various tests on sip server
 .I number
 .B ] -s 
 .I sip-uri
+
 .SH DESCRIPTION
 .B sipsak
 is a SIP stress and diagnostics utility. 
@@ -69,6 +70,16 @@ can be stressed with the
 or the
 .BR -M
 option.
+If
+.BR -I
+and
+.BR -M
+are omitted
+.B sipsak
+can be used to register any given contact (with the
+.BR -C
+option) for an account at a registrar and to query the current bindings for
+an account at a registrar.
 .IP "- flood mode (-F)"
 stress mode for SIP servers.
 .B sipsak 
@@ -97,6 +108,14 @@ This is the content of the Contact header in the usrloc mode. This allows
 to insert forwards like for mail. For example you can insert the uri of
 your first SIP account at a second account, thus all calls to the second
 account will be forwarded to the first account.
+As the argument to this option will not be enclosed in brackets you can
+give also multiple contacts in the raw format as comma seperated list.
+The special words 
+.B empty
+or
+.B none
+will result in no contact header in the REGISTER request and thus the server
+should answer with the current bindings for the account at the registrar.
 .IP -d
 If this option is set all redirects will be ignored. By default without this 
 option received redirects will be respected. This option is automaticly 
@@ -308,6 +327,12 @@ wrong options combination. 3 will be returned on remote errors like socket
 errors (e.g. icmp error), redirects without a contact header or simply 
 no answer (timeout).
 
+If the 
+.BR -N
+option was given the return code will be 2 in case of any (local or remote)
+error. 1 in case there have been retransmissions from
+.B sipsak
+to the server. And 0 if there was no error at all.
 .SH CAUTION
 Use
 .B sipsak
