@@ -8,11 +8,25 @@ AM_MAINTAINER_MODE
 AC_CONFIG_SRCDIR([sipsak.c])
 AC_CONFIG_HEADER([config.h])
 
+
+
 # Checks for programs.
 AC_PROG_CC
 AC_PROG_INSTALL
 
 # Checks for libraries.
+AC_CANONICAL_HOST
+
+case "$host" in
+  *-*-solaris*)
+    LIBS="$LIBS -lposix4 -lsocket -lnsl"
+    ;;
+  *)
+    LIBS="$LIBS"
+    ;;
+esac
+AC_SUBST([LIBS])
+
 
 # Checks for header files.
 AC_HEADER_STDC

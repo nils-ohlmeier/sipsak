@@ -35,6 +35,7 @@ POST_INSTALL = :
 NORMAL_UNINSTALL = :
 PRE_UNINSTALL = :
 POST_UNINSTALL = :
+host_triplet = @host@
 ACLOCAL = @ACLOCAL@
 AMDEP_FALSE = @AMDEP_FALSE@
 AMDEP_TRUE = @AMDEP_TRUE@
@@ -88,10 +89,18 @@ am__include = @am__include@
 am__leading_dot = @am__leading_dot@
 am__quote = @am__quote@
 bindir = @bindir@
+build = @build@
 build_alias = @build_alias@
+build_cpu = @build_cpu@
+build_os = @build_os@
+build_vendor = @build_vendor@
 datadir = @datadir@
 exec_prefix = @exec_prefix@
+host = @host@
 host_alias = @host_alias@
+host_cpu = @host_cpu@
+host_os = @host_os@
+host_vendor = @host_vendor@
 includedir = @includedir@
 infodir = @infodir@
 install_sh = @install_sh@
@@ -142,8 +151,8 @@ NROFF = nroff
 MANS = $(dist_man1_MANS)
 DIST_COMMON = README $(dist_man1_MANS) AUTHORS COPYING ChangeLog \
 	INSTALL Makefile.am Makefile.in NEWS TODO aclocal.m4 \
-	config.h.in configure configure.ac depcomp install-sh missing \
-	mkinstalldirs
+	config.guess config.h.in config.sub configure configure.ac \
+	depcomp install-sh missing mkinstalldirs
 SOURCES = $(sipsak_SOURCES)
 
 all: config.h
