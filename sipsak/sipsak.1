@@ -65,7 +65,7 @@ keeps sending requests to a SIP server at high pace.
 With the given 
 .I password
 an authentication will be tryed on received '401 Unauthorized'. Authorization
-will be tryed on time. If no this option is omitted an authorization with the
+will be tryed on time. If this option is omitted an authorization with the
 username as password will be tryed.
 .IP "-b number"
 The starting number which is appended to the user name in the USRLOC mode.
@@ -115,10 +115,10 @@ field will be inserted. If omitted in the traceroute mode
 .BR number
 will be 255.
 .IP -n
-In stead of the full qualified domain name in the Via line the IP of the
+Instead of the full qualified domain name in the Via line the IP of the
 local host will be used.
 .IP "-r port"
-In stead of the default sip port 5060 the 
+Instead of the default sip port 5060 the 
 .BR port
 will be used. Alternatively the remote port can be given within the sip uri of
 the 
@@ -192,7 +192,7 @@ Sets the value of the Expires header to the given number.
 Activates the randomly removing of old bindings in the USRLOC mode. How many 
 per cent of the bindings will be removed, is determined by the 
 USRLOC_REMOVE_PERCENT define within the code (set it before compilation).
-Multiple removing of bindings is possible, and can not be prevented.
+Multiple removing of bindings is possible, and cannot be prevented.
 .SH RETURN VALUES
 The return value 0 means that no error occurred and received the expected 
 answer (a 200 in most cases). 1 will be returned on unexpected answers. 
@@ -221,13 +221,13 @@ in traceroute mode impossible.
 is case sensitive (not RFC conform). So all the header fields are only found
 if they are written like in the RFC.
 
-The short notation is not supported.
-
 IPv6 is not supported.
 
 DNS/SRV is not supported.
 
-Currently, sipsak has only been ported to Linux.
+Currently, sipsak runs fine on Linux. It should also run under CygWin (see
+the homepage for details). Also BSD was reported to the author as operating
+system.
 .SH BUGS
 sipsak is only tested against the SIP Express Router (ser) though their could
 be various bugs. Please feel free to mail them to the author.
