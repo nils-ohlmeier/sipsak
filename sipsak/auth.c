@@ -1,5 +1,5 @@
 /*
- * $Id: auth.c,v 1.3 2003/09/06 22:25:41 calrissian Exp $
+ * $Id: auth.c,v 1.4 2003/10/06 17:39:22 calrissian Exp $
  *
  * Copyright (C) 2002-2003 Fhg Fokus
  *
@@ -16,7 +16,6 @@
  * GNU General Public License for more details.
  */
 
-#include <libio.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
