@@ -1,5 +1,5 @@
 /*
- * $Id: sipsak.c,v 1.20 2002/09/13 13:02:47 calrissian Exp $
+ * $Id: sipsak.c,v 1.21 2002/09/21 01:13:33 calrissian Exp $
  *
  * Copyright (C) 2002 Fhg Fokus
  *
@@ -60,7 +60,9 @@ bouquets and brickbats to farhan@hotfoon.com
 #include <arpa/inet.h>
 #include <sys/poll.h>
 
+#ifdef AUTH
 #include <openssl/md5.h>
+#endif
 
 #define SIPSAK_VERSION "v0.7.5"
 #define RESIZE		1024
@@ -497,6 +499,7 @@ void warning_extract(char *message)
 	}
 }
 
+#ifdef AUTH
 /* converts a hash into hex output
    taken from the RFC 2617 */
 void cvt_hex(char *_b, char *_h)
@@ -669,7 +672,10 @@ void insert_auth(char *message, char *authreq)
 		if (!password)
 			password=usern;
 		ha1_tmp=malloc(strlen(usern)+strlen(realm)+strlen(password)+3);
-		resp_tmp=malloc(2*HASHHEXLEN+strlen(nonce)+strlen(qop_tmp)+3);
+		if (qop_auth)
+			resp_tmp=malloc(2*HASHHEXLEN+strlen(nonce)+strlen(qop_tmp)+3);
+		else
+			resp_tmp=malloc(2*HASHHEXLEN+strlen(nonce)+3);
 		sprintf(ha1_tmp, "%s:%s:%s", usern, realm, password);
 		MD5(ha1_tmp, strlen(ha1_tmp), ha1);
 		cvt_hex(ha1, ha1_hex);
@@ -700,9 +706,10 @@ void insert_auth(char *message, char *authreq)
 		printf("authorizing\n");
 	/* hopefully we free all here */
 	free(backup); free(auth); free(usern); free(method); free(uri); 
-	free(qop_tmp); free(realm); free(nonce); free(ha1_tmp); free(ha2_tmp); 
-	free(resp_tmp);
+	free(realm); free(nonce); free(ha1_tmp); free(ha2_tmp); free(resp_tmp);
+	if (qop_auth) free(qop_tmp);
 }
+#endif
 
 int cseq(char *message)
 {
@@ -1144,6 +1151,7 @@ void shoot(char *buff)
 							exit(2);
 						}
 					} /* if redircts... */
+#ifdef AUTH
 					else if (regexec(&authexp, reply, 0, 0, 0)==0) {
 						if (!username) {
 							printf("error: received 401 but can not "
@@ -1153,6 +1161,7 @@ void shoot(char *buff)
 						insert_auth(buff, reply);
 						i--;
 					}
+#endif
 					else if (trace) {
 						if (regexec(&tmhexp, reply, 0, 0, 0)==0) {
 							/* we received 483 to many hops */
@@ -1470,8 +1479,11 @@ void shoot(char *buff)
 
 /* prints out some usage help and exits */
 void print_help() {
-	printf("sipsak %s\n", SIPSAK_VERSION);
-	printf("\n"
+	printf("sipsak %s", SIPSAK_VERSION);
+#ifdef AUTH
+	printf(" (with digest auth support)");
+#endif
+	printf("\n\n"
 		" shoot : sipsak [-f filename] -s sip:uri\n"
 		" trace : sipsak -T -s sip:uri\n"
 		" USRLOC: sipsak -U [-b number] [-e number] [-x number] [-z] -s "
