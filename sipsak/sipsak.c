@@ -1,5 +1,5 @@
 /*
- * $Id: sipsak.c,v 1.52 2003/10/06 03:52:49 calrissian Exp $
+ * $Id: sipsak.c,v 1.53 2003/10/06 16:28:00 calrissian Exp $
  *
  * Copyright (C) 2002-2003 Fhg Fokus
  *
@@ -54,7 +54,8 @@ void print_help() {
 		" random: sipsak -R [-t number] -s sip:uri\n\n"
 		" additional parameter in every mode:\n"
 		"   [-a password] [-d] [-i] [-H hostname] [-l port] [-m number] [-n] "
-		"[-r port] [-v] [-V]\n   [-w]\n\n"
+		"[-r port]\n"
+		"   [-v] [-V] [-w]\n\n"
 		"   -h           displays this help message\n"
 		"   -V           prints version string only\n"
 		"   -f filename  the file which contains the SIP message to send\n"
