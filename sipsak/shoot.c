@@ -1,5 +1,5 @@
 /*
- * $Id: shoot.c,v 1.35 2004/11/02 13:48:50 calrissian Exp $
+ * $Id: shoot.c,v 1.36 2004/11/08 21:43:13 calrissian Exp $
  *
  * Copyright (C) 2002-2004 Fhg Fokus
  * Copyright (C) 2004 Nils Ohlmeier
@@ -332,7 +332,7 @@ void shoot(char *buff)
 						if (nameend>0)
 							printf("inviting user %s%i... ", username, namebeg);
 						else
-							printf("invitng user %s... ", username);
+							printf("inviting user %s... ", username);
 						break;
 					case INV_OK_RECV:
 						printf("sending invite reply... ");
