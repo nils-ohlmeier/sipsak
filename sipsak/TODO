@@ -1,4 +1,5 @@
 ToDo List (no order):
+ - parse the complete DNS resonses in util
  - Nagios compliance
  - add RFC-conform From tag
  - check all parameters with is[alpha|number]
