@@ -1,5 +1,5 @@
 /*
- * $Id: auth.c,v 1.4 2003/10/06 17:39:22 calrissian Exp $
+ * $Id: auth.c,v 1.5 2004/02/02 20:16:35 calrissian Exp $
  *
  * Copyright (C) 2002-2003 Fhg Fokus
  *
@@ -65,7 +65,7 @@ void insert_auth(char *message, char *authreq)
 			(begin=strstr(message, PROXYAUZ_STR))!=NULL) {
 		printf("\nrequest:\n%s\nresponse:\n%s\nerror: authorization failed\n  "
 			"     request already contains (Proxy-) Authorization, but "
-			"received 401, see above\n", message, authreq);
+			"received 40[1|7], see above\n", message, authreq);
 		exit(2);
 	}
 	/* make a backup of all except the request line because for 
