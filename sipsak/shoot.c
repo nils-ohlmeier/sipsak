@@ -1,5 +1,5 @@
 /*
- * $Id: shoot.c,v 1.23 2004/06/13 19:59:12 calrissian Exp $
+ * $Id: shoot.c,v 1.24 2004/06/15 10:46:52 calrissian Exp $
  *
  * Copyright (C) 2002-2004 Fhg Fokus
  * Copyright (C) 2004 Nils Ohlmeier
@@ -76,7 +76,7 @@ void shoot(char *buff)
 	int srcport, dstport, rawsock;
 #endif
 	int redirected, retryAfter, nretries;
-	int usock, csock, i, len, ret, usrlocstep;
+	int usock, csock, i, len, ret;
 	int dontsend, cseqtmp, rand_tmp, flen;
 	int rem_rand, retrans_r_c, retrans_s_c;
 	int randretrys = 0;
@@ -90,6 +90,9 @@ void shoot(char *buff)
 	fd_set	fd;
 	socklen_t slen;
 	regex_t redexp, proexp, okexp, tmhexp, errexp, authexp;
+	enum usteps { REG_REP, INV_RECV, INV_OK_RECV, INV_ACK_RECV, MES_RECV, 
+					MES_OK_RECV, UNREG_REP};
+	enum usteps usrlocstep = REG_REP;
 
 	/* the vars are filled by configure */
 	nretries = DEFAULT_RETRYS;
@@ -97,7 +100,7 @@ void shoot(char *buff)
 
 	/* initalize some local vars */
 	redirected = 1;
-	usrlocstep=dontsend=retrans_r_c=retrans_s_c = 0;
+	dontsend=retrans_r_c=retrans_s_c = 0;
 	big_delay=tmp_delay = 0;
 	delaytime.tv_sec = 0;
 	delaytime.tv_usec = 0;
@@ -204,17 +207,20 @@ void shoot(char *buff)
 			else
 				nretries=2*(nameend-namebeg)+2;
 			create_msg(buff, REQ_REG);
-			usrlocstep=0;
+			usrlocstep=REG_REP;
 		}
 		else if (invite) {
 			nretries=3*(nameend-namebeg)+3;
 			create_msg(buff, REQ_INV);
-			usrlocstep=1;
+			usrlocstep=INV_RECV;
 		}
 		else {
 			nretries=2*(nameend-namebeg)+2;
 			create_msg(buff, REQ_MES);
-			usrlocstep=4;
+			if (mes_body)
+				usrlocstep=MES_OK_RECV;
+			else
+				usrlocstep=MES_RECV;
 		}
 		cseqcmp=1;
 	}
@@ -295,36 +301,39 @@ void shoot(char *buff)
 			/* some initial output */
 			else if ((usrloc||invite||message) && (verbose > 1) && !dontsend) {
 				switch (usrlocstep) {
-					case 0:
+					case REG_REP:
 						if (nameend>0)
 							printf("registering user %s%i... ", username, 
 								namebeg);
 						else
 							printf("registering user %s... ", username);
 						break;
-					case 1:
+					case INV_RECV:
 						if (nameend>0)
 							printf("inviting user %s%i... ", username, namebeg);
 						else
 							printf("invitng user %s... ", username);
 						break;
-					case 2:
+					case INV_OK_RECV:
 						printf("sending invite reply... ");
 						break;
-					case 3:
+					case INV_ACK_RECV:
 						printf("sending invite ack... ");
 						break;
-					case 4:
+					case MES_RECV:
 						if (nameend>0)
 							printf("sending message to %s%i... ", username,
 								namebeg);
 						else
 							printf("sending message to %s... ", username);
 						break;
-					case 5:
-						printf("sending message reply... ");
+					case MES_OK_RECV:
+						if (mes_body)
+							printf("sending message ... ");
+						else
+							printf("sending message reply... ");
 						break;
-					case 6:
+					case UNREG_REP:
 						if (nameend>0)
 							printf("remove binding for %s%i...", username, 
 								namebeg);
@@ -547,26 +556,6 @@ void shoot(char *buff)
 						delaytime.tv_sec = 0;
 						delaytime.tv_usec = 0;
 					}
-					/* if (usrloc) {
-						switch (usrlocstep) {
-							case 0: 
-								cseqcmp = 3*namebeg+1;
-								break;
-							case 1:
-							case 2:
-								cseqcmp = 3*namebeg+2;
-								break;
-							case 3:
-								cseqcmp = 3*namebeg+3;
-								break;
-							default:
-								printf("error: unknown usrloc step on cseq"
-									" compare\n");
-								exit_code(2);
-								break;
-						}
-					}
-					else */
 					/* check for old CSeq => ignore retransmission */
 					if (!usrloc && !invite && !message)
 						cseqcmp = namebeg;
@@ -751,7 +740,7 @@ void shoot(char *buff)
 						}
 						else {
 						switch (usrlocstep) {
-							case 0:
+							case REG_REP:
 								/* we have sent a register and look 
 								   at the response now */
 								if (regexec(&okexp, reply, 0, 0, 0)==0) {
@@ -759,8 +748,6 @@ void shoot(char *buff)
 										printf ("\tOK\n");
 									if (verbose > 2)
 										printf("\n%s\n", reply);
-									//strcpy(buff, confirm);
-									//usrlocstep=1;
 								}
 								else {
 									printf("\nreceived:\n%s\nerror: didn't "
@@ -814,24 +801,24 @@ void shoot(char *buff)
 										cseqcmp++;
 										trashchar=cseqcmp;
 										create_msg(buff, REQ_REM);
-										usrlocstep=6;
+										usrlocstep=UNREG_REP;
 									}
 								}
 								else if (invite) {
 									create_msg(buff, REQ_INV);
 									cseqcmp++;
-									usrlocstep=1;
+									usrlocstep=INV_RECV;
 								}
 								else if (message) {
 									create_msg(buff, REQ_MES);
 									cseqcmp++;
-									usrlocstep=4;
+									usrlocstep=MES_RECV;
 								}
 								if (sleep_ms != 0) {
 									nanosleep(&sleep_ms_s, &sleep_rem);
 								}
 								break;
-							case 1:
+							case INV_RECV:
 								/* see if we received our invite */
 								if (!strncmp(reply, messusern, 
 									strlen(messusern))) {
@@ -842,7 +829,7 @@ void shoot(char *buff)
 									cpy_vias(reply, confirm);
 									cpy_to(reply, confirm);
 									strcpy(buff, confirm);
-									usrlocstep=2;
+									usrlocstep=INV_OK_RECV;
 								}
 								else {
 									printf("\nreceived:\n%s\nerror: did not "
@@ -851,7 +838,7 @@ void shoot(char *buff)
 									exit_code(1);
 								}
 								break;
-							case 2:
+							case INV_OK_RECV:
 								/* did we received our ok ? */
 								if (strncmp(reply, INV_STR, INV_STR_LEN)==0) {
 									if (verbose)
@@ -868,7 +855,7 @@ void shoot(char *buff)
 										printf("\n%s\n", reply);
 									cpy_to(reply, ack);
 									strcpy(buff, ack);
-									usrlocstep=3;
+									usrlocstep=INV_ACK_RECV;
 								}
 								else {
 									printf("\nreceived:\n%s\nerror: did not "
@@ -878,7 +865,7 @@ void shoot(char *buff)
 									exit_code(1);
 								}
 								break;
-							case 3:
+							case INV_ACK_RECV:
 								/* did we received our ack */
 								if (nameend > 0)
 									sprintf(messusern, "%s sip:%s%i", ACK_STR, 
@@ -932,7 +919,7 @@ void shoot(char *buff)
 											namebeg++;
 											create_msg(buff, REQ_REG);
 											cseqcmp=cseqcmp+2;
-											usrlocstep=0;
+											usrlocstep=REG_REP;
 										}
 										else {
 											/* to prevent only removing of low
@@ -944,14 +931,14 @@ void shoot(char *buff)
 											cseqcmp++;
 											trashchar=cseqcmp;
 											create_msg(buff, REQ_REM);
-											usrlocstep=6;
+											usrlocstep=UNREG_REP;
 										}
 									}
 									else {
 										namebeg++;
 										create_msg(buff, REQ_INV);
 										cseqcmp=cseqcmp+3;
-										usrlocstep=1;
+										usrlocstep=INV_RECV;
 									}
 								}
 								else {
@@ -964,7 +951,7 @@ void shoot(char *buff)
 								if (sleep_ms != 0)
 									nanosleep(&sleep_ms_s, &sleep_rem);
 								break;
-							case 4:
+							case MES_RECV:
 								/* we sent the message and look if its 
 								   forwarded to us */
 								if (!strncmp(reply, messusern, 
@@ -980,7 +967,7 @@ void shoot(char *buff)
 									cpy_vias(reply, confirm);
 									cpy_to(reply, confirm);
 									strcpy(buff, confirm);
-									usrlocstep=5;
+									usrlocstep=MES_OK_RECV;
 								}
 								else {
 									printf("\nreceived:\n%s\nerror: did not "
@@ -989,7 +976,7 @@ void shoot(char *buff)
 									exit_code(1);
 								}
 								break;
-							case 5:
+							case MES_OK_RECV:
 								/* we sent our reply on the message and
 								   look if this is also forwarded to us */
 								if (strncmp(reply, MES_STR, MES_STR_LEN)==0) {
@@ -1043,7 +1030,7 @@ void shoot(char *buff)
 											namebeg++;
 											create_msg(buff, REQ_REG);
 											cseqcmp=cseqcmp+2;
-											usrlocstep=0;
+											usrlocstep=REG_REP;
 										}
 										else {
 											/* to prevent only removing of low
@@ -1055,14 +1042,14 @@ void shoot(char *buff)
 											cseqcmp++;
 											trashchar=cseqcmp;
 											create_msg(buff, REQ_REM);
-											usrlocstep=6;
+											usrlocstep=UNREG_REP;
 										}
 									}
 									else {
 										namebeg++;
 										create_msg(buff, REQ_MES);
 										cseqcmp=cseqcmp+3;
-										usrlocstep=4;
+										usrlocstep=MES_RECV;
 									}
 								}
 								else {
@@ -1075,7 +1062,7 @@ void shoot(char *buff)
 								if (sleep_ms != 0)
 									nanosleep(&sleep_ms_s, &sleep_rem);
 								break;
-							case 6:
+							case UNREG_REP:
 								if (strncmp(reply, MES_STR, MES_STR_LEN)==0) {
 									if (verbose)
 										printf("ignoring MESSAGE "
@@ -1096,7 +1083,7 @@ void shoot(char *buff)
 									namebeg++;
 									create_msg(buff, REQ_REG);
 									cseqcmp++;
-									usrlocstep = 0;
+									usrlocstep=REG_REP;
 									i--;
 								}
 								else {

@@ -1,5 +1,5 @@
 /*
- * $Id: request.c,v 1.11 2004/06/06 15:19:52 calrissian Exp $
+ * $Id: request.c,v 1.12 2004/06/15 10:46:52 calrissian Exp $
  *
  * Copyright (C) 2002-2004 Fhg Fokus
  *
@@ -223,30 +223,58 @@ void create_msg(char *buff, int action){
 				sprintf(messusern, "%s sip:%s", INV_STR, username);
 			break;
 		case REQ_MES:
-			sprintf(buff, 
-				"%s sip:%s%s%s"
-				"%s%s:%i;rport\r\n"
-				"%ssip:sipsak@%s:%i;tag=%x\r\n"
-				"%ssip:%s%s\r\n"
-				"%s%u@%s\r\n"
-				"%s%i %s\r\n"
-				"%s%s\r\n"
-				"%s%i\r\n"
-				"%s70\r\n"
-				"%ssipsak %s\r\n"
-				"\r\n"
-				"%s%s%i.", 
-				MES_STR, usern, domainname, SIP20_STR, 
-				VIA_STR, fqdn, lport, 
-				FROM_STR, fqdn, lport, c,
-				TO_STR, usern, domainname, 
-				CALL_STR, c, fqdn, 
-				CSEQ_STR, 3*namebeg+2, MES_STR, 
-				CON_TYP_STR, TXT_PLA_STR, 
-				CON_LEN_STR, SIPSAK_MES_STR_LEN+strlen(usern)-1, 
-				MAX_FRW_STR, 
-				UA_STR, SIPSAK_VERSION,	
-				SIPSAK_MES_STR, username, namebeg);
+			if (mes_body) {
+				sprintf(buff, 
+					"%s sip:%s%s%s"
+					"%s%s:%i;rport\r\n"
+					"%ssip:sipsak@%s:%i;tag=%x\r\n"
+					"%ssip:%s%s\r\n"
+					"%s%u@%s\r\n"
+					"%s%i %s\r\n"
+					"%s%s\r\n"
+					"%s%i\r\n"
+					"%s70\r\n"
+					"%ssipsak %s\r\n"
+					"\r\n"
+					"%s", 
+					MES_STR, usern, domainname, SIP20_STR, 
+					VIA_STR, fqdn, lport, 
+					FROM_STR, fqdn, lport, c,
+					TO_STR, usern, domainname, 
+					CALL_STR, c, fqdn, 
+					CSEQ_STR, 3*namebeg+2, MES_STR, 
+					CON_TYP_STR, TXT_PLA_STR, 
+					CON_LEN_STR, strlen(mes_body), 
+					MAX_FRW_STR, 
+					UA_STR, SIPSAK_VERSION,	
+					mes_body);
+			}
+			else {
+				sprintf(buff, 
+					"%s sip:%s%s%s"
+					"%s%s:%i;rport\r\n"
+					"%ssip:sipsak@%s:%i;tag=%x\r\n"
+					"%ssip:%s%s\r\n"
+					"%s%u@%s\r\n"
+					"%s%i %s\r\n"
+					"%s%s\r\n"
+					"%s%i\r\n"
+					"%s70\r\n"
+					"%ssipsak %s\r\n"
+					"\r\n"
+					"%s%s%i.", 
+					MES_STR, usern, domainname, SIP20_STR, 
+					VIA_STR, fqdn, lport, 
+					FROM_STR, fqdn, lport, c,
+					TO_STR, usern, domainname, 
+					CALL_STR, c, fqdn, 
+					CSEQ_STR, 3*namebeg+2, MES_STR, 
+					CON_TYP_STR, TXT_PLA_STR, 
+					CON_LEN_STR, SIPSAK_MES_STR_LEN+strlen(usern)-1, 
+					MAX_FRW_STR, 
+					UA_STR, SIPSAK_VERSION,	
+					SIPSAK_MES_STR, username, namebeg);
+			}
 			sprintf(confirm, 
 				"%s"
 				"%ssip:sipsak@%s:%i;tag=%x\r\n"

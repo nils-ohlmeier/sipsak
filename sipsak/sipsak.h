@@ -1,5 +1,5 @@
 /*
- * $Id: sipsak.h,v 1.10 2004/06/13 19:59:12 calrissian Exp $
+ * $Id: sipsak.h,v 1.11 2004/06/15 10:46:52 calrissian Exp $
  *
  * Copyright (C) 2002-2004 Fhg Fokus
  *
@@ -24,7 +24,6 @@
 #endif
 
 #define SIPSAK_VERSION PACKAGE_VERSION
-#define RESIZE		1024
 #define BUFSIZE		4096
 #define FQDN_SIZE   200
 #define REQ_REG 1
@@ -115,6 +114,7 @@ int maxforw, lport, rport, randtrash, trashchar, numeric, nonce_count;
 int file_b, uri_b, trace, via_ins, usrloc, redirects, rand_rem, replace_b;
 int empty_contact, nagios_warn;
 char *username, *domainname, *password, *replace_str, *hostname, *contact_uri;
+char *mes_body;
 char fqdn[FQDN_SIZE], messusern[FQDN_SIZE];
 char confirm[BUFSIZE], ack[BUFSIZE];
 

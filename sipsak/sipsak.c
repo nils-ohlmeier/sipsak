@@ -1,5 +1,5 @@
 /*
- * $Id: sipsak.c,v 1.62 2004/06/13 19:59:12 calrissian Exp $
+ * $Id: sipsak.c,v 1.63 2004/06/15 10:46:52 calrissian Exp $
  *
  * Copyright (C) 2002-2004 Fhg Fokus
  * Copyright (C) 2004 Nils Ohlmeier
@@ -67,7 +67,7 @@ void print_help() {
 		"   -T           activates the traceroute mode\n"
 		"   -U           activates the usrloc mode\n"
 		"   -I           simulates a successful calls with itself\n"
-		"   -M           sends messages it itself\n"
+		"   -M           sends messages to itself\n"
 		"   -C sip:uri   use the given uri as Contact in REGISTER\n"
 		"   -b number    the starting number appendix to the user name in "
 			"usrloc mode\n"
@@ -102,6 +102,7 @@ void print_help() {
 		"   -G           activates replacement of variables\n"
 		"   -N           returns exit codes Nagios compliant\n"
 		"   -W number    return Nagios warning if retrans > number\n"
+		"   -B string    send a message with string as body\n"
 		);
 		exit(0);
 };
@@ -119,7 +120,7 @@ int main(int argc, char *argv[])
 	sleep_ms, empty_contact, nagios_warn = 0;
 	namebeg=nameend=maxforw= -1;
 	via_ins=redirects = 1;
-	username=password=replace_str=hostname=contact_uri = NULL;
+	username=password=replace_str=hostname=contact_uri=mes_body = NULL;
 	address = 0;
 	rport = 5060;
 	expires_t = USRLOC_EXP_DEF;
@@ -132,7 +133,7 @@ int main(int argc, char *argv[])
 	if (argc==1) print_help();
 
 	/* lots of command line switches to handle*/
-	while ((c=getopt(argc,argv,"a:b:C:c:de:f:Fg:GhH:iIl:m:MnNo:p:r:Rs:t:TUvVwW:x:z")) != EOF){
+	while ((c=getopt(argc,argv,"a:B:b:C:c:de:f:Fg:GhH:iIl:m:MnNo:p:r:Rs:t:TUvVwW:x:z")) != EOF){
 		switch(c){
 			case 'a':
 				password=malloc(strlen(optarg));
@@ -145,6 +146,11 @@ int main(int argc, char *argv[])
 						"username\n");
 					exit_code(2);
 				}
+				break;
+			case 'B':
+				mes_body=malloc(strlen(optarg));
+				strncpy(mes_body, optarg, strlen(optarg));
+				*(mes_body+strlen(optarg)) = '\0';
 				break;
 			case 'C':
 				if (!strncmp(optarg, "empty", 5) || !strncmp(optarg, "none", 4)) {
@@ -493,17 +499,25 @@ int main(int argc, char *argv[])
 				"output\n");
 		}
 	}
+	else if (mes_body) {
+		if (!message) {
+			printf("warning: to send a message mode (-M) is required. activating\n");
+			message=1;
+		}
+		if (!uri_b) {
+			printf("error: need at least a sip uri to send a meesage\n");
+			exit_code(2);
+		}
+		if (nameend==-1)
+			nameend=0;
+		if (namebeg==-1)
+			namebeg=0;
+	}
 	else {
 		if (!uri_b) {
 			printf("error: a spi uri is needed at least\n");
 			exit_code(2);
 		}
-/*		if (!(username || file_b)) {
-			printf("error: ether a file or an username in the sip uri is "
-				"required\n");
-			exit_code(2);
-		}*/
-		
 	}
 	/* determine our hostname */
 	get_fqdn();
