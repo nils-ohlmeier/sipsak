@@ -314,7 +314,9 @@ substantial burden on network and server under test.
 .IP "sipsak -vv -s sip:nobody@foo.bar" 
 displays received replies.
 .IP "sipsak -T -s sip:nobody@foo.bar" 
-traces SIP path.
+traces SIP path to nobody.
+.IP "sipsak -U -C sip:me@home -x 3600 -a password -s sip:myself@company"
+inserts forwarding from work to home for one hour.
 
 .SH LIMITATIONS / NOT IMPLEMENTED
 Many servers may decide NOT to include SIP "Warning" header fields.
@@ -323,21 +325,20 @@ in traceroute mode impossible.
 
 .B sipsak
 is case sensitive (not RFC conform). So all the header fields are only found
-if they are written like in the RFC.
+if they are written like in RFC3261.
 
 IPv6 is not supported.
 
 DNS/SRV is not supported.
 
-Currently, sipsak runs fine on Linux. It should also run under CygWin (see
-the homepage for details). Also BSD was reported to the author as operating
-system.
+Missing support for the Record-Route and Route header.
+
 .SH BUGS
 sipsak is only tested against the SIP Express Router (ser) though their could
 be various bugs. Please feel free to mail them to the author.
 
 
 .SH AUTHOR
-Nils Ohlmeier <ohlmeier at fokus dot frauenhofer dot de>
+Nils Ohlmeier <develop at ohlmeier dot org>
 .SH "SEE ALSO"
 .BR traceroute (8)
