@@ -1,5 +1,5 @@
 /*
- * $Id: sipsak.c,v 1.75 2004/10/08 17:30:52 calrissian Exp $
+ * $Id: sipsak.c,v 1.76 2004/10/08 18:07:14 calrissian Exp $
  *
  * Copyright (C) 2002-2004 Fhg Fokus
  * Copyright (C) 2004 Nils Ohlmeier
@@ -91,6 +91,7 @@ void print_long_help() {
 		"  --version                  prints version string only\n"
 		"  --filename=FILE            the file which contains the SIP message to send\n"
 		"                               use - for standard input\n"
+		"  --no-crlf                  de-activate CR (\\r) insertion\n"
 		"  --sip-uri=SIPURI           the destination server uri in form\n"
 		"                               sip:[user@]servername[:port]\n"
 		"  --traceroute               activates the traceroute mode\n"
@@ -118,8 +119,8 @@ void print_long_help() {
 		"  --hostname=HOSTNAME        overwrites the local hostname in all headers\n"
 		"  --max-forwards=NUMBER      the value for the max-forwards header field\n"
 		"  --numeric                  use IPs instead of FQDN in the Via-Line\n");
-	printf("  --processes                Divide the workflow among the number of processes\n"
-		"  --auth-username            Authentication username\n"
+	printf("  --processes=NUMBER         Divide the workflow among the number of processes\n"
+		"  --auth-username=STRING     username for authentication\n"
 		);
 	printf("  --no-via                   deactivate the insertion of a Via-Line\n"
 		"  --password=PASSWORD        password for authentication\n"
@@ -134,10 +135,10 @@ void print_long_help() {
 		"  --nagios-warn=NUMBER       return Nagios warning if retrans > number\n"
 		"  --message-body=STRING      send a message with string as body\n"
 		"  --disposition=STRING       Content-Disposition value\n"
-		"  --search                   search for a RegExp in replies and return error\n"
+		"  --search=REGEXP            search for a RegExp in replies and return error\n"
 		"                             on failfure\n"
-		"  --no-crlf                  de-activate CR (\\r) insertion\n"
 		);
+	exit(0);
 }
 
 /* prints out some usage help and exits */
@@ -147,6 +148,8 @@ void print_help() {
 		"  -h                displays this help message\n"
 		"  -V                prints version string only\n"
 		"  -f FILE           the file which contains the SIP message to send\n"
+		"                      use - for standard input\n"
+		"  -L                de-activate CR (\\r) insertion in files\n"
 		"  -s SIPURI         the destination server uri in form\n"
 		"                      sip:[user@]servername[:port]\n"
 		"  -T                activates the traceroute mode\n"
@@ -178,7 +181,8 @@ void print_help() {
 		"  -n                use IPs instead of FQDN in the Via-Line\n"
 		"  -i                deactivate the insertion of a Via-Line\n"
 		"  -a PASSWORD       password for authentication\n"
-		"                      (if omitted password=username)\n"
+		"                      (if omitted password=\"\")\n"
+		"  -u STRING         Authentication username\n"
 		);
 	printf(
 		"  -d                ignore redirects\n"
@@ -187,14 +191,12 @@ void print_help() {
 		"  -g STRING         replacement for a special mark in the message\n"
 		"  -G                activates replacement of variables\n"
 		"  -N                returns exit codes Nagios compliant\n"
-		"  -q                search for a RegExp in replies and return error\n"
+		"  -q STRING         search for a RegExp in replies and return error\n"
 		"                    on failure\n");
 	printf("  -W NUMBER         return Nagios warning if retrans > number\n"
 		"  -B STRING         send a message with string as body\n"
 		"  -O STRING         Content-Disposition value\n"
 		"  -P NUMBER         Number of processes to start\n"
-		"  -u STRING         Authentication username\n"
-		"  -L                de-activate CR (\\r) insertion in files\n"
 		);
 		exit(0);
 }
