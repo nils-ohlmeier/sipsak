@@ -5,7 +5,6 @@ ToDo List (no order):
  - endless randtrash mode with logfile
  - support for IPv6
  - DNS SRV support
- - timeouts for usrloc
  - case in-sensitive
  - TCP support
  - RR support
