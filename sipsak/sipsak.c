@@ -1,5 +1,5 @@
 /*
- * $Id: sipsak.c,v 1.65 2004/06/21 16:35:32 calrissian Exp $
+ * $Id: sipsak.c,v 1.66 2004/06/24 17:47:46 calrissian Exp $
  *
  * Copyright (C) 2002-2004 Fhg Fokus
  * Copyright (C) 2004 Nils Ohlmeier
@@ -59,7 +59,8 @@ void print_help() {
 		" additional parameter in every mode:\n"
 		"   [-a password] [-d] [-i] [-H hostname] [-l port] [-m number] [-n] "
 		"[-N] [-r port]\n"
-		"   [-v] [-V] [-w]\n\n"
+		"   [-v] [-V] [-w]\n\n");
+	printf(
 		"   -h           displays this help message\n"
 		"   -V           prints version string only\n"
 		"   -f filename  the file which contains the SIP message to send\n"
@@ -68,7 +69,8 @@ void print_help() {
 		"   -T           activates the traceroute mode\n"
 		"   -U           activates the usrloc mode\n"
 		"   -I           simulates a successful calls with itself\n"
-		"   -M           sends messages to itself\n"
+		"   -M           sends messages to itself\n");
+	printf(
 		"   -C sip:uri   use the given uri as Contact in REGISTER\n"
 		"   -b number    the starting number appendix to the user name in "
 			"usrloc mode\n"
@@ -79,7 +81,8 @@ void print_help() {
 		"   -o number    sleep number ms before sending next request\n"
 		"   -x number    the expires header field value (default: 15)\n"
 		"   -z           activates randomly removing of user bindings\n"
-		"   -F           activates the flood mode\n"
+		"   -F           activates the flood mode\n");
+	printf(
 		"   -c number    the maximum CSeq number for flood mode "
 			"(default: 2^31)\n"
 		"   -R           activates the random modues (dangerous)\n"
@@ -88,14 +91,16 @@ void print_help() {
 		"                (default: request length)\n"
 		"   -l port      the local port to use (default: any)\n"
 		"   -r port      the remote port to use (default: 5060)\n"
-		"   -p hostname  request target (outbound proxy)\n"
+		"   -p hostname  request target (outbound proxy)\n");
+	printf(
 		"   -H hostname  overwrites the hostname in all headers\n"
 		"                (usefull if the detection of the hostname fails)\n"
 		"   -m number    the value for the max-forwards header field\n"
 		"   -n           use IPs instead of fqdn in the Via-Line\n"
 		"   -i           deactivate the insertion of a Via-Line\n"
 		"   -a password  password for authentication\n"
-		"                (if omitted password=username)\n"
+		"                (if omitted password=username)\n");
+	printf(
 		"   -d           ignore redirects\n"
 		"   -v           each v's produces more verbosity (max. 3)\n"
 		"   -w           extract IP from the warning in reply\n"
@@ -107,7 +112,7 @@ void print_help() {
 		"   -O string    Content-Disposition value\n"
 		);
 		exit(0);
-};
+}
 
 int main(int argc, char *argv[])
 {
@@ -157,7 +162,7 @@ int main(int argc, char *argv[])
 	/* some initialisation to be shure */
 	file_b=uri_b=trace=lport=usrloc=flood=verbose=randtrash=trashchar = 0;
 	numeric=warning_ext=rand_rem=nonce_count=replace_b=invite=message = 0;
-	sleep_ms, empty_contact, nagios_warn = 0;
+	sleep_ms=empty_contact=nagios_warn = 0;
 	namebeg=nameend=maxforw= -1;
 	via_ins=redirects = 1;
 	username=password=replace_str=hostname=contact_uri=mes_body = NULL;

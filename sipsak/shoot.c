@@ -1,5 +1,5 @@
 /*
- * $Id: shoot.c,v 1.26 2004/06/17 16:37:19 calrissian Exp $
+ * $Id: shoot.c,v 1.27 2004/06/24 17:47:46 calrissian Exp $
  *
  * Copyright (C) 2002-2004 Fhg Fokus
  * Copyright (C) 2004 Nils Ohlmeier
@@ -27,6 +27,7 @@
 #include <sys/socket.h>
 #include <sys/poll.h>
 #include <netinet/in.h>
+#include <arpa/inet.h>
 
 #include "shoot.h"
 
@@ -77,8 +78,9 @@ void shoot(char *buff)
 #endif
 	int redirected, retryAfter, nretries;
 	int usock, csock, i, len, ret;
-	int dontsend, cseqtmp, rand_tmp, flen;
+	int dontsend, cseqtmp, rand_tmp;
 	int rem_rand, retrans_r_c, retrans_s_c;
+	unsigned int flen;
 	int randretrys = 0;
 	int cseqcmp = 0;
 	int rem_namebeg = 0;
@@ -629,7 +631,7 @@ void shoot(char *buff)
 								if (!address){
 									printf("error: cannot determine host "
 										"address from Contact of redirect:"
-										"\%s\n", reply);
+										"\n%s\n", reply);
 									exit_code(2);
 								}
 							}
@@ -662,7 +664,6 @@ void shoot(char *buff)
 						if (verbose > 2)
 							printf("\nreceived:\n%s\n", buff);
 						increase_cseq(buff);
-						//i--;
 					} /* if auth...*/
 					else if (trace) {
 						if (regexec(&tmhexp, reply, 0, 0, 0)==0) {

@@ -1,5 +1,5 @@
 /*
- * $Id: helper.c,v 1.10 2004/06/05 17:39:14 calrissian Exp $
+ * $Id: helper.c,v 1.11 2004/06/24 17:47:46 calrissian Exp $
  *
  * Copyright (C) 2002-2004 Fhg Fokus
  *
@@ -17,9 +17,13 @@
  */
 
 #include <stdlib.h>
+#include <stdio.h>
 #include <netdb.h>
+#include <unistd.h>
 #include <sys/utsname.h>
 #include <string.h>
+#include <ctype.h>
+#include <arpa/inet.h>
 
 #include "helper.h"
 #include "sipsak.h"
@@ -78,7 +82,6 @@ long getaddress(char *host)
 	*/
 	pent = gethostbyname(host);
 	if (!pent) {
-		//perror("gethostbyname error");
 		printf("'%s' is unresolveable\n", host);
 		exit_code(2);
 	}
@@ -96,7 +99,7 @@ void get_fqdn(){
 	struct hostent* he;
 	struct utsname un;
 	int i;
-	unsigned char *addrp;
+	char *addrp;
 	char *fqdnp;
 
 	if (hostname) {

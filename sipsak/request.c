@@ -1,5 +1,5 @@
 /*
- * $Id: request.c,v 1.14 2004/06/17 14:54:03 calrissian Exp $
+ * $Id: request.c,v 1.15 2004/06/24 17:47:46 calrissian Exp $
  *
  * Copyright (C) 2002-2004 Fhg Fokus
  *
@@ -52,7 +52,7 @@ void create_msg(char *buff, int action){
 	c=rand();
 	switch (action){
 		case REQ_REG:
-			// not elegant but easier :)
+			/* not elegant but easier :) */
 			if (empty_contact) {
 				sprintf(buff, 
 					"%s sip:%s%s"
@@ -404,10 +404,11 @@ void create_msg(char *buff, int action){
 			break;
 	}
 	free(usern);
-	if (verbose > 2)
+	if (verbose > 2) {
 		if (*(&buff + strlen(buff) - 1) != "\n")
 			printf("request:\n%s\n", buff);
 		else
 			printf("request:\n%s", buff);
+	}
 }
 

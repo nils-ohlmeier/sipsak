@@ -1,5 +1,5 @@
 /*
- * $Id: auth.c,v 1.7 2004/06/05 17:39:14 calrissian Exp $
+ * $Id: auth.c,v 1.8 2004/06/24 17:47:46 calrissian Exp $
  *
  * Copyright (C) 2002-2004 Fhg Fokus
  *
@@ -60,6 +60,8 @@ void insert_auth(char *message, char *authreq)
 	char ha1_hex[HASHHEXLEN+1], ha2_hex[HASHHEXLEN+1], resp_hex[HASHHEXLEN+1];
 	int cnonce, qop_auth=0, proxy_auth=0;
 	MD5_CTX Md5Ctx;
+
+	auth=begin=end=insert=backup=realm=usern=nonce=method=uri = NULL;
 
 	/* prevent double auth insertion */
 	if ((begin=strstr(message, AUTH_STR))!=NULL ||
