@@ -1,5 +1,5 @@
 /*
- * $Id: sipsak.c,v 1.54 2004/01/09 23:33:59 calrissian Exp $
+ * $Id: sipsak.c,v 1.55 2004/02/03 15:47:07 calrissian Exp $
  *
  * Copyright (C) 2002-2003 Fhg Fokus
  *
@@ -155,9 +155,9 @@ int main(int argc, char *argv[])
 								exit(2);
 							}
 							else{
-								contact_uri=malloc(strlen(optarg));
+								contact_uri=malloc(strlen(optarg)+1);
+								memset(contact_uri, 0, strlen(optarg)+1);
 								strncpy(contact_uri, optarg, strlen(optarg));
-								*(contact_uri+strlen(optarg)) = '\0';
 							}
 						}
 					}
