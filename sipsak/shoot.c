@@ -1,5 +1,5 @@
 /*
- * $Id: shoot.c,v 1.27 2004/06/24 17:47:46 calrissian Exp $
+ * $Id: shoot.c,v 1.28 2004/06/26 22:53:04 calrissian Exp $
  *
  * Copyright (C) 2002-2004 Fhg Fokus
  * Copyright (C) 2004 Nils Ohlmeier
@@ -32,6 +32,7 @@
 #include "shoot.h"
 
 #ifdef RAW_SUPPORT
+#include <netinet/in_systm.h>
 #include <netinet/ip.h>
 #include <netinet/ip_icmp.h>
 
@@ -64,23 +65,15 @@ bouquets and brickbats to farhan@hotfoon.com
 /* this is the main function with the loops and modes */
 void shoot(char *buff)
 {
-	struct sockaddr_in	addr, faddr;
+	struct sockaddr_in	addr;
 	struct timeval	tv, sendtime, recvtime, firstsendt, delaytime;
 	struct timezone tz;
 	struct timespec sleep_ms_s, sleep_rem;
 	struct pollfd 	sockerr;
-#ifdef RAW_SUPPORT
-	struct ip 		*r_ip_hdr, *s_ip_hdr;
-	struct icmp 	*icmp_hdr;
-	struct udphdr 	*udp_hdr;
-	size_t r_ip_len, s_ip_len, icmp_len;
-	int srcport, dstport, rawsock;
-#endif
 	int redirected, retryAfter, nretries;
 	int usock, csock, i, len, ret;
 	int dontsend, cseqtmp, rand_tmp;
 	int rem_rand, retrans_r_c, retrans_s_c;
-	unsigned int flen;
 	int randretrys = 0;
 	int cseqcmp = 0;
 	int rem_namebeg = 0;
@@ -88,13 +81,22 @@ void shoot(char *buff)
 	char *contact, *foo, *bar, *lport_str;
 	char *crlf = NULL;
 	char reply[BUFSIZE];
-	char fstr[INET_ADDRSTRLEN];
 	fd_set	fd;
 	socklen_t slen;
 	regex_t redexp, proexp, okexp, tmhexp, errexp, authexp;
 	enum usteps { REG_REP, INV_RECV, INV_OK_RECV, INV_ACK_RECV, MES_RECV, 
 					MES_OK_RECV, UNREG_REP};
 	enum usteps usrlocstep = REG_REP;
+#ifdef RAW_SUPPORT
+	struct sockaddr_in faddr;
+	struct ip 		*r_ip_hdr, *s_ip_hdr;
+	struct icmp 	*icmp_hdr;
+	struct udphdr 	*udp_hdr;
+	size_t r_ip_len, s_ip_len, icmp_len;
+	int srcport, dstport, rawsock;
+	unsigned int flen;
+	char fstr[INET_ADDRSTRLEN];
+#endif
 
 	/* the vars are filled by configure */
 	nretries = DEFAULT_RETRYS;
