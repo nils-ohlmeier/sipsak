@@ -20,7 +20,7 @@ RM = rm -f
 
 OS = $(shell uname -s)
 
-RM_CMD = $(RM) *.BAK *.bak *.o ,* *~ *.a *.orig *.rej
+RM_CMD = $(RM) *.BAK *.bak *.o ,* *~ *.a *.orig *.rej sipsak.exe
 
 WARNING = -Wall
 DEFS =
@@ -35,12 +35,15 @@ ifeq ($(DEFS), -DAUTH)
   ifeq ($(OS), netbsd)
     LFLAGS+= -lcrypto
   endif
+  ifneq (,$(findstring CYGWIN, $(OS)))
+    LFLAGS+= -lcrypto -static
+  endif
 endif
 
 all:: $(PROGS)
 
 %: %.o
-	$(CC) $(LFLAGS) -o $@ $^
+	$(CC) -o $@ $^ $(LFLAGS)
 %.o: %.c
 	$(CC) $(FLAGS) -c $<
 
