@@ -1,5 +1,5 @@
 /*
- * $Id: helper.c,v 1.13 2004/07/25 21:26:53 calrissian Exp $
+ * $Id: helper.c,v 1.14 2004/10/08 17:26:00 calrissian Exp $
  *
  * Copyright (C) 2002-2004 Fhg Fokus
  *
@@ -188,6 +188,24 @@ void replace_string(char *mess, char *search, char *replacement){
 			free(backup);
 			insert=strstr(mess, search);
 		}
+	}
+}
+
+/* insert \r in front of all \n if it is not present allready */
+void insert_cr(char *mes){
+	char *lf, *pos, *backup;
+
+	pos = mes;
+	lf = strchr(pos, '\n');
+	while ((lf != NULL) && (--lf != "\r")) {
+		backup=malloc(strlen(lf)+2);
+		strcpy(backup, lf+1);
+		//strncpy(lf, "\r", 1);
+		*(lf+1) = '\r';
+		strcpy(lf+2, backup);
+		free(backup);
+		pos = lf+3;
+		lf = strchr(pos, '\n');
 	}
 }
 
