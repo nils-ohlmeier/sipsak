@@ -1,5 +1,5 @@
 /*
- * $Id: request.c,v 1.15 2004/06/24 17:47:46 calrissian Exp $
+ * $Id: request.c,v 1.16 2004/07/15 18:07:41 calrissian Exp $
  *
  * Copyright (C) 2002-2004 Fhg Fokus
  *
@@ -50,6 +50,7 @@ void create_msg(char *buff, int action){
 			sprintf(usern, "%s@", username);
 	}
 	c=rand();
+	c+=lport;
 	switch (action){
 		case REQ_REG:
 			/* not elegant but easier :) */
