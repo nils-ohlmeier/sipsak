@@ -1,4 +1,6 @@
-* version 0.8.2
+* version 0.8.6
+  - important fixes
+* version 0.8.5
   - ignores provisional responses in usrloc mode (-U)
   - added support for proxy authorization (407)
   - new argument -H overwrites automatic hostname detection
