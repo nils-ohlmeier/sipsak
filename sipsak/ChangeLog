@@ -1,4 +1,12 @@
 * version 0.8.10
+  - try authentication with empty password instead of username if no
+    password is given
+  - support to read SIP message from standard input (-f -)
+  - insert missing CR in front of LF (-L)
+  - use different username for authentication (-u)
+  - use multiple processes for usrloc, message and invite mode (-P)
+  - search for a string in the reply with a regular expression (-q)
+* version 0.8.10
   - send instant messages (just -M)
   - RFC 3261 compliant retransmission timer
   - added From (and To) tags
