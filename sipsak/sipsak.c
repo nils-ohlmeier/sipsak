@@ -1,5 +1,5 @@
 /*
- * $Id: sipsak.c,v 1.83 2005/03/27 15:34:15 calrissian Exp $
+ * $Id: sipsak.c,v 1.84 2005/03/27 17:28:34 calrissian Exp $
  *
  * Copyright (C) 2002-2004 Fhg Fokus
  * Copyright (C) 2004 Nils Ohlmeier
@@ -33,7 +33,6 @@
 #include <unistd.h>
 #include <stdlib.h>
 #include <stdio.h>
-#include <string.h>
 #include <time.h>
 #include <regex.h>
 #include <sys/wait.h>
@@ -204,7 +203,7 @@ int main(int argc, char *argv[])
 {
 	FILE	*pf;
 	char	buff[BUFSIZE];
-	int		length, c, i, j;
+	int	length, c, i, j;
 	char	*delim, *delim2;
 	pid_t 	pid;
 	struct timespec ts;
@@ -307,29 +306,16 @@ int main(int argc, char *argv[])
 				if (!strncmp(optarg, "empty", 5) || !strncmp(optarg, "none", 4)) {
 					empty_contact = 1;
 				}
-				else if (!strncmp(optarg,"sip",3)){
-					if ((delim=strchr(optarg,':'))!=NULL){
-						delim++;
-						if ((delim2=strchr(delim,'@'))==NULL){
-							printf("error: missing '@' in Contact uri\n");
-							exit_code(2);
-						}
-						else{
-							if ((delim2-delim)==0){
-								printf("error: REGISTER Contact requires a"
-									" username\n");
-								exit_code(2);
-							}
-							else{
-								contact_uri=malloc(strlen(optarg)+1);
-								memset(contact_uri, 0, strlen(optarg)+1);
-								strncpy(contact_uri, optarg, strlen(optarg));
-							}
-						}
-					}
-					else{
-						printf("error: missing ':' in REGISTER Contact uri\n");
+				else if (((delim=strstr(optarg,"sip:"))!=NULL) &&
+					((delim=strstr(optarg,"sips:"))!=NULL)) {
+			 		if (strchr(optarg,'@')<delim) {
+						printf("error: missing '@' in Contact uri\n");
 						exit_code(2);
+					}
+					else {
+						contact_uri=malloc(strlen(optarg)+1);
+						memset(contact_uri, 0, strlen(optarg)+1);
+						strncpy(contact_uri, optarg, strlen(optarg));
 					}
 				}
 				else if ((strlen(optarg)==1) && (!strncmp(optarg, "*", 1))) {
@@ -338,9 +324,9 @@ int main(int argc, char *argv[])
 					strncpy(contact_uri, optarg, strlen(optarg));
 				}
 				else{
-					printf("error: REGISTER Contact uri doesn't not begin "
-						"with sip or empty\n");
-					exit_code(2);
+				    printf("error: REGISTER Contact uri doesn't not contain "
+					   "sip:, *, or is not empty\n");
+				    exit_code(2);
 				}
 				break;
 			case 'c':
