@@ -1,7 +1,7 @@
 /*
- * $Id: sipsak.h,v 1.8 2004/02/22 01:06:33 calrissian Exp $
+ * $Id: sipsak.h,v 1.9 2004/06/05 17:39:14 calrissian Exp $
  *
- * Copyright (C) 2002-2003 Fhg Fokus
+ * Copyright (C) 2002-2004 Fhg Fokus
  *
  * This file belongs to sipsak, a free sip testing tool.
  *

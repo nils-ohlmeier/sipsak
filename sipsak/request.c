@@ -1,7 +1,7 @@
 /*
- * $Id: request.c,v 1.9 2004/05/16 16:45:03 jiri Exp $
+ * $Id: request.c,v 1.10 2004/06/05 17:39:14 calrissian Exp $
  *
- * Copyright (C) 2002-2003 Fhg Fokus
+ * Copyright (C) 2002-2004 Fhg Fokus
  *
  * This file belongs to sipsak, a free sip testing tool.
  *
