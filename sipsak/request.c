@@ -1,5 +1,5 @@
 /*
- * $Id: request.c,v 1.2 2003/09/11 02:52:30 calrissian Exp $
+ * $Id: request.c,v 1.3 2003/10/09 15:02:28 calrissian Exp $
  *
  * Copyright (C) 2002-2003 Fhg Fokus
  *
@@ -40,7 +40,7 @@ void create_msg(char *buff, int action){
 		printf("error: create_msg(): out of mem\n");
 		exit(2);
 	}
-	if (action <= 4) {
+	if (username) {
 		if (verbose > 2)
 			printf("username: %s\ndomainname: %s\n", username, domainname);
 		if (nameend>0) 
