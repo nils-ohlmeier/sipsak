@@ -1,5 +1,5 @@
 /*
- * $Id: sipsak.c,v 1.61 2004/06/06 18:13:19 calrissian Exp $
+ * $Id: sipsak.c,v 1.62 2004/06/13 19:59:12 calrissian Exp $
  *
  * Copyright (C) 2002-2004 Fhg Fokus
  * Copyright (C) 2004 Nils Ohlmeier
@@ -44,7 +44,7 @@
 /* prints out some usage help and exits */
 void print_help() {
 	printf("%s %s by Nils Ohlmeier\n", PACKAGE_NAME, PACKAGE_VERSION);
-	printf(" Copyright (C) 2002-2003 FhG Fokus\n");
+	printf(" Copyright (C) 2002-2004 FhG Fokus, 2004 Nils Ohlmeier\n");
 	printf(" report bugs to %s\n\n", PACKAGE_BUGREPORT);
 	printf(
 		" shoot : sipsak [-f filename] -s sip:uri\n"
@@ -101,6 +101,7 @@ void print_help() {
 		"   -g string    replacement for a special mark in the message\n"
 		"   -G           activates replacement of variables\n"
 		"   -N           returns exit codes Nagios compliant\n"
+		"   -W number    return Nagios warning if retrans > number\n"
 		);
 		exit(0);
 };
@@ -115,7 +116,7 @@ int main(int argc, char *argv[])
 	/* some initialisation to be shure */
 	file_b=uri_b=trace=lport=usrloc=flood=verbose=randtrash=trashchar = 0;
 	numeric=warning_ext=rand_rem=nonce_count=replace_b=invite=message = 0;
-	sleep_ms, empty_contact = 0;
+	sleep_ms, empty_contact, nagios_warn = 0;
 	namebeg=nameend=maxforw= -1;
 	via_ins=redirects = 1;
 	username=password=replace_str=hostname=contact_uri = NULL;
@@ -131,7 +132,7 @@ int main(int argc, char *argv[])
 	if (argc==1) print_help();
 
 	/* lots of command line switches to handle*/
-	while ((c=getopt(argc,argv,"a:b:C:c:de:f:Fg:GhH:iIl:m:MnNo:p:r:Rs:t:TUvVwx:z")) != EOF){
+	while ((c=getopt(argc,argv,"a:b:C:c:de:f:Fg:GhH:iIl:m:MnNo:p:r:Rs:t:TUvVwW:x:z")) != EOF){
 		switch(c){
 			case 'a':
 				password=malloc(strlen(optarg));
@@ -359,6 +360,9 @@ int main(int argc, char *argv[])
 				break;
 			case 'w':
 				warning_ext=1;
+				break;
+			case 'W':
+				nagios_warn = atoi(optarg);
 				break;
 			case 'x':
 				expires_t=atoi(optarg);

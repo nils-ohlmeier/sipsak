@@ -1,5 +1,5 @@
 /*
- * $Id: shoot.c,v 1.22 2004/06/13 19:35:26 calrissian Exp $
+ * $Id: shoot.c,v 1.23 2004/06/13 19:59:12 calrissian Exp $
  *
  * Copyright (C) 2002-2004 Fhg Fokus
  * Copyright (C) 2004 Nils Ohlmeier
@@ -789,7 +789,8 @@ void shoot(char *buff)
 												"%i ms exceeded and request was"
 												" retransmitted.\n", 
 												retrans_s_c, retryAfter);
-											exit_code(4);
+											if (retrans_s_c > nagios_warn)
+												exit_code(4);
 										}
 										exit_code(0);
 									}
@@ -916,7 +917,8 @@ void shoot(char *buff)
 												"%i ms exceeded and request was"
 												" retransmitted.\n", 
 												retrans_s_c, retryAfter);
-											exit_code(4);
+											if (retrans_s_c > nagios_warn)
+												exit_code(4);
 										}
 										exit_code(0);
 									}
@@ -1026,7 +1028,8 @@ void shoot(char *buff)
 												"%i ms exceeded and request was"
 												" retransmitted.\n", 
 												retrans_s_c, retryAfter);
-											exit_code(4);
+											if (retrans_s_c > nagios_warn)
+												exit_code(4);
 										}
 										exit_code(0);
 									}
