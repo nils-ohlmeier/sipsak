@@ -1,5 +1,5 @@
 /*
- * $Id: sipsak.c,v 1.50 2003/09/06 21:41:03 calrissian Exp $
+ * $Id: sipsak.c,v 1.51 2003/09/11 02:46:24 calrissian Exp $
  *
  * Copyright (C) 2002-2003 Fhg Fokus
  *
@@ -431,11 +431,11 @@ int main(int argc, char *argv[])
 			printf("error: a spi uri is needed at least\n");
 			exit(2);
 		}
-		if (!(username || file_b)) {
+/*		if (!(username || file_b)) {
 			printf("error: ether a file or an username in the sip uri is "
 				"required\n");
 			exit(2);
-		}
+		}*/
 		
 	}
 	/* determine our hostname */
