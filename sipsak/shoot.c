@@ -1,5 +1,5 @@
 /*
- * $Id: shoot.c,v 1.12 2004/01/31 17:29:32 calrissian Exp $
+ * $Id: shoot.c,v 1.13 2004/02/07 01:31:39 calrissian Exp $
  *
  * Copyright (C) 2002-2003 Fhg Fokus
  *
@@ -1073,7 +1073,7 @@ void shoot(char *buff)
 					if (usrloc)
 						printf("failed\n");
 					perror("socket error");
-					exit(2);
+					exit(3);
 				}
 			} /* !flood */
 			else {
