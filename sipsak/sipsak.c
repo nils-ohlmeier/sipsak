@@ -1,5 +1,5 @@
 /*
- * $Id: sipsak.c,v 1.31 2002/12/15 20:23:53 calrissian Exp $
+ * $Id: sipsak.c,v 1.32 2003/01/07 19:06:31 calrissian Exp $
  *
  * Copyright (C) 2002 Fhg Fokus
  *
@@ -218,7 +218,6 @@ void get_fqdn(){
 			exit(2);
 		}
 	}
-	strcpy(hname,"cloudcity");
 	/* a hostname with dots should be a domainname */
 	if ((strchr(hname, '.'))==NULL) {
 		if (getdomainname(&dname[0], namelen) < 0) {
