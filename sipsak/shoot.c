@@ -1,5 +1,5 @@
 /*
- * $Id: shoot.c,v 1.2 2003/04/09 03:41:13 calrissian Exp $
+ * $Id: shoot.c,v 1.3 2003/05/07 13:41:54 calrissian Exp $
  *
  * Copyright (C) 2002-2003 Fhg Fokus
  *
@@ -345,8 +345,11 @@ void shoot(char *buff)
 						}
 					}
 					/* printout that we did not received anything */
-					if (trace) printf("%i: timeout after %i ms\n", i, 
+					if (trace) {
+						printf("%i: timeout after %i ms\n", i, 
 									retryAfter);
+						i--;
+					}
 					else if (usrloc||invite||message) {
 						printf("timeout after %i ms\n", retryAfter);
 						i--;
