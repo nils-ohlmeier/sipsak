@@ -18,6 +18,8 @@ INSTALL_MAN= /usr/local/man
 CC = gcc
 RM = rm -f
 
+OS = $(shell uname -s)
+
 RM_CMD = $(RM) *.BAK *.bak *.o ,* *~ *.a *.orig *.rej
 
 WARNING = -Wall
@@ -25,8 +27,14 @@ DEFS =
 
 FLAGS = $(WARNING) $(DEFS)
 
-ifeq ($(DEFS),-DAUTH)
+ifeq ($(DEFS), -DAUTH)
   LFLAGS = -lssl
+  ifeq ($(OS), freebsd)
+    LFLAGS+= -lcrypto
+  endif
+  ifeq ($(OS), netbsd)
+    LFLAGS+= -lcrypto
+  endif
 endif
 
 all:: $(PROGS)

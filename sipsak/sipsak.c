@@ -1,5 +1,5 @@
 /*
- * $Id: sipsak.c,v 1.22 2002/10/31 09:25:33 calrissian Exp $
+ * $Id: sipsak.c,v 1.23 2002/11/07 15:50:00 calrissian Exp $
  *
  * Copyright (C) 2002 Fhg Fokus
  *
@@ -942,6 +942,7 @@ void shoot(char *buff)
 				ret = send(sock, buff, strlen(buff), 0);
 				(void)gettimeofday(&sendtime, &tz);
 				if (ret==-1) {
+					printf("\n");
 					perror("send failure");
 					exit(2);
 				}
@@ -973,7 +974,8 @@ void shoot(char *buff)
 					if ((poll(&sockerr, 1, 10))==1) {
 						if (sockerr.revents && POLLERR) {
 							recv(sock, reply, strlen(reply), 0);
-							perror("send failure: ");
+							printf("\n");
+							perror("send failure");
 							if (randtrash) 
 								printf ("last message before send failure:"
 									"\n%s\n", buff);
