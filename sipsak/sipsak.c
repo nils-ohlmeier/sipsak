@@ -1,5 +1,5 @@
 /*
- * $Id: sipsak.c,v 1.29 2002/12/11 02:10:47 calrissian Exp $
+ * $Id: sipsak.c,v 1.30 2002/12/11 07:52:42 calrissian Exp $
  *
  * Copyright (C) 2002 Fhg Fokus
  *
@@ -211,7 +211,6 @@ void get_fqdn(){
 
 	if ((uname(&un))==0) {
 		strcpy(hname, un.nodename);
-		printf("%s\n", hname);
 	}
 	else {
 		if (gethostname(&hname[0], namelen) < 0) {
@@ -1475,8 +1474,14 @@ void shoot(char *buff)
 				}
 			} /* !flood */
 			else {
+				if (i==0)
+					memcpy(&firstsendt, &sendtime, sizeof(struct timeval));
 				if (namebeg==nretries) {
 					printf("flood end reached\n");
+					printf("it took %.3f ms seconds to send %i request.\n", 
+							deltaT(&firstsendt, &sendtime), namebeg);
+					printf("so we sended %f requests per second.\n", 
+							(namebeg/deltaT(&firstsendt, &sendtime))*1000);
 					exit(0);
 				}
 				namebeg++;
