@@ -1,5 +1,5 @@
 /*
- * $Id: sipsak.c,v 1.11 2002/08/29 12:04:26 calrissian Exp $
+ * $Id: sipsak.c,v 1.12 2002/08/29 13:31:43 calrissian Exp $
  *
  * Copyright (C) 2002-2003 Fhg Fokus
  *
@@ -525,13 +525,14 @@ double deltaT(struct timeval *t1p, struct timeval *t2p)
 void shoot(char *buff)
 {
 	struct sockaddr_in	addr, sockname;
-	struct timeval	tv, sendtime, recvtime, firstsendt;
+	struct timeval	tv, sendtime, recvtime, firstsendt, delaytime;
 	struct timezone tz;
 	struct pollfd sockerr;
 	int ssock, redirected, retryAfter, nretries;
 	int sock, i, len, ret, usrlocstep, randretrys;
 	int dontsend, cseqcmp, cseqtmp;
 	int rem_rand, rem_namebeg, retrans_r_c, retrans_s_c;
+	double big_delay, tmp_delay;
 	char *contact, *crlf, *foo, *bar;
 	char reply[BUFSIZE];
 	fd_set	fd;
@@ -543,6 +544,9 @@ void shoot(char *buff)
 	nretries = 5;
 	retryAfter = 5000;
 	usrlocstep=dontsend=retrans_r_c=retrans_s_c = 0;
+	big_delay=tmp_delay = 0;
+	delaytime.tv_sec = 0;
+	delaytime.tv_usec = 0;
 
 	/* create a sending socket */
 	sock = (int)socket(PF_INET, SOCK_DGRAM, IPPROTO_UDP);
@@ -768,6 +772,8 @@ void shoot(char *buff)
 					retryAfter = retryAfter * 2;
 					if (retryAfter > 5000) retryAfter = 5000;
 					retrans_s_c++;
+					if (delaytime.tv_sec == 0)
+						memcpy(&delaytime, &sendtime, sizeof(struct timeval));
 					/* if we did not exit until here lets try another send */
 					continue;
 				}
@@ -795,6 +801,13 @@ void shoot(char *buff)
 					/* store the time of our first send */
 					if (i==0)
 						memcpy(&firstsendt, &sendtime, sizeof(struct timeval));
+					/* store the biggest delay if one occured */
+					if (delaytime.tv_sec != 0) {
+						tmp_delay = deltaT(&delaytime, &recvtime);
+						if (tmp_delay > big_delay) big_delay = tmp_delay;
+						delaytime.tv_sec = 0;
+						delaytime.tv_usec = 0;
+					}
 					/* check for old CSeq => ignore retransmission */
 					if (usrloc) {
 						switch (usrlocstep) {
@@ -982,10 +995,9 @@ void shoot(char *buff)
 									usrlocstep=1;
 								}
 								else {
-									if (verbose)
-										printf("received:\n%s\n", reply);
-									printf("error: didn't received '200 OK' "
-										"on regsiter. aborting\n");
+									printf("\nreceived:\n%s\nerror: didn't "
+										"received '200 OK' on regsiter (see "
+										"above). aborting\n", reply);
 									exit(1);
 								}
 								break;
@@ -1008,10 +1020,9 @@ void shoot(char *buff)
 									usrlocstep=2;
 								}
 								else {
-									if (verbose)
-										printf("\nreceived:\n%s\n", reply);
-									printf("error: didn't received the "
-										"'MESSAGE' we sended. aborting\n");
+									printf("\nreceived:\n%s\nerror: didn't "
+										"received the 'MESSAGE' we sended (see"
+										" above). aborting\n", reply);
 									exit(1);
 								}
 								break;
@@ -1032,15 +1043,24 @@ void shoot(char *buff)
 										printf("USRLOC for %s%i completed "
 											"successful\n", username, namebeg);
 									if (namebeg==nameend) {
-										printf("All USRLOC tests completed "
-											"successful.\n");
+										printf("\nAll USRLOC tests completed "
+											"successful.\nreceived last message"
+											" %.3f ms after first request (test"
+											" duration).\n", deltaT(&firstsendt,
+											 &recvtime));
+										if (big_delay)
+											printf("biggest delay between "
+												"request and response was %.3f"
+												" ms\n", big_delay);
 										if (retrans_r_c)
-											printf("%i retransmissions "
-												"received during test.\n", 
+											printf("%i retransmission(s) "
+												"received from server.\n", 
 												retrans_r_c);
 										if (retrans_s_c)
-											printf("sent %i retransmissions "
-												"during test.\n", retrans_s_c);
+											printf("%i time(s) the timeout of "
+												"%i ms exceeded and request was"
+												" retransmitted.\n", 
+												retrans_s_c, retryAfter);
 										exit(0);
 									}
 									/* lets see if we deceid to remove a 
@@ -1065,11 +1085,10 @@ void shoot(char *buff)
 									}
 								}
 								else {
-									if (verbose)
-										printf("\nreceived:\n%s\n", reply);
-									printf("error: didn't received the '200 "
-										"OK' that we sended as the reply on "
-										"the message\n");
+									printf("\nreceived:\n%s\nerror: didn't "
+										"received the '200 OK' that we sended "
+										"as the reply on the message (see "
+										"above). aborting\n", reply);
 									exit(1);
 								}
 								break;
@@ -1085,11 +1104,10 @@ void shoot(char *buff)
 									i--;
 								}
 								else {
-									if (verbose)
-										printf("\nreceived:\n%s\n", reply);
-									printf("error: didn't received the "
-										"expected 200 on the remove bindings "
-										"request for %s%i\n", username, 
+									printf("\nreceived:\n%s\nerror: didn't "
+										"received the expected 200 on the "
+										"remove bindings request for %s%i (see"
+										" above). aborting\n", reply, username, 
 										namebeg);
 									exit(1);
 								}
