@@ -1,5 +1,5 @@
 /*
- * $Id: shoot.c,v 1.34 2004/10/29 23:14:20 calrissian Exp $
+ * $Id: shoot.c,v 1.35 2004/11/02 13:48:50 calrissian Exp $
  *
  * Copyright (C) 2002-2004 Fhg Fokus
  * Copyright (C) 2004 Nils Ohlmeier
@@ -698,8 +698,8 @@ void shoot(char *buff)
 					} /* if redircts... */
 					else if (regexec(&authexp, reply, 0, 0, 0)==0) {
 						if (!username) {
-							printf("error: received 401 but cannot "
-								"authentication without a username\n");
+							printf("%s\nerror: received 401 but cannot "
+								"authentication without a username\n", reply);
 							exit_code(2);
 						}
 						/* prevents a strange error */
