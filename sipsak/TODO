@@ -6,5 +6,6 @@ ToDo List (no order):
  - use one port for sending and receiving (NAT support :)
  - timeouts for usrloc
  - case in-sensitive
+ - TCP support
 
 Feel free to send me patches for this (or other) features!
