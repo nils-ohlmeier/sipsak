@@ -1,5 +1,5 @@
 /*
- * $Id: sipsak.c,v 1.33 2003/01/17 04:54:45 calrissian Exp $
+ * $Id: sipsak.c,v 1.34 2003/01/20 07:53:11 calrissian Exp $
  *
  * Copyright (C) 2002 Fhg Fokus
  *
@@ -18,6 +18,8 @@
 
 /* sipsak written by nils ohlmeier (develop@ohlmeier.de).
    based up on a modifyed version of shoot.
+   return codes are now: 0 for an received 200, 1 for all other
+   received responses, 2 for local errors, and 3 for remote errors.
 */
 
 /* changes by jiri@iptel.org; now messages can be really received;
@@ -282,7 +284,6 @@ void add_via(char *mes)
 		/* We doesn't find a Via so we insert our via
 		   direct after the first line. */
 		via=strchr(mes,'\n');
-		via++;
 	}
 	else if (via!=NULL && via2!=NULL && via2<via){
 		/* the short via is above the long version */
@@ -292,7 +293,7 @@ void add_via(char *mes)
 		/* their is only a short via */
 		via = via2;
 	}
-	via=via+1;
+	via++;
 	/* finnaly make a backup, insert our via and append the backup */
 	backup=malloc(strlen(via)+1);
 	strncpy(backup, via, strlen(via)+1);
@@ -846,7 +847,7 @@ void shoot(char *buff)
 	}
 
 	/* for the via line we need our listening port number */
-	if ((via_ins||usrloc) && lport==0){
+	if ((via_ins||usrloc||replace_b) && lport==0){
 		memset(&sockname, 0, sizeof(sockname));
 		slen=sizeof(sockname);
 		getsockname(ssock, (struct sockaddr *)&sockname, &slen);
@@ -854,7 +855,8 @@ void shoot(char *buff)
 	}
 
 	if (replace_b){
-		replace_string(buff, "$host$", fqdn);
+		replace_string(buff, "$dsthost$", domainname);
+		replace_string(buff, "$srchost$", fqdn);
 		lport_str=malloc(6);
 		sprintf(lport_str, "%i", lport);
 		replace_string(buff, "$port$", lport_str);
