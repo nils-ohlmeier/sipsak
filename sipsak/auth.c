@@ -1,5 +1,5 @@
 /*
- * $Id: auth.c,v 1.5 2004/02/02 20:16:35 calrissian Exp $
+ * $Id: auth.c,v 1.6 2004/05/16 16:45:03 jiri Exp $
  *
  * Copyright (C) 2002-2003 Fhg Fokus
  *
@@ -24,6 +24,7 @@
 #include "sipsak.h"
 #include "md5global.h"
 #include "md5.h"
+#include "exit_code.h"
 
 /* converts a hash into hex output
    taken from the RFC 2617 */
@@ -66,7 +67,7 @@ void insert_auth(char *message, char *authreq)
 		printf("\nrequest:\n%s\nresponse:\n%s\nerror: authorization failed\n  "
 			"     request already contains (Proxy-) Authorization, but "
 			"received 40[1|7], see above\n", message, authreq);
-		exit(2);
+		exit_code(2);
 	}
 	/* make a backup of all except the request line because for 
 	   simplicity we insert the auth header direct behind the request line */
@@ -91,19 +92,19 @@ void insert_auth(char *message, char *authreq)
 		if ((begin=strstr(auth, "Basic"))!=NULL) {
 			printf("%s\nerror: authentication method Basic is deprecated since"
 				" RFC 3261 and not supported by sipsak\n", authreq);
-			exit(3);
+			exit_code(3);
 		}
 		if ((begin=strstr(auth, "Digest"))==NULL) {
 			printf("%s\nerror: couldn't find authentication method Digest in "
 				"the 402 response above\n", authreq);
-			exit(3);
+			exit_code(3);
 		}
 		if ((begin=strstr(auth, "algorithm="))!=NULL) {
 			begin+=10;
 			if ((strncmp(begin, "MD5", 3))!=0) {
 				printf("%s\nerror: unsupported authentication algorithm\n", 
 					authreq);
-				exit(2);
+				exit_code(2);
 			}
 		}
 		/* we need the username at some points */
@@ -159,7 +160,7 @@ void insert_auth(char *message, char *authreq)
 		}
 		else {
 			printf("%s\nerror: realm not found in 401 above\n", authreq);
-			exit(3);
+			exit_code(3);
 		}
 		/* copy opaque if needed */
 		if ((begin=strstr(auth, OPAQUE_STR))!=NULL) {
@@ -174,7 +175,7 @@ void insert_auth(char *message, char *authreq)
 			if (strstr(begin, QOPAUTH_STR)==NULL) {
 				printf("\nresponse\n%s\nerror: qop \"auth\" not supported by"
 					" server\n", authreq);
-				exit(3);
+				exit_code(3);
 			}
 			qop_auth=1;
 		}
@@ -197,7 +198,7 @@ void insert_auth(char *message, char *authreq)
 		}
 		else {
 			printf("%s\nerror: nonce not found in 401 above\n", authreq);
-			exit(3);
+			exit_code(3);
 		}
 		/* if qop is supported we need som additional header */
 		if (qop_auth) {
@@ -255,7 +256,7 @@ void insert_auth(char *message, char *authreq)
 	else {
 		printf("%s\nerror: couldn't find Proxy- or WWW-Authentication header"
 			" in the 401 response above\n",	authreq);
-		exit(3);
+		exit_code(3);
 	}
 	if (verbose>1) 
 		printf("authorizing\n");

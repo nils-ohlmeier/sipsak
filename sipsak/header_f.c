@@ -1,5 +1,5 @@
 /*
- * $Id: header_f.c,v 1.3 2004/02/23 00:08:05 calrissian Exp $
+ * $Id: header_f.c,v 1.4 2004/05/16 16:45:03 jiri Exp $
  *
  * Copyright (C) 2002-2003 Fhg Fokus
  *
@@ -22,6 +22,7 @@
 
 #include "header_f.h"
 #include "sipsak.h"
+#include "exit_code.h"
 
 /* add a Via Header Field in the message. */
 void add_via(char *mes)
@@ -36,7 +37,7 @@ void add_via(char *mes)
 
 	if (strlen(mes)+strlen(via_line)>= BUFSIZE){
 		printf("can't add our Via Header Line because file is too big\n");
-		exit(2);
+		exit_code(2);
 	}
 	via=strstr(mes, "\nVia");
 	via2=strstr(mes, "\nv:");
@@ -75,7 +76,7 @@ void cpy_vias(char *reply, char *dest){
 	if ((first_via=strstr(reply, "Via:"))==NULL &&
 		(first_via=strstr(reply, "\nv:"))==NULL ){
 		printf("error: the received message doesn't contain a Via header\n");
-		exit(3);
+		exit_code(3);
 	}
 	last_via=first_via+4;
 	middle_via=last_via;
@@ -103,7 +104,7 @@ void cpy_to(char *reply, char *dest) {
 	/* find the position where we want to insert the To */
 	if ((dst_to=strstr(dest, "To:"))==NULL) {
 		printf("error: could not find To in our reply\n");
-		exit(2);
+		exit_code(2);
 	}
 	/* find the To we want to copy */
 	if ((src_to=strstr(reply, "To:"))==NULL && 

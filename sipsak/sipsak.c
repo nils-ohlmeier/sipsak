@@ -1,5 +1,5 @@
 /*
- * $Id: sipsak.c,v 1.57 2004/02/29 04:28:02 calrissian Exp $
+ * $Id: sipsak.c,v 1.58 2004/05/16 16:45:03 jiri Exp $
  *
  * Copyright (C) 2002-2003 Fhg Fokus
  *
@@ -38,6 +38,7 @@
 #include "sipsak.h"
 #include "helper.h"
 #include "shoot.h"
+#include "exit_code.h"
 
 /* prints out some usage help and exits */
 void print_help() {
@@ -97,8 +98,10 @@ void print_help() {
 		"   -v           each v's produces more verbosity (max. 3)\n"
 		"   -w           extract IP from the warning in reply\n"
 		"   -g string    replacement for a special mark in the message\n"
-		"   -G           avtivates replacement of variables\n");
-	exit(0);
+		"   -G           activates replacement of variables\n"
+		"   -N           returns exit codes a la Nagios\n"
+		);
+		exit(0);
 };
 
 int main(int argc, char *argv[])
@@ -127,8 +130,11 @@ int main(int argc, char *argv[])
 	if (argc==1) print_help();
 
 	/* lots of command line switches to handle*/
-	while ((c=getopt(argc,argv,"a:b:C:c:de:f:Fg:GhH:iIl:m:Mno:p:r:Rs:t:TUvVwx:z")) != EOF){
+	while ((c=getopt(argc,argv,"Na:b:C:c:de:f:Fg:GhH:iIl:m:Mno:p:r:Rs:t:TUvVwx:z")) != EOF){
 		switch(c){
+			case 'N':
+				exit_mode=EM_NAGIOS;
+				break;
 			case 'a':
 				password=malloc(strlen(optarg));
 				strncpy(password, optarg, strlen(optarg));
@@ -138,7 +144,7 @@ int main(int argc, char *argv[])
 				if ((namebeg=atoi(optarg))==-1) {
 					printf("error: non-numerical appendix begin for the "
 						"username\n");
-					exit(2);
+					exit_code(2);
 				}
 				break;
 			case 'C':
@@ -150,13 +156,13 @@ int main(int argc, char *argv[])
 						delim++;
 						if ((delim2=strchr(delim,'@'))==NULL){
 							printf("error: missing '@' in Contact uri\n");
-							exit(2);
+							exit_code(2);
 						}
 						else{
 							if ((delim2-delim)==0){
 								printf("error: REGISTER Contact requires a"
 									" username\n");
-								exit(2);
+								exit_code(2);
 							}
 							else{
 								contact_uri=malloc(strlen(optarg)+1);
@@ -167,19 +173,19 @@ int main(int argc, char *argv[])
 					}
 					else{
 						printf("error: missing ':' in REGISTER Contact uri\n");
-						exit(2);
+						exit_code(2);
 					}
 				}
 				else{
 					printf("error: REGISTER Contact uri doesn't not begin "
 						"with sip or empty\n");
-					exit(2);
+					exit_code(2);
 				}
 				break;
 			case 'c':
 				if ((namebeg=atoi(optarg))==-1) {
 					printf("error: non-numerical CSeq maximum\n");
-					exit(2);
+					exit_code(2);
 				}
 				break;
 			case 'd':
@@ -189,7 +195,7 @@ int main(int argc, char *argv[])
 				if ((nameend=atoi(optarg))==-1) {
 					printf("error: non-numerical appendix end for the "
 						"username\n");
-					exit(2);
+					exit_code(2);
 				}
 				break;
 			case 'F':
@@ -201,7 +207,7 @@ int main(int argc, char *argv[])
 				pf = fopen(optarg, "rb");
 				if (!pf){
 					puts("unable to open the file.\n");
-					exit(2);
+					exit_code(2);
 				}
 				length  = fread(buff, 1, sizeof(buff), pf);
 				if (length >= sizeof(buff)){
@@ -209,7 +215,7 @@ int main(int argc, char *argv[])
 						"than %i bytes.\n", BUFSIZE);
 					printf("      or recompile the program with bigger "
 						"BUFSIZE defined.\n");
-					exit(2);
+					exit_code(2);
 				}
 				fclose(pf);
 				buff[length] = '\0';
@@ -237,14 +243,14 @@ int main(int argc, char *argv[])
 				lport=atoi(optarg);
 				if (!lport) {
 					puts("error: non-numerical local port number");
-					exit(2);
+					exit_code(2);
 				}
 				break;
 			case 'm':
 				maxforw=atoi(optarg);
 				if (maxforw==-1) {
 					printf("error: non-numerical number of max-forwards\n");
-					exit(2);
+					exit_code(2);
 				}
 				break;
 			case 'M':
@@ -262,7 +268,7 @@ int main(int argc, char *argv[])
 					sleep_ms = atoi(optarg);
 					if (!sleep_ms) {
 						printf("error: non-numerical sleep value\n");
-						exit(2);
+						exit_code(2);
 					}
 				}
 				break;
@@ -273,7 +279,7 @@ int main(int argc, char *argv[])
 				rport=atoi(optarg);
 				if (!rport) {
 					printf("error: non-numerical remote port number\n");
-					exit(2);
+					exit_code(2);
 				}
 				break;
 			case 'R':
@@ -301,7 +307,7 @@ int main(int argc, char *argv[])
 							if (!rport) {
 								printf("error: non-numerical remote port "
 									"number\n");
-								exit(2);
+								exit_code(2);
 							}
 						}
 						else {
@@ -314,17 +320,17 @@ int main(int argc, char *argv[])
 						if (!address){
 							printf("error:unable to determine the remote host "
 								"address\n");
-							exit(2);
+							exit_code(2);
 						}
 					}
 					else{
 						printf("error: sip:uri doesn't contain a : ?!\n");
-						exit(2);
+						exit_code(2);
 					}
 				}
 				else{
 					printf("error: sip:uri doesn't not begin with sip\n");
-					exit(2);
+					exit_code(2);
 				}
 				uri_b=1;
 				break;			break;
@@ -333,7 +339,7 @@ int main(int argc, char *argv[])
 				if (!trashchar) {
 					printf("error: non-numerical number of trashed "
 						"character\n");
-					exit(2);
+					exit_code(2);
 				}
 				break;
 			case 'T':
@@ -348,7 +354,7 @@ int main(int argc, char *argv[])
 			case 'V':
 				printf("sipsak %s   by Nils Ohlmeier\n Copyright (C) 2002-2003"
 						" FhG Fokus\n", SIPSAK_VERSION);
-				exit(0);
+				exit_code(0);
 				break;
 			case 'w':
 				warning_ext=1;
@@ -361,7 +367,7 @@ int main(int argc, char *argv[])
 				break;
 			default:
 				printf("error: unknown parameter %c\n", c);
-				exit(2);
+				exit_code(2);
 				break;
 		}
 	}
@@ -371,11 +377,11 @@ int main(int argc, char *argv[])
 		if (usrloc || flood || randtrash) {
 			printf("error: trace can't be combined with usrloc, random or "
 				"flood\n");
-			exit(2);
+			exit_code(2);
 		}
 		if (!uri_b) {
 			printf("error: for trace mode a sip:uri is realy needed\n");
-			exit(2);
+			exit_code(2);
 		}
 		if (file_b) {
 			printf("warning: file will be ignored for tracing.");
@@ -383,7 +389,7 @@ int main(int argc, char *argv[])
 		if (!username) {
 			printf("error: for trace mode without a file the sip:uir have to "
 				"contain a username\n");
-			exit(2);
+			exit_code(2);
 		}
 		if (!via_ins){
 			printf("warning: Via-Line is needed for tracing. Ignoring -i\n");
@@ -400,33 +406,33 @@ int main(int argc, char *argv[])
 		if (trace || flood || randtrash) {
 			printf("error: usrloc can't be combined with trace, random or "
 				"flood\n");
-			exit(2);
+			exit_code(2);
 		}
 		if (!username || !uri_b) {
 			printf("error: for the USRLOC mode you have to give a sip:uri with "
 				"a username\n       at least\n");
-			exit(2);
+			exit_code(2);
 		}
 		if (namebeg>0 && nameend==-1) {
 			printf("error: if a starting numbers is given also an ending "
 				"number have to be specified\n");
-			exit(2);
+			exit_code(2);
 		}
 		if (invite && message) {
 			printf("error: invite and message tests are XOR\n");
-			exit(2);
+			exit_code(2);
 		}
 		if (!usrloc && invite && !lport) {
 			printf("WARNING: Do NOT use the usrloc invite mode without "
 				"registering sipsak before.\n         See man page for "
 				"details.\n");
-			exit(2);
+			exit_code(2);
 		}
 		if (contact_uri!=NULL) {
 			if (invite || message) {
 				printf("error: Contact uri is not support for invites or "
 					"messages\n");
-				exit(2);
+				exit_code(2);
 			}
 			if (nameend!=-1 || namebeg!=-1) {
 				printf("warning: ignoring starting or ending number if Contact"
@@ -455,11 +461,11 @@ int main(int argc, char *argv[])
 		if (trace || usrloc || randtrash) {
 			printf("error: flood can't be combined with trace, random or "
 				"usrloc\n");
-			exit(2);
+			exit_code(2);
 		}
 		if (!uri_b) {
 			printf("error: we need at least a sip uri for flood\n");
-			exit(2);
+			exit_code(2);
 		}
 		if (redirects) {
 			printf("warning: redirects are not expected in flood. "
@@ -471,11 +477,11 @@ int main(int argc, char *argv[])
 		if (trace || usrloc || flood) {
 			printf("error: random can't be combined with trace, flood or "
 				"usrloc\n");
-			exit(2);
+			exit_code(2);
 		}
 		if (!uri_b) {
 			printf("error: need at least a sip uri for random\n");
-			exit(2);
+			exit_code(2);
 		}
 		if (redirects) {
 			printf("warning: redirects are not expected in random. "
@@ -490,12 +496,12 @@ int main(int argc, char *argv[])
 	else {
 		if (!uri_b) {
 			printf("error: a spi uri is needed at least\n");
-			exit(2);
+			exit_code(2);
 		}
 /*		if (!(username || file_b)) {
 			printf("error: ether a file or an username in the sip uri is "
 				"required\n");
-			exit(2);
+			exit_code(2);
 		}*/
 		
 	}

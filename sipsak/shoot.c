@@ -1,5 +1,5 @@
 /*
- * $Id: shoot.c,v 1.16 2004/05/06 15:40:12 calrissian Exp $
+ * $Id: shoot.c,v 1.17 2004/05/16 16:45:03 jiri Exp $
  *
  * Copyright (C) 2002-2003 Fhg Fokus
  *
@@ -33,6 +33,7 @@
 #include "auth.h"
 #include "header_f.h"
 #include "helper.h"
+#include "exit_code.h"
 
 #ifndef DEFAULT_RETRYS
 #define DEFAULT_RETRYS 5
@@ -87,7 +88,7 @@ void shoot(char *buff)
 	sock = (int)socket(PF_INET, SOCK_DGRAM, IPPROTO_UDP);
 	if (sock==-1) {
 		perror("socket creation failed");
-		exit(2);
+		exit_code(2);
 	}
 
 	addr.sin_family=AF_INET;
@@ -95,7 +96,7 @@ void shoot(char *buff)
 	addr.sin_port = htons((short)lport);
 	if (bind( sock, (struct sockaddr *) &addr, sizeof(addr) )==-1) {
 		perror("socket binding failed");
-		exit(2);
+		exit_code(2);
 	}
 
 	if (sleep_ms != 0) {
@@ -232,7 +233,7 @@ void shoot(char *buff)
 		ret = connect(sock, (struct sockaddr *)&addr, sizeof(addr));
 		if (ret==-1) {
 			perror("no connect");
-			exit(2);
+			exit_code(2);
 		}
 
 		/* here we go for the number of nretries which strongly depends on the 
@@ -309,7 +310,7 @@ void shoot(char *buff)
 				if (ret==-1) {
 					printf("\n");
 					perror("send failure");
-					exit(2);
+					exit_code(2);
 				}
 			}
 			else {
@@ -344,7 +345,7 @@ void shoot(char *buff)
 							if (randtrash) 
 								printf ("last message before send failure:"
 									"\n%s\n", buff);
-							exit(3);
+							exit_code(3);
 						}
 					}
 					/* printout that we did not received anything */
@@ -368,7 +369,7 @@ void shoot(char *buff)
 									"times without getting a response:\n%s\n"
 									"give up further retransmissions...\n", 
 									buff);
-								exit(3);
+								exit_code(3);
 							}
 							else {
 								printf("resending it without additional "
@@ -388,7 +389,7 @@ void shoot(char *buff)
 				}
 				else if ( ret == -1 ) {
 					perror("select error");
-					exit(2);
+					exit_code(2);
 				}
 				else if (FD_ISSET(sock, &fd)) {
 					/* no timeout, no error ... something has happened :-) */
@@ -433,7 +434,7 @@ void shoot(char *buff)
 							default:
 								printf("error: unknown usrloc step on cseq"
 									" compare\n");
-								exit(2);
+								exit_code(2);
 								break;
 						}
 					}
@@ -468,7 +469,7 @@ void shoot(char *buff)
 								(foo=strstr(reply, "\nm:"))==NULL ) {
 								printf("error: cannot find Contact in this "
 									"redirect:\n%s\n", reply);
-								exit(3);
+								exit_code(3);
 							}
 							crlf=strchr(foo, '\n');
 							if ((contact=strchr(foo, '\r'))!=NULL 
@@ -480,7 +481,7 @@ void shoot(char *buff)
 							if ((contact=strstr(bar, "sip"))==NULL) {
 								printf("error: cannot find sip in the Contact "
 									"of this redirect:\n%s\n", reply);
-								exit(3);
+								exit_code(3);
 							}
 							if ((foo=strchr(contact, ';'))!=NULL)
 								*foo='\0';
@@ -497,7 +498,7 @@ void shoot(char *buff)
 										printf("error: cannot handle the port "
 											"in the uri in Contact:\n%s\n", 
 											reply);
-										exit(3);
+										exit_code(3);
 									}
 								}
 								/* correct our request */
@@ -512,13 +513,13 @@ void shoot(char *buff)
 									printf("error: cannot determine host "
 										"address from Contact of redirect:"
 										"\%s\n", reply);
-									exit(2);
+									exit_code(2);
 								}
 							}
 							else{
 								printf("error: missing : in Contact of this "
 									"redirect:\n%s\n", reply);
-								exit(3);
+								exit_code(3);
 							}
 							free(bar);
 							memset(&addr, 0, sizeof(addr));
@@ -528,14 +529,14 @@ void shoot(char *buff)
 						else {
 							printf("error: cannot handle this redirect:"
 								"\n%s\n", reply);
-							exit(2);
+							exit_code(2);
 						}
 					} /* if redircts... */
 					else if (regexec(&authexp, reply, 0, 0, 0)==0) {
 						if (!username) {
 							printf("error: received 401 but cannot "
 								"authentication without a username\n");
-							exit(2);
+							exit_code(2);
 						}
 						/* prevents a strange error */
 						regcomp(&authexp, "^SIP/[0-9]\\.[0-9] 401 ", 
@@ -606,9 +607,9 @@ void shoot(char *buff)
 								printf("\twithout Contact header\n");
 							}
 							if (regexec(&okexp, reply, 0, 0, 0)==0)
-								exit(0);
+								exit_code(0);
 							else
-								exit(1);
+								exit_code(1);
 						}
 					} /* if trace ... */
 					else if (usrloc||invite||message) {
@@ -635,7 +636,7 @@ void shoot(char *buff)
 									printf("\nreceived:\n%s\nerror: didn't "
 										"received '200 OK' on register (see "
 										"above). aborting\n", reply);
-									exit(1);
+									exit_code(1);
 								}
 								if (!invite && !message) {
 									if (namebeg==nameend) {
@@ -658,7 +659,7 @@ void shoot(char *buff)
 												"%i ms exceeded and request was"
 												" retransmitted.\n", 
 												retrans_s_c, retryAfter);
-										exit(0);
+										exit_code(0);
 									}
 									/* lets see if we deceid to remove a 
 									   binding (case 6)*/
@@ -714,7 +715,7 @@ void shoot(char *buff)
 									printf("\nreceived:\n%s\nerror: did not "
 										"received the INVITE that was sent "
 										"(see above). aborting\n", reply);
-									exit(1);
+									exit_code(1);
 								}
 								break;
 							case 2:
@@ -741,7 +742,7 @@ void shoot(char *buff)
 										"received the '200 OK' that was sent "
 										"as the reply on the INVITE (see "
 										"above). aborting\n", reply);
-									exit(1);
+									exit_code(1);
 								}
 								break;
 							case 3:
@@ -783,7 +784,7 @@ void shoot(char *buff)
 												"%i ms exceeded and request was"
 												" retransmitted.\n", 
 												retrans_s_c, retryAfter);
-										exit(0);
+										exit_code(0);
 									}
 									if (usrloc) {
 										/* lets see if we deceid to remove a 
@@ -822,7 +823,7 @@ void shoot(char *buff)
 										"received the 'ACK' that was sent "
 										"as the reply on the '200 OK' (see "
 										"above). aborting\n", reply);
-									exit(1);
+									exit_code(1);
 								}
 								if (sleep_ms != 0)
 									nanosleep(&sleep_ms_s, &sleep_rem);
@@ -849,7 +850,7 @@ void shoot(char *buff)
 									printf("\nreceived:\n%s\nerror: did not "
 										"received the 'MESSAGE' that was sent "
 										"(see above). aborting\n", reply);
-									exit(1);
+									exit_code(1);
 								}
 								break;
 							case 5:
@@ -891,7 +892,7 @@ void shoot(char *buff)
 												"%i ms exceeded and request was"
 												" retransmitted.\n", 
 												retrans_s_c, retryAfter);
-										exit(0);
+										exit_code(0);
 									}
 									if (usrloc) {
 										/* lets see if we deceid to remove a 
@@ -930,7 +931,7 @@ void shoot(char *buff)
 										"received the '200 OK' that was sent "
 										"as the reply on the MESSAGE (see "
 										"above). aborting\n", reply);
-									exit(1);
+									exit_code(1);
 								}
 								if (sleep_ms != 0)
 									nanosleep(&sleep_ms_s, &sleep_rem);
@@ -965,14 +966,14 @@ void shoot(char *buff)
 										"remove bindings request for %s%i (see"
 										" above). aborting\n", reply, username, 
 										namebeg);
-									exit(1);
+									exit_code(1);
 								}
 								if (sleep_ms != 0)
 									nanosleep(&sleep_ms_s, &sleep_rem);
 								break;
 							default:
 								printf("error: unknown step in usrloc\n");
-								exit(2);
+								exit_code(2);
 								break;
 						}
 						}
@@ -1003,13 +1004,13 @@ void shoot(char *buff)
 							if (randretrys == 0) {
 								printf("random end reached. server survived "
 									":) respect!\n");
-								exit(0);
+								exit_code(0);
 							}
 							else {
 								printf("maximum sendings reached but did not "
 									"get a response on this request:\n%s\n", 
 									buff);
-								exit(3);
+								exit_code(3);
 							}
 						}
 						else trash_random(buff);
@@ -1057,9 +1058,9 @@ void shoot(char *buff)
 							}
 							else if (verbose) printf("%s\n", reply);
 							if (regexec(&okexp, reply, 0, 0, 0)==0)
-								exit(0);
+								exit_code(0);
 							else
-								exit(1);
+								exit_code(1);
 						}
 					} /* redirect, auth, and modes */
 		
@@ -1068,7 +1069,7 @@ void shoot(char *buff)
 					if (usrloc)
 						printf("failed\n");
 					perror("socket error");
-					exit(3);
+					exit_code(3);
 				}
 			} /* !flood */
 			else {
@@ -1080,7 +1081,7 @@ void shoot(char *buff)
 							deltaT(&firstsendt, &sendtime), namebeg);
 					printf("so we sended %f requests per second.\n", 
 							(namebeg/deltaT(&firstsendt, &sendtime))*1000);
-					exit(0);
+					exit_code(0);
 				}
 				namebeg++;
 				create_msg(buff, REQ_FLOOD);
@@ -1088,12 +1089,12 @@ void shoot(char *buff)
 		} /* for nretries */
 
 	} /* while redirected */
-	if (randtrash) exit(0);
+	if (randtrash) exit_code(0);
 	printf("** give up retransmissioning....\n");
 	if (retrans_r_c && (verbose > 1))
 		printf("%i retransmissions received during test\n", retrans_r_c);
 	if (retrans_s_c && (verbose > 1))
 		printf("sent %i retransmissions during test\n", retrans_s_c);
-	exit(3);
+	exit_code(3);
 }
 

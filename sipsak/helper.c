@@ -1,5 +1,5 @@
 /*
- * $Id: helper.c,v 1.8 2004/04/26 15:35:32 calrissian Exp $
+ * $Id: helper.c,v 1.9 2004/05/16 16:45:03 jiri Exp $
  *
  * Copyright (C) 2002-2003 Fhg Fokus
  *
@@ -23,6 +23,7 @@
 
 #include "helper.h"
 #include "sipsak.h"
+#include "exit_code.h"
 
 /* take either a dot.decimal string of ip address or a 
 domain name and returns a NETWORK ordered long int containing
@@ -79,7 +80,7 @@ long getaddress(char *host)
 	if (!pent) {
 		//perror("gethostbyname error");
 		printf("'%s' is unresolveable\n", host);
-		exit(2);
+		exit_code(2);
 	}
 	lp = (long *) (pent->h_addr);
 	l = *lp;
@@ -109,14 +110,14 @@ void get_fqdn(){
 		else {
 			if (gethostname(&hname[0], namelen) < 0) {
 				printf("error: cannot determine hostname\n");
-				exit(2);
+				exit_code(2);
 			}
 		}
 		/* a hostname with dots should be a domainname */
 		if ((strchr(hname, '.'))==NULL) {
 			if (getdomainname(&dname[0], namelen) < 0) {
 				printf("error: cannot determine domainname\n");
-				exit(2);
+				exit_code(2);
 			}
 			if (strcmp(&dname[0],"(none)")!=0)
 				sprintf(fqdn, "%s.%s", hname, dname);
@@ -145,7 +146,7 @@ void get_fqdn(){
 	}
 	else {
 		printf("error: cannot resolve hostname: %s\n", hname);
-		exit(2);
+		exit_code(2);
 	}
 	if ((strchr(fqdn, '.'))==NULL) {
 		if (hostname) {
@@ -154,7 +155,7 @@ void get_fqdn(){
 		}
 		else {
 			printf("error: this FQDN or IP is not valid: %s\n", fqdn);
-			exit(2);
+			exit_code(2);
 		}
 	}
 
