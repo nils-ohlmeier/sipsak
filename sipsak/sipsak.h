@@ -1,5 +1,5 @@
 /*
- * $Id: sipsak.h,v 1.22 2005/01/05 23:37:25 calrissian Exp $
+ * $Id: sipsak.h,v 1.23 2005/01/06 10:33:00 calrissian Exp $
  *
  * Copyright (C) 2002-2004 Fhg Fokus
  *
@@ -19,6 +19,7 @@
 #ifndef SIPSAK_H
 #define SIPSAK_H
 
+#include <sys/types.h>
 #include <regex.h>
 
 #if HAVE_CONFIG_H
@@ -126,6 +127,12 @@
 #define CON_LEN_STR_LEN (sizeof(CON_LEN_STR) - 1)
 #define CON_LEN_SHORT_STR "l: "
 #define CON_LEN_SHORT_STR_LEN (sizeof(CON_LEN_SHORT_STR) - 1)
+
+#define RR_STR "Record-Route: "
+#define RR_STR_LEN (sizeof(RR_STR) -  1)
+
+#define ROUTE_STR "Route: "
+#define ROUTE_STR_LEN (sizeof(ROUTE_STR) - 1)
 
 #define SIPSAK_MES_STR "usrloc test message from SIPsak for user "
 #define SIPSAK_MES_STR_LEN (sizeof(SIPSAK_MES_STR) - 1)
