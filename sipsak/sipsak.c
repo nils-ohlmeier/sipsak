@@ -1,5 +1,5 @@
 /*
- * $Id: sipsak.c,v 1.23 2002/11/07 15:50:00 calrissian Exp $
+ * $Id: sipsak.c,v 1.24 2002/11/12 16:22:58 calrissian Exp $
  *
  * Copyright (C) 2002 Fhg Fokus
  *
@@ -1657,6 +1657,7 @@ int main(int argc, char *argv[])
 						if ((delim2=strchr(delim,'@'))!=NULL){
 							username=malloc(delim2-delim+1);
 							strncpy(username, delim, delim2-delim);
+							*(username+(delim2-delim)) = '\0';
 							delim2++;
 							delim=delim2;
 						}
@@ -1672,6 +1673,7 @@ int main(int argc, char *argv[])
 						}
 						domainname=malloc(strlen(delim)+1);
 						strncpy(domainname, delim, strlen(delim));
+						*(domainname+strlen(delim)) = '\0';
 						address = getaddress(delim);
 						if (!address){
 							printf("error:unable to determine the remote host "
