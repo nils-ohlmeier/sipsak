@@ -17,9 +17,13 @@ sipsak \- a utility for various tests on sip server
 .I filename 
 .B ] [-g
 .I string
+.B ] [-H
+.I hostname
 .B ] [-l 
 .I port
 .B ] [-m 
+.I number
+.B ] [-o 
 .I number
 .B ] [-r 
 .I port
@@ -132,6 +136,10 @@ will be replaced by the local listening port of
 will be replaced by the username which is given by the
 .B -s
 parameter.
+.IP "-H hostname"
+Overwrites the automatic detection of the hostname with the given parameter.
+.B Warning: 
+use this with caution (preferable only if the automatic detection fails).
 .IP -i
 Deactivates the insertion of the Via line of the localhost. 
 .B Warning: 
@@ -187,6 +195,13 @@ can cause unexpected behaivor.
 .IP -n
 Instead of the full qualified domain name in the Via line the IP of the
 local host will be used.
+.IP "-o number"
+.B sipsak 
+will sleep for 
+.BR number 
+ms before it starts the next cycle in the usrloc mode. This will slow down
+the whole test process to be more realistic. Each cycle will be still completed
+as fast as possible, but the whole test will be slowed down.
 .IP "-r port"
 Instead of the default sip port 5060 the 
 .BR port
