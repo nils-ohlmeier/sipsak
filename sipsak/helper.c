@@ -1,5 +1,5 @@
 /*
- * $Id: helper.c,v 1.12 2004/06/26 22:52:10 calrissian Exp $
+ * $Id: helper.c,v 1.13 2004/07/25 21:26:53 calrissian Exp $
  *
  * Copyright (C) 2002-2004 Fhg Fokus
  *
@@ -98,9 +98,11 @@ void get_fqdn(){
 	size_t namelen=100;
 	struct hostent* he;
 	struct utsname un;
-	int i;
-	char *addrp;
 	char *fqdnp;
+
+	memset(&hname, 0, sizeof(hname));
+	memset(&dname, 0, sizeof(dname));
+	memset(&hlp, 0, sizeof(hlp));
 
 	if (hostname) {
 		strcpy(fqdn, hostname);
@@ -135,14 +137,7 @@ void get_fqdn(){
 	he=gethostbyname(hname);
 	if (he) {
 		if (numeric) {
-			addrp = he->h_addr_list[0];
-			hlp[0]=fqdn[0]='\0';
-			fqdnp = &fqdn[0];
-			for (i = 0; i < 3; i++) {
-				sprintf(hlp, "%i.", addrp[i]);
-				fqdnp = strcat(fqdn, hlp);
-			}
-			sprintf(hlp, "%i", addrp[3]);
+			sprintf(hlp, "%s", inet_ntoa(*(struct in_addr *) he->h_addr_list[0]));
 			fqdnp = strcat(fqdn, hlp);
 		}
 		else {
