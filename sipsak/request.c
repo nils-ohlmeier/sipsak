@@ -1,5 +1,5 @@
 /*
- * $Id: request.c,v 1.4 2003/12/30 21:40:54 calrissian Exp $
+ * $Id: request.c,v 1.5 2004/01/09 23:33:59 calrissian Exp $
  *
  * Copyright (C) 2002-2003 Fhg Fokus
  *
@@ -51,32 +51,60 @@ void create_msg(char *buff, int action){
 	c=rand();
 	switch (action){
 		case REQ_REG:
-			/* build the register, message and the 200 we need in for 
-			   USRLOC on one function call*/
-			sprintf(buff, 
-				"%s sip:%s%s"
-				"%s%s:%i;rport\r\n"
-				"%s<sip:%s%s>\r\n"
-				"%s<sip:%s%s>\r\n"
-				"%s%u@%s\r\n"
-				"%s%i %s\r\n"
-				"%s<sip:%s%s:%i>\r\n"
-				"%s%i\r\n"
-				"%s0\r\n"
-				"%s70\r\n"
-				"%ssipsak %s\r\n"
-				"\r\n", 
-				REG_STR, domainname, SIP20_STR, 
-				VIA_STR, fqdn, lport, 
-				FROM_STR, usern, domainname, 
-				TO_STR, usern, domainname, 
-				CALL_STR, c, fqdn, 
-				CSEQ_STR, 3*namebeg+1, REG_STR, 
-				CONT_STR, usern, fqdn, lport, 
-				EXP_STR, expires_t, 
-				CON_LEN_STR, 
-				MAX_FRW_STR, 
-				UA_STR, SIPSAK_VERSION);
+			// not elegant but easier :)
+			if (contact_uri!=NULL) {
+				sprintf(buff, 
+					"%s sip:%s%s"
+					"%s%s:%i;rport\r\n"
+					"%s<sip:%s%s>\r\n"
+					"%s<sip:%s%s>\r\n"
+					"%s%u@%s\r\n"
+					"%s%i %s\r\n"
+					"%s<%s>\r\n"
+					"%s%i\r\n"
+					"%s0\r\n"
+					"%s70\r\n"
+					"%ssipsak %s\r\n"
+					"\r\n", 
+					REG_STR, domainname, SIP20_STR, 
+					VIA_STR, fqdn, lport, 
+					FROM_STR, usern, domainname, 
+					TO_STR, usern, domainname, 
+					CALL_STR, c, fqdn, 
+					CSEQ_STR, 3*namebeg+1, REG_STR, 
+					CONT_STR, contact_uri, 
+					EXP_STR, expires_t, 
+					CON_LEN_STR, 
+					MAX_FRW_STR, 
+					UA_STR, SIPSAK_VERSION);
+	
+			}
+			else{
+				sprintf(buff, 
+					"%s sip:%s%s"
+					"%s%s:%i;rport\r\n"
+					"%s<sip:%s%s>\r\n"
+					"%s<sip:%s%s>\r\n"
+					"%s%u@%s\r\n"
+					"%s%i %s\r\n"
+					"%s<sip:%s%s:%i>\r\n"
+					"%s%i\r\n"
+					"%s0\r\n"
+					"%s70\r\n"
+					"%ssipsak %s\r\n"
+					"\r\n", 
+					REG_STR, domainname, SIP20_STR, 
+					VIA_STR, fqdn, lport, 
+					FROM_STR, usern, domainname, 
+					TO_STR, usern, domainname, 
+					CALL_STR, c, fqdn, 
+					CSEQ_STR, 3*namebeg+1, REG_STR, 
+					CONT_STR, usern, fqdn, lport, 
+					EXP_STR, expires_t, 
+					CON_LEN_STR, 
+					MAX_FRW_STR, 
+					UA_STR, SIPSAK_VERSION);
+			}
 			break;
 		case REQ_REM:
 			sprintf(buff, 

@@ -1,3 +1,5 @@
+  - added -C option to use given Contact in REGISTER
+  - fixed authentication failure when password given as last option
 * version 0.8.7
   - merged listening and sending socket into one
   - added rport parameter to all Via lines

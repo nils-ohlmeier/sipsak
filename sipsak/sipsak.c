@@ -1,5 +1,5 @@
 /*
- * $Id: sipsak.c,v 1.53 2003/10/06 16:28:00 calrissian Exp $
+ * $Id: sipsak.c,v 1.54 2004/01/09 23:33:59 calrissian Exp $
  *
  * Copyright (C) 2002-2003 Fhg Fokus
  *
@@ -50,6 +50,7 @@ void print_help() {
 		" usrloc: sipsak -U [-I|M] [-b number] [-e number] [-x number] [-z] -s "
 			"sip:uri\n"
 		" usrloc: sipsak -I|M [-b number] [-e number] -s sip:uri\n"
+		" usrloc: sipsak -U [-C sip:uri] [-x number] -s sip:uri\n"
 		" flood : sipsak -F [-c number] -s sip:uri\n"
 		" random: sipsak -R [-t number] -s sip:uri\n\n"
 		" additional parameter in every mode:\n"
@@ -65,6 +66,7 @@ void print_help() {
 		"   -U           activates the usrloc mode\n"
 		"   -I           simulates a successful calls with itself\n"
 		"   -M           sends messages it itself\n"
+		"   -C sip:uri   use the given uri as Contact in REGISTER\n"
 		"   -b number    the starting number appendix to the user name in "
 			"usrloc mode\n"
 		"                (default: 0)\n"
@@ -111,7 +113,7 @@ int main(int argc, char *argv[])
 	sleep_ms = 0;
 	namebeg=nameend=maxforw= -1;
 	via_ins=redirects = 1;
-	username=password=replace_str=hostname = NULL;
+	username=password=replace_str=hostname=contact_uri = NULL;
 	address = 0;
     rport = 5060;
 	expires_t = USRLOC_EXP_DEF;
@@ -124,16 +126,49 @@ int main(int argc, char *argv[])
 	if (argc==1) print_help();
 
 	/* lots of command line switches to handle*/
-	while ((c=getopt(argc,argv,"a:b:c:de:f:Fg:GhH:iIl:m:Mno:r:Rs:t:TUvVwx:z")) != EOF){
+	while ((c=getopt(argc,argv,"a:b:C:c:de:f:Fg:GhH:iIl:m:Mno:r:Rs:t:TUvVwx:z")) != EOF){
 		switch(c){
 			case 'a':
 				password=malloc(strlen(optarg));
 				strncpy(password, optarg, strlen(optarg));
+				*(password+strlen(optarg)) = '\0';
 				break;
 			case 'b':
 				if ((namebeg=atoi(optarg))==-1) {
 					printf("error: non-numerical appendix begin for the "
 						"username\n");
+					exit(2);
+				}
+				break;
+			case 'C':
+				if (!strncmp(optarg,"sip",3)){
+					if ((delim=strchr(optarg,':'))!=NULL){
+						delim++;
+						if ((delim2=strchr(delim,'@'))==NULL){
+							printf("error: missing '@' in Contact uri\n");
+							exit(2);
+						}
+						else{
+							if ((delim2-delim)==0){
+								printf("error: REGISTER Contact requires a"
+									" username\n");
+								exit(2);
+							}
+							else{
+								contact_uri=malloc(strlen(optarg));
+								strncpy(contact_uri, optarg, strlen(optarg));
+								*(contact_uri+strlen(optarg)) = '\0';
+							}
+						}
+					}
+					else{
+						printf("error: missing ':' in REGISTER Contact uri\n");
+						exit(2);
+					}
+				}
+				else{
+					printf("error: REGISTER Contact uri doesn't not begin "
+						"with sip\n");
 					exit(2);
 				}
 				break;
@@ -378,6 +413,22 @@ int main(int argc, char *argv[])
 				"registering sipsak before.\n         See man page for "
 				"details.\n");
 			exit(2);
+		}
+		if (contact_uri!=NULL) {
+			if (invite || message) {
+				printf("error: Contact uri is not support for invites or "
+					"messages\n");
+				exit(2);
+			}
+			if (nameend!=-1 || namebeg!=-1) {
+				printf("warning: ignoring starting or ending number if Contact"
+					" is given\n");
+				nameend=namebeg=0;
+			}
+			if (rand_rem) {
+				printf("warning: ignoring -z option when Contact is given\n");
+				rand_rem=0;
+			}
 		}
 		if (via_ins) {
 			via_ins=0;
