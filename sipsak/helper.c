@@ -1,5 +1,5 @@
 /*
- * $Id: helper.c,v 1.7 2003/12/18 04:08:06 calrissian Exp $
+ * $Id: helper.c,v 1.8 2004/04/26 15:35:32 calrissian Exp $
  *
  * Copyright (C) 2002-2003 Fhg Fokus
  *
@@ -149,7 +149,7 @@ void get_fqdn(){
 	}
 	if ((strchr(fqdn, '.'))==NULL) {
 		if (hostname) {
-			printf("WARNING: %s is not resolvable... continouing anyway\n");
+			printf("WARNING: %s is not resolvable... continouing anyway\n", fqdn);
 			strcpy(fqdn, hostname);
 		}
 		else {
