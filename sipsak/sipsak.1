@@ -5,7 +5,7 @@
 .SH NAME
 sipsak \- a utility for various tests on sip server
 .SH SYNOPSIS
-.B sipsak [-dFGhinRTUVvwz] [-a
+.B sipsak [-dFGhiInMRTUVvwz] [-a
 .I password
 .B ] [-b
 .I number 
@@ -55,7 +55,12 @@ parser.
 .IP "- usrloc mode (-U)"
 stress mode for SIP registrar. 
 .B sipsak
-keeps registering and sending requests to a SIP server at high pace.
+keeps registering to a SIP server at high pace. Additionaly the registrar
+can be stressed with the 
+.BR -I
+or the
+.BR -M
+option.
 .IP "- flood mode (-F)"
 stress mode for SIP servers.
 .B sipsak 
@@ -70,7 +75,7 @@ an authentication will be tryed on received '401 Unauthorized'. Authorization
 will be tryed on time. If this option is omitted an authorization with the
 username as password will be tryed.
 .IP "-b number"
-The starting number which is appended to the user name in the USRLOC mode.
+The starting number which is appended to the user name in the usrloc mode.
 This 
 .I number
 is increased until it reaches the value given by the
@@ -84,7 +89,7 @@ If this option is set all redirects will be ignored. By default without this
 option received redirects will be respected. This option is automaticly 
 activated in the randtrash mode and in the flood mode.
 .IP "-e number"
-The ending number which is appended to the user name in the USRLOC mode.
+The ending number which is appended to the user name in the usrloc mode.
 This number is increased until it reaches this ending
 .I number.
 .IP "-f filename"
@@ -94,7 +99,12 @@ will be read in in binary mode and will be used as replacement for the
 alternatively created sip header. This can used in the default mode to make
 other requests than OPTIONS requests (e.g. INVITE). But be warned that
 the manipulation functions (e.g. inserting Via header) are only tested
-with RFC conform requests.
+with RFC conform requests. Additionaly special strings within the file
+can be replaced with some local or given values (see 
+.BR -g
+and
+.BR -G
+for details).
 .IP -F
 This options activates the flood mode. In this mode OPTIONS requests with
 increasing CSeq numbers are sent to the server. Replies are ignored --
@@ -116,11 +126,26 @@ parameter.
 .B $srchost$
 will be replaced by the hostname of the local machine.
 .B $port$
-will be replaced by the local listening port of sipsak.
+will be replaced by the local listening port of 
+.B sipsak.
 .IP -i
 Deactivates the insertion of the Via line of the localhost. 
 .B Warning: 
 this probably disables the receiving of the responses from the server.
+.IP -I
+Activates the Invites cycles within the usrloc mode. It should be combined
+with
+.BR -U.
+In this combination 
+.B sipsak 
+first registeres a user, and then simulates an 
+invitation to this user. First an Invite is sent, this is replied with 200 OK
+and finaly an ACK is sent. This option can also be used without
+.BR -U
+, but you should be shure to NOT invite real UAs with this option.
+.B Warning: sipsak 
+is no real UA and invitations to real UAs can result in unexpected 
+behaivior.
 .IP "-l port"
 The receiving UDP socket will use the local network 
 .I port.
@@ -132,6 +157,20 @@ This sets the value of the Max-Forward header field. If omitted no Max-Forward
 field will be inserted. If omitted in the traceroute mode 
 .BR number
 will be 255.
+.IP -M
+This activates the Messages cycles within the usrloc mode (known from 
+.B sipsak
+versions pre 0.8.0 within the normal usrloc test). This option should be
+combined with
+.BR -U
+so that a succesful registration will be tested with a test message to the user
+and replied with 200 OK. But this option can also be used without the
+.BR -U
+option.
+.B Warning:
+using without 
+.BR -U
+can cause unexpected behaivor.
 .IP -n
 Instead of the full qualified domain name in the Via line the IP of the
 local host will be used.
@@ -177,13 +216,17 @@ if no other value is given by the
 parameter. Any other response than 483 or 1xx are treated as a final response
 and will terminate this mode.
 .IP -U
-This activates the usrloc mode. First a REGISTER request for the given 
-user name is sent to server. Authentication is not expected and not 
-supported. After successful registration an IM request is sent to the 
-before registered user. After successful receiving the before sent IM the
-expected 200 is sent back. If the 200 is received successful the number
-at the end of the user name is increased and the next usrloc cycle starts.
-An user name is mandatory for this mode in the 
+This activates the usrloc mode. Without the 
+.BR -I
+or the
+.BR -M
+option, this only registers users at a registrar. With one of the above
+options the previous registered user will also be probed ether with a
+simulated call flow (invite, 200, ack) or with an instant message 
+(message, 200). One password for all users accounts within the usrloc test 
+can be given with the 
+.BR -a
+option. An user name is mandatory for this mode in the 
 .BR -s
 parameter. The number starting from the 
 .BR -b
@@ -201,13 +244,14 @@ This parameter increases the output verbosity. No
 means nearly no output except in traceroute and error messages. The maximum
 of three v's prints out the content of all packets received and sent.
 .IP -V
-Prints out only the name and version number of sipsak.
+Prints out only the name and version number of 
+.B sipsak.
 .IP -w
 Activates the extraction of the IP or hostname from the Warning header field.
 .IP "-x number"
 Sets the value of the Expires header to the given number.
 .IP -z
-Activates the randomly removing of old bindings in the USRLOC mode. How many 
+Activates the randomly removing of old bindings in the usrloc mode. How many 
 per cent of the bindings will be removed, is determined by the 
 USRLOC_REMOVE_PERCENT define within the code (set it before compilation).
 Multiple removing of bindings is possible, and cannot be prevented.
