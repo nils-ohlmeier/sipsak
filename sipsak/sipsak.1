@@ -5,7 +5,7 @@
 .SH NAME
 sipsak \- a utility for various tests on sip server
 .SH SYNOPSIS
-.B sipsak [-dFGhiInNMRTUVvwz] [-a
+.B sipsak [-dFGhiILnNMRTUVvwz] [-a
 .I PASSWORD
 .B ] [-b
 .I NUMBER 
@@ -29,12 +29,16 @@ sipsak \- a utility for various tests on sip server
 .I NUMBER
 .B ] [-p
 .I HOSTNAME
+.B ] [-P
+.I NUMBER
 .B ] [-q
 .I REGEXP
 .B ] [-r 
 .I PORT
 .B ] [-t 
 .I NUMBER 
+.B ] [-u
+.I STRING
 .B ] [-W
 .I NUMBER
 .B ] [-x 
@@ -95,8 +99,8 @@ keeps sending requests to a SIP server at high pace.
 With the given 
 .I PASSWORD
 an authentication will be tryed on received '401 Unauthorized'. Authorization
-will be tryed on time. If this option is omitted an authorization with the
-username as password will be tryed.
+will be tryed on time. If this option is omitted an authorization with an
+empty password ("") will be tryed.
 .IP "-b, --apendix-begin NUMBER"
 The starting number which is appended to the user name in the usrloc mode.
 This 
@@ -133,7 +137,11 @@ The content of
 .I FILE
 will be read in in binary mode and will be used as replacement for the
 alternatively created sip header. This can used in the default mode to make
-other requests than OPTIONS requests (e.g. INVITE). But be warned that
+other requests than OPTIONS requests (e.g. INVITE). By default missing
+carriage returns in front of line feeds will be inserted (use
+.BR -L
+to de-activate this function).
+But be warned that
 the manipulation functions (e.g. inserting Via header) are only tested
 with RFC conform requests. Additionaly special strings within the file
 can be replaced with some local or given values (see 
@@ -205,6 +213,12 @@ The receiving UDP socket will use the local network
 Useful if a file is given by 
 .BR -f
 which contains a correct Via line.
+.IP "-L, --no-crlf"
+De-activates the insertion of carriage returns (\\r) before all line feeds
+(\\n) (which is not allready proceeded by carraige return) if the input
+is comming from a file (
+.BR -f
+).
 .IP "-m, --max-forwards NUMBER"
 This sets the value of the Max-Forward header field. If omitted no Max-Forward
 field will be inserted. If omitted in the traceroute mode 
@@ -242,9 +256,16 @@ as fast as possible, but the whole test will be slowed down.
 the address of the hostname is the target where the request will be sent to 
 (outgoing proxy). Use this if the destination host is different then the host
 part of the request uri.
-.IP "-q, --search RegExp"
+.IP "-P, --processes NUMBER"
+Start
+.BR NUMBER
+of processes in parallel to do the send and reply checking. Makes only sence
+if a higher number for 
+.BR -e
+is given in the usrloc, message or invite mode.
+.IP "-q, --search REGEXP"
 match replies against 
-.BR RegExp
+.BR REGEXP
 and return false if no match
 occured. Useful for example to detect server name in Server header field.
 .IP "-r, --remote-port PORT"
@@ -288,6 +309,11 @@ if no other value is given by the
 .BR -m
 parameter. Any other response than 483 or 1xx are treated as a final response
 and will terminate this mode.
+.IP "-u, --auth-username STRING"
+Use the given
+.BR STRING
+as username value for the authentication (different account and 
+authentication username).
 .IP "-U, --usrloc-mode"
 This activates the usrloc mode. Without the 
 .BR -I
