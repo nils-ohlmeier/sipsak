@@ -33,6 +33,8 @@ sipsak \- a utility for various tests on sip server
 .I port
 .B ] [-t 
 .I number 
+.B ] [-W
+.I number
 .B ] [-x 
 .I number
 .B ] -s 
@@ -312,6 +314,9 @@ Prints out only the name and version number of
 .B sipsak.
 .IP -w
 Activates the extraction of the IP or hostname from the Warning header field.
+.IP "-W number"
+Return Nagios warn exit code (1) if the number of retransmissions before
+success was above the given number.
 .IP "-x number"
 Sets the value of the Expires header to the given number.
 .IP -z
