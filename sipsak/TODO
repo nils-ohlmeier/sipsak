@@ -1,4 +1,5 @@
 ToDo List (no order):
+ - check all parameters with is[alpha|number]
  - use given Contacts in REGISTER
    (Note: i do not plan a config file for
     multiple accounts currently)
