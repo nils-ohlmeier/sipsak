@@ -35,7 +35,7 @@ fi
 
 # Checks for header files.
 AC_HEADER_STDC
-AC_CHECK_HEADERS([arpa/inet.h getopt.h netdb.h netinet/in.h netinet/in_systm.h stdlib.h string.h sys/socket.h sys/time.h unistd.h])
+AC_CHECK_HEADERS([arpa/inet.h getopt.h netdb.h netinet/in.h netinet/in_systm.h openssl/md5.h stdlib.h string.h sys/socket.h sys/time.h unistd.h])
 AC_CHECK_HEADERS([netinet/ip.h netinet/udp.h],,,
 [[#ifdef HAVE_NETINET_IN_SYSTM_H
 #include <sys/types.h>
@@ -62,6 +62,10 @@ AC_HEADER_TIME
 AC_FUNC_MALLOC
 AC_FUNC_SELECT_ARGTYPES
 AC_CHECK_FUNCS([getdomainname gethostbyname gethostname getopt_long gettimeofday inet_ntop memset ntohs regcomp select socket strchr strstr uname])
+
+AC_CHECK_LIB(crypto, MD5_Init,
+ LIBS="$LIBS -lcrypto"
+)
 
 GCC_STACK_PROTECT_CC
 

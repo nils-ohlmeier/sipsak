@@ -1,5 +1,5 @@
 /*
- * $Id: auth.c,v 1.9 2004/07/09 17:58:41 calrissian Exp $
+ * $Id: auth.c,v 1.10 2004/07/25 17:13:03 calrissian Exp $
  *
  * Copyright (C) 2002-2004 Fhg Fokus
  *
@@ -20,11 +20,18 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "config.h"
 #include "auth.h"
 #include "sipsak.h"
-#include "md5global.h"
-#include "md5.h"
 #include "exit_code.h"
+
+#ifdef HAVE_OPENSSL_MD5_H
+#include <openssl/md5.h>
+#else
+#include "md5global.h"
+#endif
+
+#include "md5.h"
 
 /* converts a hash into hex output
    taken from the RFC 2617 */

@@ -1,5 +1,5 @@
 /* MD5.H - header file for MD5C.C
- * $Id: md5.h,v 1.1 2003/03/18 05:00:04 calrissian Exp $
+ * $Id: md5.h,v 1.2 2004/07/25 17:13:03 calrissian Exp $
  */
 
 
@@ -25,6 +25,16 @@ These notices must be retained in any copies of any part of this
 documentation and/or software.
  */
 
+#include "config.h"
+
+#ifdef HAVE_OPENSSL_MD5_H
+#include <openssl/md5.h>
+
+#define MD5Init   MD5_Init
+#define MD5Update MD5_Update
+#define MD5Final  MD5_Final
+
+#else
 /* MD5 context. */
 typedef struct {
   UINT4 state[4];                                   /* state (ABCD) */
@@ -36,4 +46,4 @@ void MD5Init PROTO_LIST ((MD5_CTX *));
 void MD5Update PROTO_LIST
   ((MD5_CTX *, unsigned char *, unsigned int));
 void MD5Final PROTO_LIST ((unsigned char [16], MD5_CTX *));
-
+#endif
