@@ -1,3 +1,13 @@
+* version 0.8.10
+  - send instant messages (just -M)
+  - RFC 3261 compliant retransmission timer
+  - added From (and To) tags
+  - use MD5 from openssl if available
+  - new argument -C to use any given contact value, even empty
+  - support long options if available
+  - support Nagios warn level with optional numbers of retransmissions
+  - use a raw socket if available to support broken RFC 3581 implementations
+  - small fixes and betaufications
 * version 0.8.9
   - added Nagios compliant exit codes
   - fixed missing replies from un-symmetric servers
