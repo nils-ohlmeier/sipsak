@@ -1,5 +1,5 @@
 /*
- * $Id: shoot.c,v 1.28 2004/06/26 22:53:04 calrissian Exp $
+ * $Id: shoot.c,v 1.29 2004/06/29 14:05:17 calrissian Exp $
  *
  * Copyright (C) 2002-2004 Fhg Fokus
  * Copyright (C) 2004 Nils Ohlmeier
@@ -21,6 +21,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
+#include <limits.h>
 #include <sys/time.h>
 #include <sys/types.h>
 #include <regex.h>
@@ -241,7 +242,7 @@ void shoot(char *buff)
 	}
 	else if (flood){
 		/* this should be the max of an (32 bit) int without the sign */
-		if (namebeg==-1) namebeg=2147483647;
+		if (namebeg==-1) namebeg=INT_MAX;
 		nretries=namebeg;
 		namebeg=1;
 		create_msg(buff, REQ_FLOOD);
