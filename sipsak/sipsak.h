@@ -1,5 +1,5 @@
 /*
- * $Id: sipsak.h,v 1.16 2004/08/04 21:39:45 calrissian Exp $
+ * $Id: sipsak.h,v 1.17 2004/09/19 23:49:18 jiri Exp $
  *
  * Copyright (C) 2002-2004 Fhg Fokus
  *
@@ -18,6 +18,8 @@
 
 #ifndef SIPSAK_H
 #define SIPSAK_H
+
+#include <regex.h>
 
 #if HAVE_CONFIG_H
 #include <config.h>
@@ -135,5 +137,6 @@ char *username, *domainname, *password, *replace_str, *hostname, *contact_uri;
 char *mes_body, *con_dis;
 char fqdn[FQDN_SIZE], messusern[FQDN_SIZE];
 char confirm[BUFSIZE], ack[BUFSIZE];
+regex_t* re;
 
 #endif

@@ -29,6 +29,8 @@ sipsak \- a utility for various tests on sip server
 .I NUMBER
 .B ] [-p
 .I HOSTNAME
+.B ] [-q
+.I REGEXP
 .B ] [-r 
 .I PORT
 .B ] [-t 
@@ -240,6 +242,11 @@ as fast as possible, but the whole test will be slowed down.
 the address of the hostname is the target where the request will be sent to 
 (outgoing proxy). Use this if the destination host is different then the host
 part of the request uri.
+.IP "-q, --search RegExp"
+match replies against 
+.BR RegExp
+and return false if no match
+occured. Useful for example to detect server name in Server header field.
 .IP "-r, --remote-port PORT"
 Instead of the default sip port 5060 the 
 .BR PORT

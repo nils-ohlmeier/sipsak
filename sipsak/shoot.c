@@ -1,5 +1,5 @@
 /*
- * $Id: shoot.c,v 1.32 2004/07/15 13:21:12 calrissian Exp $
+ * $Id: shoot.c,v 1.33 2004/09/19 23:49:17 jiri Exp $
  *
  * Copyright (C) 2002-2004 Fhg Fokus
  * Copyright (C) 2004 Nils Ohlmeier
@@ -62,6 +62,20 @@ you are free to use this code as you deem fit. just dont blame the author
 for any problems you may have using it.
 bouquets and brickbats to farhan@hotfoon.com
 */
+
+/* if a reply was received successfuly, return success, unless 
+ * reply matching is enabled and no match occured
+ */
+
+inline static void on_success(char *reply)
+{
+	if (re && regexec(re, reply, 0, 0, 0)==REG_NOMATCH) {
+		fprintf(stderr, "error: RegExp failed\n");
+		exit_code(32);
+	} else {
+		exit_code(0);
+	}
+}
 
 /* this is the main function with the loops and modes */
 void shoot(char *buff)
@@ -580,7 +594,7 @@ void shoot(char *buff)
 					cseqtmp = cseq(reply);
 					if ((0 < cseqtmp) && (cseqtmp < cseqcmp)) {
 						if (verbose)
-							printf("irgnoring retransmission\n");
+							printf("ignoring retransmission\n");
 						retrans_r_c++;
 						dontsend = 1;
 						continue;
@@ -744,7 +758,7 @@ void shoot(char *buff)
 								printf("\twithout Contact header\n");
 							}
 							if (regexec(&okexp, reply, 0, 0, 0)==0)
-								exit_code(0);
+								on_success(reply);
 							else
 								exit_code(1);
 						}
@@ -798,7 +812,7 @@ void shoot(char *buff)
 											if (retrans_s_c > nagios_warn)
 												exit_code(4);
 										}
-										exit_code(0);
+										on_success(reply);
 									}
 									/* lets see if we deceid to remove a 
 									   binding (case 6)*/
@@ -927,7 +941,7 @@ void shoot(char *buff)
 											if (retrans_s_c > nagios_warn)
 												exit_code(4);
 										}
-										exit_code(0);
+										on_success(reply);
 									}
 									if (usrloc) {
 										/* lets see if we deceid to remove a 
@@ -1039,7 +1053,7 @@ void shoot(char *buff)
 											if (retrans_s_c > nagios_warn)
 												exit_code(4);
 										}
-										exit_code(0);
+										on_success(reply);
 									}
 									if (usrloc) {
 										/* lets see if we deceid to remove a 
@@ -1212,7 +1226,7 @@ void shoot(char *buff)
 							}
 							else if (verbose) printf("%s\n", reply);
 							if (regexec(&okexp, reply, 0, 0, 0)==0)
-								exit_code(0);
+								on_success(reply);
 							else
 								exit_code(1);
 						}

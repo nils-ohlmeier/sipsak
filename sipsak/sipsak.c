@@ -1,5 +1,5 @@
 /*
- * $Id: sipsak.c,v 1.72 2004/08/07 13:08:37 calrissian Exp $
+ * $Id: sipsak.c,v 1.73 2004/09/19 23:49:18 jiri Exp $
  *
  * Copyright (C) 2002-2004 Fhg Fokus
  * Copyright (C) 2004 Nils Ohlmeier
@@ -35,6 +35,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <time.h>
+#include <regex.h>
 
 #include "config.h"
 
@@ -46,6 +47,9 @@
 #include "helper.h"
 #include "shoot.h"
 #include "exit_code.h"
+
+/* regular expression for matching received replies */
+regex_t* re;
 
 void print_version() {
 	printf("%s %s by Nils Ohlmeier\n", PACKAGE_NAME, PACKAGE_VERSION);
@@ -116,6 +120,8 @@ void print_long_help() {
 		"  --nagios-warn=NUMBER       return Nagios warning if retrans > number\n"
 		"  --message-body=STRING      send a message with string as body\n"
 		"  --disposition=STRING       Content-Disposition value\n"
+		"  --search                   search for a RegExp in replies and return error\n"
+		"                             on failfure\n"
 		);
 }
 
@@ -166,6 +172,8 @@ void print_help() {
 		"  -g STRING         replacement for a special mark in the message\n"
 		"  -G                activates replacement of variables\n"
 		"  -N                returns exit codes Nagios compliant\n"
+		"  -q                search for a RegExp in replies and return error\n"
+		"                    on failure\n"
 		"  -W NUMBER         return Nagios warning if retrans > number\n"
 		"  -B STRING         send a message with string as body\n"
 		"  -O STRING         Content-Disposition value\n"
@@ -215,6 +223,7 @@ int main(int argc, char *argv[])
 		{"replace", 0, 0, 'G'},
 		{"nagios-code", 0, 0, 'N'},
 		{"nagios-warn", 1, 0, 'W'},
+		{"search", 1, 0, 'q'},
 		{"message-body", 1, 0, 'B'},
 		{"disposition", 1, 0, 'O'},
 		{0, 0, 0, 0}
@@ -236,14 +245,15 @@ int main(int argc, char *argv[])
 	memset(ack, 0, BUFSIZE);
 	memset(fqdn, 0, FQDN_SIZE);
 	memset(messusern, 0, FQDN_SIZE);
+	re=0;
 
 	if (argc==1) print_help();
 
 	/* lots of command line switches to handle*/
 #ifdef HAVE_GETOPT_LONG
-	while ((c=getopt_long(argc, argv, "a:B:b:C:c:de:f:Fg:GhH:iIl:m:MnNo:O:p:r:Rs:t:TUvVwW:x:z", l_opts, &option_index)) != EOF){
+	while ((c=getopt_long(argc, argv, "q:a:B:b:C:c:de:f:Fg:GhH:iIl:m:MnNo:O:p:r:Rs:t:TUvVwW:x:z", l_opts, &option_index)) != EOF){
 #else
-	while ((c=getopt(argc,argv,"a:B:b:C:c:de:f:Fg:GhH:iIl:m:MnNo:O:p:r:Rs:t:TUvVwW:x:z")) != EOF){
+	while ((c=getopt(argc,argv,"q:a:B:b:C:c:de:f:Fg:GhH:iIl:m:MnNo:O:p:r:Rs:t:TUvVwW:x:z")) != EOF){
 #endif
 		switch(c){
 			case 'a':
@@ -495,6 +505,23 @@ int main(int argc, char *argv[])
 				break;
 			case 'W':
 				nagios_warn = atoi(optarg);
+				break;
+			case 'q':
+				if (re) {
+					/* previously allocated -- free */
+					regfree(re);
+				} else {
+					/* never tried -- allocate */
+					re=malloc(sizeof(regex_t));
+				};
+				if (!re) {
+					fprintf(stderr, "Error: can't allocate RE\n");
+					exit_code(2);
+				};
+				if (regcomp(re, optarg, REG_EXTENDED|REG_ICASE|REG_NEWLINE )!=0) {
+					fprintf(stderr, "Error: compiling RE: %s\n", optarg );
+					exit_code(2);
+				};
 				break;
 			case 'x':
 				expires_t=atoi(optarg);
