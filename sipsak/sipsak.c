@@ -1,7 +1,8 @@
 /*
- * $Id: sipsak.c,v 1.58 2004/05/16 16:45:03 jiri Exp $
+ * $Id: sipsak.c,v 1.59 2004/06/05 17:40:19 calrissian Exp $
  *
- * Copyright (C) 2002-2003 Fhg Fokus
+ * Copyright (C) 2002-2004 Fhg Fokus
+ * Copyright (C) 2004 Nils Ohlmeier
  *
  * This file belongs to sipsak, a free sip testing tool.
  *
@@ -56,7 +57,7 @@ void print_help() {
 		" random: sipsak -R [-t number] -s sip:uri\n\n"
 		" additional parameter in every mode:\n"
 		"   [-a password] [-d] [-i] [-H hostname] [-l port] [-m number] [-n] "
-		"[-r port]\n"
+		"[-N] [-r port]\n"
 		"   [-v] [-V] [-w]\n\n"
 		"   -h           displays this help message\n"
 		"   -V           prints version string only\n"
@@ -99,7 +100,7 @@ void print_help() {
 		"   -w           extract IP from the warning in reply\n"
 		"   -g string    replacement for a special mark in the message\n"
 		"   -G           activates replacement of variables\n"
-		"   -N           returns exit codes a la Nagios\n"
+		"   -N           returns exit codes Nagios compliant\n"
 		);
 		exit(0);
 };
@@ -119,7 +120,7 @@ int main(int argc, char *argv[])
 	via_ins=redirects = 1;
 	username=password=replace_str=hostname=contact_uri = NULL;
 	address = 0;
-    rport = 5060;
+	rport = 5060;
 	expires_t = USRLOC_EXP_DEF;
 	memset(buff, 0, BUFSIZE);
 	memset(confirm, 0, BUFSIZE);
@@ -130,11 +131,8 @@ int main(int argc, char *argv[])
 	if (argc==1) print_help();
 
 	/* lots of command line switches to handle*/
-	while ((c=getopt(argc,argv,"Na:b:C:c:de:f:Fg:GhH:iIl:m:Mno:p:r:Rs:t:TUvVwx:z")) != EOF){
+	while ((c=getopt(argc,argv,"a:b:C:c:de:f:Fg:GhH:iIl:m:MnNo:p:r:Rs:t:TUvVwx:z")) != EOF){
 		switch(c){
-			case 'N':
-				exit_mode=EM_NAGIOS;
-				break;
 			case 'a':
 				password=malloc(strlen(optarg));
 				strncpy(password, optarg, strlen(optarg));
@@ -258,6 +256,9 @@ int main(int argc, char *argv[])
 				break;
 			case 'n':
 				numeric = 1;
+				break;
+			case 'N':
+				exit_mode=EM_NAGIOS;
 				break;
 			case 'o':
 				sleep_ms = 0;
