@@ -1,5 +1,5 @@
 /*
- * $Id: sipsak.h,v 1.15 2004/07/25 19:12:38 calrissian Exp $
+ * $Id: sipsak.h,v 1.16 2004/08/04 21:39:45 calrissian Exp $
  *
  * Copyright (C) 2002-2004 Fhg Fokus
  *
@@ -35,8 +35,12 @@
 #define FQDN_SIZE   100
 #endif
 
+#ifdef HAVE_CONFIG_H
+#define SIP_T1 DEFAULT_TIMEOUT
+#else
 #define SIP_T1 500
-#define SIP_T2 4000
+#endif
+#define SIP_T2 8*SIP_T1
 
 #define REQ_REG 1
 #define REQ_REM 2
