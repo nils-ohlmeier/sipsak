@@ -1,5 +1,5 @@
 /*
- * $Id: shoot.c,v 1.5 2003/09/06 16:53:40 calrissian Exp $
+ * $Id: shoot.c,v 1.6 2003/09/06 18:28:09 calrissian Exp $
  *
  * Copyright (C) 2002-2003 Fhg Fokus
  *
@@ -135,7 +135,7 @@ void shoot(char *buff)
 		REG_EXTENDED|REG_NOSUB|REG_ICASE); 
 	regcomp(&redexp, "^SIP/[0-9]\\.[0-9] 3[0-9][0-9] ", 
 		REG_EXTENDED|REG_NOSUB|REG_ICASE);
-	regcomp(&authexp, "^SIP/[0-9]\\.[0-9] 401 ", 
+	regcomp(&authexp, "^SIP/[0-9]\\.[0-9] 40[17] ", 
 		REG_EXTENDED|REG_NOSUB|REG_ICASE);
 	regcomp(&errexp, "^SIP/[0-9]\\.[0-9] 4[0-9][0-9] ", 
 		REG_EXTENDED|REG_NOSUB|REG_ICASE); 
