@@ -1,5 +1,5 @@
 /*
- * $Id: helper.h,v 1.3 2004/10/08 17:26:00 calrissian Exp $
+ * $Id: helper.h,v 1.4 2004/10/29 23:14:20 calrissian Exp $
  *
  * Copyright (C) 2002-2004 Fhg Fokus
  *
@@ -28,6 +28,8 @@ void get_fqdn();
 void replace_string(char *mes, char *search, char *replacement);
 
 void insert_cr(char *mes);
+
+void swap_buffers(char *fst, char *snd);
 
 void trash_random(char *message);
 

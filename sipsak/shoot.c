@@ -1,5 +1,5 @@
 /*
- * $Id: shoot.c,v 1.33 2004/09/19 23:49:17 jiri Exp $
+ * $Id: shoot.c,v 1.34 2004/10/29 23:14:20 calrissian Exp $
  *
  * Copyright (C) 2002-2004 Fhg Fokus
  * Copyright (C) 2004 Nils Ohlmeier
@@ -87,7 +87,7 @@ void shoot(char *buff)
 	struct pollfd 	sockerr;
 	int redirected, retryAfter, nretries;
 	int usock, csock, i, len, ret;
-	int dontsend, cseqtmp, rand_tmp;
+	int dontsend, dontrecv, cseqtmp, rand_tmp;
 	int rem_rand, retrans_r_c, retrans_s_c;
 	int randretrys = 0;
 	int cseqcmp = 0;
@@ -120,7 +120,7 @@ void shoot(char *buff)
 
 	/* initalize some local vars */
 	redirected = 1;
-	dontsend=retrans_r_c=retrans_s_c = 0;
+	dontsend=dontrecv=retrans_r_c=retrans_s_c = 0;
 	big_delay=tmp_delay = 0;
 	delaytime.tv_sec = 0;
 	delaytime.tv_usec = 0;
@@ -403,21 +403,36 @@ void shoot(char *buff)
 
 			/* in flood we are only interested in sending so skip the rest */
 			if (!flood) {
-				/* set the timeout and wait for a response */
-				tv.tv_sec = retryAfter/1000;
-				tv.tv_usec = (retryAfter % 1000) * 1000;
+				if (! dontrecv) {
+					/* set the timeout and wait for a response */
+					tv.tv_sec = retryAfter/1000;
+					tv.tv_usec = (retryAfter % 1000) * 1000;
 
-				FD_ZERO(&fd);
-				FD_SET(usock, &fd); 
-				if (csock != -1)
-					FD_SET(csock, &fd); 
+					FD_ZERO(&fd);
+					FD_SET(usock, &fd); 
+					if (csock != -1)
+						FD_SET(csock, &fd); 
 #ifdef RAW_SUPPORT
-				if (rawsock != -1)
-					FD_SET(rawsock, &fd); 
+					if (rawsock != -1)
+						FD_SET(rawsock, &fd); 
 #endif
 
-				ret = select(FD_SETSIZE, &fd, NULL, NULL, &tv);
-				(void)gettimeofday(&recvtime, &tz);
+					ret = select(FD_SETSIZE, &fd, NULL, NULL, &tv);
+					(void)gettimeofday(&recvtime, &tz);
+				}
+				else {
+					i--;
+					dontrecv = 0;
+					if (usrlocstep == INV_OK_RECV) {
+						swap_buffers(buff, ack);
+						increase_cseq(buff);
+						increase_cseq(confirm);
+						increase_cseq(ack);
+						usrlocstep = INV_RECV;
+					}
+					continue;
+				}
+
 				if (ret == 0)
 				{
 					/* store the time of our first send */
@@ -693,7 +708,12 @@ void shoot(char *buff)
 						insert_auth(buff, reply);
 						if (verbose > 2)
 							printf("\nreceived:\n%s\n", reply);
-						increase_cseq(buff);
+						if (usrlocstep == INV_OK_RECV) {
+							swap_buffers(buff, ack);
+						}
+						else {
+							increase_cseq(buff);
+						}
 					} /* if auth...*/
 					else if (trace) {
 						if (regexec(&tmhexp, reply, 0, 0, 0)==0) {

@@ -1,5 +1,5 @@
 /*
- * $Id: helper.c,v 1.14 2004/10/08 17:26:00 calrissian Exp $
+ * $Id: helper.c,v 1.15 2004/10/29 23:14:19 calrissian Exp $
  *
  * Copyright (C) 2002-2004 Fhg Fokus
  *
@@ -207,6 +207,18 @@ void insert_cr(char *mes){
 		pos = lf+3;
 		lf = strchr(pos, '\n');
 	}
+}
+
+/* sipmly swappes the content of the two buffers */
+void swap_buffers(char *fst, char *snd) {
+	char *tmp;
+
+	tmp = malloc(strlen(fst)+1);
+	memset(tmp, 0, strlen(fst)+1);
+	strcpy(tmp, fst);
+	strcpy(fst, snd);
+	strcpy(snd, tmp);
+	free(tmp);
 }
 
 /* trashes one character in buff randomly */
