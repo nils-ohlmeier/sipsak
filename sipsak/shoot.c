@@ -1,5 +1,5 @@
 /*
- * $Id: shoot.c,v 1.8 2003/10/06 19:16:31 calrissian Exp $
+ * $Id: shoot.c,v 1.9 2003/12/30 21:44:27 calrissian Exp $
  *
  * Copyright (C) 2002-2003 Fhg Fokus
  *
@@ -52,12 +52,12 @@ bouquets and brickbats to farhan@hotfoon.com
 /* this is the main function with the loops and modes */
 void shoot(char *buff)
 {
-	struct sockaddr_in	addr, sockname;
+	struct sockaddr_in	addr;
 	struct timeval	tv, sendtime, recvtime, firstsendt, delaytime;
 	struct timezone tz;
 	struct timespec sleep_ms_s, sleep_rem;
 	struct pollfd sockerr;
-	int ssock, redirected, retryAfter, nretries;
+	int redirected, retryAfter, nretries;
 	int sock , i, len, ret, usrlocstep;
 	int dontsend, cseqtmp, rand_tmp;
 	int rem_rand, retrans_r_c, retrans_s_c;
@@ -83,25 +83,18 @@ void shoot(char *buff)
 	delaytime.tv_sec = 0;
 	delaytime.tv_usec = 0;
 
-	/* create a sending socket */
+	/* create the socket */
 	sock = (int)socket(PF_INET, SOCK_DGRAM, IPPROTO_UDP);
 	if (sock==-1) {
-		perror("no client socket");
+		perror("socket creation failed");
 		exit(2);
 	}
 
-	/* create a listening socket */
-	ssock = (int)socket(PF_INET, SOCK_DGRAM, IPPROTO_UDP);
-	if (ssock==-1) {
-		perror("no server socket");
-		exit(2);
-	}
-
-	sockname.sin_family=AF_INET;
-	sockname.sin_addr.s_addr = htonl( INADDR_ANY );
-	sockname.sin_port = htons((short)lport);
-	if (bind( ssock, (struct sockaddr *) &sockname, sizeof(sockname) )==-1) {
-		perror("no bind");
+	addr.sin_family=AF_INET;
+	addr.sin_addr.s_addr = htonl( INADDR_ANY );
+	addr.sin_port = htons((short)lport);
+	if (bind( sock, (struct sockaddr *) &addr, sizeof(addr) )==-1) {
+		perror("socket binding failed");
 		exit(2);
 	}
 
@@ -119,10 +112,10 @@ void shoot(char *buff)
 
 	/* for the via line we need our listening port number */
 	if ((via_ins||usrloc||invite||message||replace_b) && lport==0){
-		memset(&sockname, 0, sizeof(sockname));
-		slen=sizeof(sockname);
-		getsockname(ssock, (struct sockaddr *)&sockname, &slen);
-		lport=ntohs(sockname.sin_port);
+		memset(&addr, 0, sizeof(addr));
+		slen=sizeof(addr);
+		getsockname(sock, (struct sockaddr *)&addr, &slen);
+		lport=ntohs(addr.sin_port);
 	}
 
 	if (replace_b){
@@ -331,7 +324,7 @@ void shoot(char *buff)
 				tv.tv_usec = (retryAfter % 1000) * 1000;
 
 				FD_ZERO(&fd);
-				FD_SET(ssock, &fd); 
+				FD_SET(sock, &fd); 
 
 				ret = select(FD_SETSIZE, &fd, NULL, NULL, &tv);
 				(void)gettimeofday(&recvtime, &tz);
@@ -397,7 +390,7 @@ void shoot(char *buff)
 					perror("select error");
 					exit(2);
 				}
-				else if (FD_ISSET(ssock, &fd)) {
+				else if (FD_ISSET(sock, &fd)) {
 					/* no timeout, no error ... something has happened :-) */
 				 	if (!trace && !usrloc && !invite && !message && !randtrash 
 						&& (verbose > 1))
@@ -411,7 +404,7 @@ void shoot(char *buff)
 				/* we are retrieving only the extend of a decent 
 				   MSS = 1500 bytes */
 				len = sizeof(addr);
-				ret = recv(ssock, reply, BUFSIZE, 0);
+				ret = recv(sock, reply, BUFSIZE, 0);
 				if(ret > 0)
 				{
 					reply[ret] = 0;
@@ -1076,7 +1069,9 @@ void shoot(char *buff)
 		
 				} /* ret > 0 */
 				else {
-					perror("recv error");
+					if (usrloc)
+						printf("failed\n");
+					perror("socket error");
 					exit(2);
 				}
 			} /* !flood */
