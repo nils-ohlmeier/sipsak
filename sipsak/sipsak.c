@@ -1,5 +1,5 @@
 /*
- * $Id: sipsak.c,v 1.26 2002/11/13 02:44:20 calrissian Exp $
+ * $Id: sipsak.c,v 1.27 2002/11/15 21:43:54 calrissian Exp $
  *
  * Copyright (C) 2002 Fhg Fokus
  *
@@ -1505,7 +1505,11 @@ void print_help() {
 		" flood : sipsak -F [-c number] -s sip:uri\n"
 		" random: sipsak -R [-t number] -s sip:uri\n\n"
 		" additional parameter in every mode:\n"
+#ifdef AUTH
 		"   [-a password] [-d] [-i] [-l port] [-m number] [-n] [-r port] [-v] "
+#else
+		"   [-d] [-i] [-l port] [-m number] [-n] [-r port] [-v] "
+#endif
 			"[-V] [-w]\n"
 		"   -h           displays this help message\n"
 		"   -V           prints version string only\n"
@@ -1534,8 +1538,10 @@ void print_help() {
 		"   -m number    the value for the max-forwards header field\n"
 		"   -n           use IPs instead of fqdn in the Via-Line\n"
 		"   -i           deactivate the insertion of a Via-Line\n"
+#ifdef AUTH
 		"   -a password  password for authentication\n"
 		"                (if omitted password=username)\n"
+#endif
 		"   -d           ignore redirects\n"
 		"   -v           each v's produces more verbosity (max. 3)\n"
 		"   -w           extract IP from the warning in reply\n\n"
@@ -1570,12 +1576,18 @@ int main(int argc, char *argv[])
 	if (argc==1) print_help();
 
 	/* lots of command line switches to handle*/
+#ifdef AUTH
 	while ((c=getopt(argc,argv,"a:b:c:de:f:Fhil:m:nr:Rs:t:TUvVwx:z")) != EOF){
+#else
+	while ((c=getopt(argc,argv,"b:c:de:f:Fhil:m:nr:Rs:t:TUvVwx:z")) != EOF){
+#endif
 		switch(c){
+#ifdef AUTH
 			case 'a':
 				password=malloc(strlen(optarg));
 				strncpy(password, optarg, strlen(optarg));
 				break;
+#endif
 			case 'b':
 				if ((namebeg=atoi(optarg))==-1) {
 					printf("error: non-numerical appendix begin for the "
