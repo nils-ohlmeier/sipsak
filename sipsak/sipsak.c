@@ -1,5 +1,5 @@
 /*
- * $Id: sipsak.c,v 1.69 2004/07/15 12:23:41 calrissian Exp $
+ * $Id: sipsak.c,v 1.70 2004/07/25 19:13:21 calrissian Exp $
  *
  * Copyright (C) 2002-2004 Fhg Fokus
  * Copyright (C) 2004 Nils Ohlmeier
@@ -530,8 +530,8 @@ int main(int argc, char *argv[])
 				printf("sipsak %s  by Nils Ohlmeier\n Copyright (C) 2002-2004"
 						" FhG Fokus\n Copyright (C) 2004 Nils Ohlmeier\n", 
 						SIPSAK_VERSION);
-				printf(" compiled with DEFAULT_RETRYS=%i, DEFAULT_TIMEOUT=%i",
-						DEFAULT_RETRYS, DEFAULT_TIMEOUT);
+				printf(" compiled with DEFAULT_RETRYS=%i, DEFAULT_TIMEOUT=%i, FQDN_SIZE=%i",
+						DEFAULT_RETRYS, DEFAULT_TIMEOUT, FQDN_SIZE);
 #ifdef RAW_SUPPORT
 				printf(", RAW_SUPPORT");
 #endif
