@@ -1,5 +1,5 @@
 /*
- * $Id: sipsak.c,v 1.44 2003/03/27 11:02:18 calrissian Exp $
+ * $Id: sipsak.c,v 1.45 2003/04/03 21:09:01 calrissian Exp $
  *
  * Copyright (C) 2002 Fhg Fokus
  *
@@ -143,7 +143,7 @@ long address;
 int verbose, nameend, namebeg, expires_t, flood, warning_ext, invite, message;
 int maxforw, lport, rport, randtrash, trashchar, numeric, nonce_count;
 int file_b, uri_b, trace, via_ins, usrloc, redirects, rand_rem, replace_b;
-char *username, *domainname, *password, *replace_str;
+char *username, *domainname, *password, *replace_str, *hostname;
 char fqdn[FQDN_SIZE], messusern[FQDN_SIZE];
 char confirm[BUFSIZE], ack[BUFSIZE];
 
@@ -220,26 +220,32 @@ void get_fqdn(){
 	unsigned char *addrp;
 	char *fqdnp;
 
-	if ((uname(&un))==0) {
-		strcpy(hname, un.nodename);
+	if (hostname) {
+		strcpy(fqdn, hostname);
+		strcpy(hname, hostname);
 	}
 	else {
-		if (gethostname(&hname[0], namelen) < 0) {
-			printf("error: cannot determine hostname\n");
-			exit(2);
+		if ((uname(&un))==0) {
+			strcpy(hname, un.nodename);
 		}
-	}
-	/* a hostname with dots should be a domainname */
-	if ((strchr(hname, '.'))==NULL) {
-		if (getdomainname(&dname[0], namelen) < 0) {
-			printf("error: cannot determine domainname\n");
-			exit(2);
+		else {
+			if (gethostname(&hname[0], namelen) < 0) {
+				printf("error: cannot determine hostname\n");
+				exit(2);
+			}
 		}
-		if (strcmp(&dname[0],"(none)")!=0)
-			sprintf(fqdn, "%s.%s", hname, dname);
-	}
-	else {
-		strcpy(fqdn, hname);
+		/* a hostname with dots should be a domainname */
+		if ((strchr(hname, '.'))==NULL) {
+			if (getdomainname(&dname[0], namelen) < 0) {
+				printf("error: cannot determine domainname\n");
+				exit(2);
+			}
+			if (strcmp(&dname[0],"(none)")!=0)
+				sprintf(fqdn, "%s.%s", hname, dname);
+		}
+		else {
+			strcpy(fqdn, hname);
+		}
 	}
 
 	he=gethostbyname(hname);
@@ -1939,6 +1945,7 @@ void print_help() {
 		"                (default: request length)\n"
 		"   -l port      the local port to use (default: any)\n"
 		"   -r port      the remote port to use (default: 5060)\n"
+		"   -H hostname  overwrites the hostname in Via header\n"
 		"   -m number    the value for the max-forwards header field\n"
 		"   -n           use IPs instead of fqdn in the Via-Line\n"
 		"   -i           deactivate the insertion of a Via-Line\n"
@@ -1964,7 +1971,7 @@ int main(int argc, char *argv[])
 	numeric=warning_ext=rand_rem=nonce_count=replace_b=invite=message = 0;
 	namebeg=nameend=maxforw = -1;
 	via_ins=redirects = 1;
-	username=password=replace_str = NULL;
+	username=password=replace_str=hostname = NULL;
 	address = 0;
     rport = 5060;
 	expires_t = USRLOC_EXP_DEF;
@@ -1977,7 +1984,7 @@ int main(int argc, char *argv[])
 	if (argc==1) print_help();
 
 	/* lots of command line switches to handle*/
-	while ((c=getopt(argc,argv,"a:b:c:de:f:Fg:GhiIl:m:Mnr:Rs:t:TUvVwx:z")) != EOF){
+	while ((c=getopt(argc,argv,"a:b:c:de:f:Fg:GhH:iIl:m:Mnr:Rs:t:TUvVwx:z")) != EOF){
 		switch(c){
 			case 'a':
 				password=malloc(strlen(optarg));
@@ -2037,6 +2044,9 @@ int main(int argc, char *argv[])
 				break;
 			case 'h':
 				print_help();
+				break;
+			case 'H':
+				hostname=optarg;
 				break;
 			case 'i':
 				via_ins=0;
