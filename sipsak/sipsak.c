@@ -1,5 +1,5 @@
 /*
- * $Id: sipsak.c,v 1.85 2005/03/28 03:19:39 calrissian Exp $
+ * $Id: sipsak.c,v 1.86 2005/04/09 15:33:02 calrissian Exp $
  *
  * Copyright (C) 2002-2004 Fhg Fokus
  * Copyright (C) 2004 Nils Ohlmeier
@@ -306,7 +306,7 @@ int main(int argc, char *argv[])
 				if (!strncmp(optarg, "empty", 5) || !strncmp(optarg, "none", 4)) {
 					empty_contact = 1;
 				}
-				else if (((delim=strstr(optarg,"sip:"))!=NULL) &&
+				else if (((delim=strstr(optarg,"sip:"))!=NULL) ||
 					((delim=strstr(optarg,"sips:"))!=NULL)) {
 			 		if (strchr(optarg,'@')<delim) {
 						printf("error: missing '@' in Contact uri\n");
