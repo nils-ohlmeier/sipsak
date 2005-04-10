@@ -1,7 +1,8 @@
 /*
- * $Id: header_f.c,v 1.12 2005/04/10 20:25:48 calrissian Exp $
+ * $Id: header_f.c,v 1.13 2005/04/10 20:57:28 calrissian Exp $
  *
  * Copyright (C) 2002-2004 Fhg Fokus
+ * Copyright (C) 2004-2005 Nils Ohlmeier
  *
  * This file belongs to sipsak, a free sip testing tool.
  *

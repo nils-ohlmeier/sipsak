@@ -1,8 +1,8 @@
 /*
- * $Id: sipsak.c,v 1.87 2005/04/10 20:25:48 calrissian Exp $
+ * $Id: sipsak.c,v 1.88 2005/04/10 20:57:28 calrissian Exp $
  *
  * Copyright (C) 2002-2004 Fhg Fokus
- * Copyright (C) 2004 Nils Ohlmeier
+ * Copyright (C) 2004-2005 Nils Ohlmeier
  *
  * This file belongs to sipsak, a free sip testing tool.
  *
@@ -71,7 +71,7 @@ static void sigchld_handler(int signo)
 void print_version() {
 	printf("%s %s by Nils Ohlmeier\n", PACKAGE_NAME, PACKAGE_VERSION);
 	printf(" Copyright (C) 2002-2004 FhG Fokus\n");
-	printf(" Copyright (C) 2004 Nils Ohlmeier\n");
+	printf(" Copyright (C) 2004-2005 Nils Ohlmeier\n");
 	printf(" report bugs to %s\n\n", PACKAGE_BUGREPORT);
 	printf(
 		" shoot  : sipsak [-f FILE] [-L] -s SIPURI\n"
@@ -562,7 +562,7 @@ int main(int argc, char *argv[])
 				break;
 			case 'V':
 				printf("sipsak %s  by Nils Ohlmeier\n Copyright (C) 2002-2004"
-						" FhG Fokus\n Copyright (C) 2004 Nils Ohlmeier\n", 
+						" FhG Fokus\n Copyright (C) 2004-2005 Nils Ohlmeier\n", 
 						SIPSAK_VERSION);
 				printf(" compiled with DEFAULT_RETRYS=%i, DEFAULT_TIMEOUT=%i, FQDN_SIZE=%i",
 						DEFAULT_RETRYS, DEFAULT_TIMEOUT, FQDN_SIZE);

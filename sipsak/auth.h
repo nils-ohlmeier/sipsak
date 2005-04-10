@@ -1,7 +1,8 @@
 /*
- * $Id: auth.h,v 1.3 2004/08/07 13:08:37 calrissian Exp $
+ * $Id: auth.h,v 1.4 2005/04/10 20:57:28 calrissian Exp $
  *
  * Copyright (C) 2002-2004 Fhg Fokus
+ * Copyright (C) 2004-2005 Nils Ohlmeier
  *
  * This file belongs to sipsak, a free sip testing tool.
  *

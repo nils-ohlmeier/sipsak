@@ -1,7 +1,8 @@
 /*
- * $Id: exit_code.h,v 1.1 2004/05/16 16:45:03 jiri Exp $
+ * $Id: exit_code.h,v 1.2 2005/04/10 20:57:28 calrissian Exp $
  *
  * Copyright (C) 2002-2004 Fhg Fokus
+ * Copyright (C) 2004-2005 Nils Ohlmeier
  *
  * This file belongs to sipsak, a free sip testing tool.
  *
