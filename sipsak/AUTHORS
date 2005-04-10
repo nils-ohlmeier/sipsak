@@ -1,4 +1,4 @@
-# $Id: AUTHORS,v 1.1 2003/10/06 03:52:49 calrissian Exp $
+# $Id: AUTHORS,v 1.2 2005/04/10 20:57:01 calrissian Exp $
 # The format of this file was inspired by the Linux kernel CREDITS file.
 # 
 # Authors and contributors are listed alphabetically (first name).
@@ -8,7 +8,15 @@
 
 N: Nils Ohlmeier
 C: calrissian
-E: calrissian@users.berlios.de
+E: develop@ohlmeier.org
 W: http://www.ohlmeier.org
 P: BAD6CA40   B5E7 4FB0 800F 0A2C E3E9  4073 C7C3 F275 BAD6 CA40
-D: The one and only author and developer :)
+D: the original author and main developer
+
+N: Jan Janak
+E: jan@iptel.org
+D: contributed for example the forking code and several ideas
+
+N: Jiri Kuthan
+E: jiri@iptel.org
+D: contributed the exit code code and uncounted bug reports and ideas
