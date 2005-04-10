@@ -1,5 +1,5 @@
 /*
- * $Id: shoot.h,v 1.3 2004/06/13 19:35:26 calrissian Exp $
+ * $Id: shoot.h,v 1.4 2005/04/10 20:25:48 calrissian Exp $
  *
  * Copyright (C) 2002-2004 Fhg Fokus
  *
@@ -19,14 +19,16 @@
 #ifndef SIPSAK_SHOOT_H
 #define SIPSAK_SHOOT_H
 
-#include "config.h"
+#ifdef HAVE_CONFIG_H
+# include "config.h"
+#endif
 
 #ifdef HAVE_NETINET_IP_H
-#ifdef HAVE_NETINET_IP_ICMP_H
-#ifdef HAVE_NETINET_UDP_H
-#define RAW_SUPPORT
-#endif
-#endif
+# ifdef HAVE_NETINET_IP_ICMP_H
+#  ifdef HAVE_NETINET_UDP_H
+#   define RAW_SUPPORT
+#  endif
+# endif
 #endif
 
 void shoot(char *buff);

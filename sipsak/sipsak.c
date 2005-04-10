@@ -1,5 +1,5 @@
 /*
- * $Id: sipsak.c,v 1.86 2005/04/09 15:33:02 calrissian Exp $
+ * $Id: sipsak.c,v 1.87 2005/04/10 20:25:48 calrissian Exp $
  *
  * Copyright (C) 2002-2004 Fhg Fokus
  * Copyright (C) 2004 Nils Ohlmeier
@@ -30,21 +30,31 @@
    dropped
 */
 
-#include <unistd.h>
-#include <stdlib.h>
-#include <stdio.h>
-#include <time.h>
-#include <regex.h>
-#include <sys/wait.h>
-#include <sys/types.h>
+#include "sipsak.h"
 
-#include "config.h"
-
+#ifdef HAVE_UNISTD_H
+# ifdef HAVE_SYS_TYPES_H
+#  include <sys/types.h>
+# endif
+# include <unistd.h>
+#endif
+#ifdef TIME_WITH_SYS_TIME
+# include <sys/time.h>
+# include <time.h>
+#else
+# ifdef HAVE_SYS_TIME_H
+#  include <sys/time.h>
+# else
+#  include <time.h>
+# endif
+#endif
+#ifdef HAVE_SYS_WAIT_H
+# include <sys/wait.h>
+#endif
 #ifdef HAVE_GETOPT_H
-#include <getopt.h>
+# include <getopt.h>
 #endif
 
-#include "sipsak.h"
 #include "helper.h"
 #include "shoot.h"
 #include "exit_code.h"
@@ -306,8 +316,8 @@ int main(int argc, char *argv[])
 				if (!strncmp(optarg, "empty", 5) || !strncmp(optarg, "none", 4)) {
 					empty_contact = 1;
 				}
-				else if (((delim=strstr(optarg,"sip:"))!=NULL) ||
-					((delim=strstr(optarg,"sips:"))!=NULL)) {
+				else if (((delim=STRSTR(optarg,"sip:"))!=NULL) ||
+					((delim=STRSTR(optarg,"sips:"))!=NULL)) {
 			 		if (strchr(optarg,'@')<delim) {
 						printf("error: missing '@' in Contact uri\n");
 						exit_code(2);

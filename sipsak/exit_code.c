@@ -1,5 +1,5 @@
 /*
- * $Id: exit_code.c,v 1.3 2004/06/06 18:11:35 calrissian Exp $
+ * $Id: exit_code.c,v 1.4 2005/04/10 20:25:48 calrissian Exp $
  *
  * Copyright (C) 2002-2004 Fhg Fokus
  *
@@ -16,8 +16,17 @@
  * GNU General Public License for more details.
  */
 
-#include <stdlib.h>
-#include <stdio.h>
+#if HAVE_CONFIG_H
+# include "config.h"
+#endif
+
+#ifdef HAVE_STDIO_H
+# include <stdio.h>
+#endif
+#ifdef HAVE_STDLIB_H
+# include <stdlib.h>
+#endif
+
 #include "exit_code.h"
 
 enum exit_modes exit_mode = EM_DEFAULT;

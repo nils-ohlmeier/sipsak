@@ -35,7 +35,10 @@ fi
 
 # Checks for header files.
 AC_HEADER_STDC
-AC_CHECK_HEADERS([arpa/inet.h getopt.h netdb.h netinet/in.h netinet/in_systm.h openssl/md5.h stdlib.h string.h sys/param.h sys/socket.h sys/time.h unistd.h])
+AC_CHECK_HEADERS([ctype.h arpa/inet.h getopt.h netdb.h netinet/in.h netinet/in_systm.h limits.h sys/poll.h regex.h stdlib.h stdio.h string.h sys/param.h sys/socket.h sys/time.h unistd.h sys/utsname.h],,[AC_MSG_ERROR([missing required header (see above)])],)
+AC_CHECK_HEADERS([openssl/md5.h])
+AC_HEADER_SYS_WAIT
+AC_HEADER_TIME
 AC_CHECK_HEADERS([netinet/ip.h netinet/udp.h],,,
 [[#ifdef HAVE_NETINET_IN_SYSTM_H
 #include <sys/types.h>
@@ -61,7 +64,8 @@ AC_HEADER_TIME
 # Checks for library functions.
 AC_FUNC_MALLOC
 AC_FUNC_SELECT_ARGTYPES
-AC_CHECK_FUNCS([getchar getdomainname gethostbyname gethostname getopt_long gettimeofday inet_ntop memset ntohs regcomp select socket strcasestr strchr strstr uname])
+AC_CHECK_FUNCS([getchar gethostbyname gethostname gettimeofday inet_ntop memset ntohs regcomp select socket strchr strstr uname],,[AC_MSG_ERROR([missing required function (see above)])])
+AC_CHECK_FUNCS([getdomainname getopt_long strcasestr])
 
 AC_CHECK_LIB(crypto, MD5_Init,
  LIBS="$LIBS -lcrypto"

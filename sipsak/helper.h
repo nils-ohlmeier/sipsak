@@ -1,5 +1,5 @@
 /*
- * $Id: helper.h,v 1.4 2004/10/29 23:14:20 calrissian Exp $
+ * $Id: helper.h,v 1.5 2005/04/10 20:25:48 calrissian Exp $
  *
  * Copyright (C) 2002-2004 Fhg Fokus
  *
@@ -19,7 +19,11 @@
 #ifndef SIPSAK_HELPER_H
 #define SIPSAK_HELPER_H
 
-#include <sys/time.h>
+#ifdef HAVE_SYS_TIME_H
+# include <sys/time.h>
+#else
+# include <time.h>
+#endif
 
 long getaddress(char *host);
 

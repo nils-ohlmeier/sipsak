@@ -1,5 +1,5 @@
 /*
- * $Id: auth.c,v 1.18 2005/03/27 17:28:57 calrissian Exp $
+ * $Id: auth.c,v 1.19 2005/04/10 20:25:48 calrissian Exp $
  *
  * Copyright (C) 2002-2004 Fhg Fokus
  *
@@ -15,21 +15,16 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
  */
-
-#include <stdio.h>
-#include <stdlib.h>
-
-#include "config.h"
-#include "auth.h"
 #include "sipsak.h"
-#include "exit_code.h"
 
 #ifdef HAVE_OPENSSL_MD5_H
-#include <openssl/md5.h>
+# include <openssl/md5.h>
 #else
-#include "md5global.h"
+# include "md5global.h"
 #endif
 
+#include "auth.h"
+#include "exit_code.h"
 #include "md5.h"
 
 /* converts a hash into hex output
@@ -71,8 +66,8 @@ void insert_auth(char *message, char *authreq)
 	auth=begin=end=insert=backup=realm=usern=nonce=method=uri = NULL;
 
 	/* prevent double auth insertion */
-	if ((begin=strstr(message, AUTH_STR))!=NULL ||
-			(begin=strstr(message, PROXYAUZ_STR))!=NULL) {
+	if ((begin=STRSTR(message, AUTH_STR))!=NULL ||
+			(begin=STRSTR(message, PROXYAUZ_STR))!=NULL) {
 		printf("\nrequest:\n%s\nresponse:\n%s\nerror: authorization failed\n  "
 			"     request already contains (Proxy-) Authorization, but "
 			"received 40[1|7], see above\n", message, authreq);
@@ -93,9 +88,9 @@ void insert_auth(char *message, char *authreq)
 	}
 	strncpy(backup, insert, strlen(insert)+1);
 
-	begin=strstr(authreq, WWWAUTH_STR);
+	begin=STRSTR(authreq, WWWAUTH_STR);
 	if (begin==NULL) {
-		begin=strstr(authreq, PROXYAUTH_STR);
+		begin=STRSTR(authreq, PROXYAUTH_STR);
 		proxy_auth = 1;
 	}
 	if (begin) {
@@ -110,7 +105,7 @@ void insert_auth(char *message, char *authreq)
 		strncpy(auth, begin, (size_t)(end-begin));
 		*(auth+(end-begin))='\0';
 		/* we support Digest and MD5 only */
-		if ((begin=strstr(auth, "Basic"))!=NULL) {
+		if ((begin=STRSTR(auth, "Basic"))!=NULL) {
 			printf("%s\nerror: authentication method Basic is deprecated since"
 				" RFC 3261 and not supported by sipsak\n", authreq);
 			exit_code(3);
@@ -118,13 +113,13 @@ void insert_auth(char *message, char *authreq)
 #ifdef HAVE_STRCASESTR
 		if ((begin=(char*)strcasestr(auth, "Digest"))==NULL) {
 #else
-		if ((begin=strstr(auth, "Digest"))==NULL) {
+		if ((begin=STRSTR(auth, "Digest"))==NULL) {
 #endif
 			printf("%s\nerror: couldn't find authentication method Digest in "
 				"the 40[1|7] response above\n", authreq);
 			exit_code(3);
 		}
-		if ((begin=strstr(auth, "algorithm="))!=NULL) {
+		if ((begin=STRSTR(auth, "algorithm="))!=NULL) {
 			begin+=10;
 			if ((strncmp(begin, "MD5", 3))!=0 && (strncmp(begin, "\"MD5\"", 5))!=0) {
 				printf("\n%s\nerror: unsupported authentication algorithm\n", 
@@ -184,7 +179,7 @@ void insert_auth(char *message, char *authreq)
 		snprintf(insert, ALGO_MD5_STR_LEN+1, ALGO_MD5_STR);
 		insert+=ALGO_MD5_STR_LEN;
 		/* search for the realm, copy it to request and extract it for hash*/
-		if ((begin=strstr(auth, REALM_STR))!=NULL) {
+		if ((begin=STRSTR(auth, REALM_STR))!=NULL) {
 			end=strchr(begin, ',');
 			if (!end)
 				end=strchr(begin, '\r');
@@ -209,7 +204,7 @@ void insert_auth(char *message, char *authreq)
 			exit_code(3);
 		}
 		/* copy opaque if needed */
-		if ((begin=strstr(auth, OPAQUE_STR))!=NULL) {
+		if ((begin=STRSTR(auth, OPAQUE_STR))!=NULL) {
 			end=strchr(begin, ',');
 			if (!end) {
 				end=strchr(begin, '\r');
@@ -222,8 +217,8 @@ void insert_auth(char *message, char *authreq)
 			insert++;
 		}
 		/* lets see if qop=auth is uspported */
-		if ((begin=strstr(auth, QOP_STR))!=NULL) {
-			if (strstr(begin, QOPAUTH_STR)==NULL) {
+		if ((begin=STRSTR(auth, QOP_STR))!=NULL) {
+			if (STRSTR(begin, QOPAUTH_STR)==NULL) {
 				printf("\nresponse\n%s\nerror: qop \"auth\" not supported by"
 					" server\n", authreq);
 				exit_code(3);
@@ -231,7 +226,7 @@ void insert_auth(char *message, char *authreq)
 			qop_auth=1;
 		}
 		/* search, copy and extract the nonce */
-		if ((begin=strstr(auth, NONCE_STR))!=NULL) {
+		if ((begin=STRSTR(auth, NONCE_STR))!=NULL) {
 			end=strchr(begin, ',');
 			if (!end)
 				end=strchr(begin, '\r');

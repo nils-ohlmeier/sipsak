@@ -1,5 +1,5 @@
 /*
- * $Id: request.c,v 1.19 2005/01/05 23:37:24 calrissian Exp $
+ * $Id: request.c,v 1.20 2005/04/10 20:25:48 calrissian Exp $
  *
  * Copyright (C) 2002-2004 Fhg Fokus
  *
@@ -16,12 +16,13 @@
  * GNU General Public License for more details.
  */
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
+#include "sipsak.h"
+
+#ifdef HAVE_STRING_H
+# include <string.h>
+#endif
 
 #include "request.h"
-#include "sipsak.h"
 #include "exit_code.h"
 
 /* create a valid sip header for the different modes */

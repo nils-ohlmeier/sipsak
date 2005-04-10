@@ -1,5 +1,5 @@
 /*
- * $Id: shoot.c,v 1.42 2005/03/27 17:28:57 calrissian Exp $
+ * $Id: shoot.c,v 1.43 2005/04/10 20:25:48 calrissian Exp $
  *
  * Copyright (C) 2002-2004 Fhg Fokus
  * Copyright (C) 2004 Nils Ohlmeier
@@ -17,37 +17,56 @@
  * GNU General Public License for more details.
  */
 
-#include "config.h"
+#include "sipsak.h"
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <time.h>
-#include <limits.h>
-#include <sys/time.h>
-#include <sys/types.h>
-#include <regex.h>
-#include <sys/socket.h>
-#include <sys/poll.h>
-#include <netinet/in.h>
-#include <arpa/inet.h>
-#include <sys/select.h>
+#ifdef HAVE_LIMITS_H
+# include <limits.h>
+#endif
+#ifdef TIME_WITH_SYS_TIME
+# include <sys/time.h>
+# include <time.h>
+#else
+# ifdef HAVE_SYS_TIME_H
+#  include <sys/time.h>
+# else
+#  include <time.h>
+# endif
+#endif /* TIME_WITH_SYS_TIME */
+#ifdef HAVE_SYS_SOCKET_H
+# include <sys/socket.h>
+#endif
+#ifdef HAVE_SYS_POLL_H
+# include <sys/poll.h>
+#endif
+#ifdef HAVE_NETINET_IN_H
+# include <netinet/in.h>
+#endif
+#ifdef HAVE_ARPA_INET_H
+# include <arpa/inet.h>
+#endif
 #ifdef HAVE_SYS_SELECT_H
-#include <sys/select.h>
+# include <sys/select.h>
 #endif
 
 #include "shoot.h"
 
 #ifdef RAW_SUPPORT
-#include <netinet/in_systm.h>
-#include <netinet/ip.h>
-#include <netinet/ip_icmp.h>
+# ifdef HAVE_NETINET_IN_SYSTM_H 
+#  include <netinet/in_systm.h>
+# endif
+# ifdef HAVE_NETINET_IP_H
+#  include <netinet/ip.h>
+# endif
+# ifdef HAVE_NETINET_IP_ICMP_H
+#  include <netinet/ip_icmp.h>
+# endif
+# ifdef HAVE_NETINET_UDP_H
+#  define __FAVOR_BSD
+#  include <netinet/udp.h>
+# endif
+#endif /* RAW_SUPPORT */
 
-#define __FAVOR_BSD
-#include <netinet/udp.h>
-#endif
-
-#include "sipsak.h"
-#include "request.h"
+#include "request.h"   
 #include "auth.h"
 #include "header_f.h"
 #include "helper.h"
@@ -636,8 +655,8 @@ void shoot(char *buff)
 							REG_EXTENDED|REG_NOSUB|REG_ICASE);
 						if (regexec(&redexp, reply, 0, 0, 0)==0) {
 							/* try to find the contact in the redirect */
-							if ((foo=strstr(reply, CONT_STR))==NULL &&
-								(foo=strstr(reply, "\nCONT_SHORT_STR"))==NULL ) {
+							if ((foo=STRSTR(reply, CONT_STR))==NULL &&
+								(foo=STRSTR(reply, "\nCONT_SHORT_STR"))==NULL ) {
 								printf("error: cannot find Contact in this "
 									"redirect:\n%s\n", reply);
 								exit_code(3);
@@ -649,7 +668,7 @@ void shoot(char *buff)
 							bar=malloc((size_t)(crlf-foo+1));
 							strncpy(bar, foo, (size_t)(crlf-foo));
 							*(bar+(crlf-foo))='\0';
-							if ((contact=strstr(bar, "sip"))==NULL) {
+							if ((contact=STRSTR(bar, "sip"))==NULL) {
 								printf("error: cannot find sip in the Contact "
 									"of this redirect:\n%s\n", reply);
 								exit_code(3);
@@ -787,9 +806,9 @@ void shoot(char *buff)
 							crlf++;
 							printf("(%.3f ms) %s\n", 
 								deltaT(&sendtime, &recvtime), reply);
-							contact=strstr(crlf, CONT_STR);
+							contact=STRSTR(crlf, CONT_STR);
 							if (!contact)
-								contact=strstr(crlf, "\nCONT_SHORT_STR");
+								contact=STRSTR(crlf, "\nCONT_SHORT_STR");
 							if (contact){
 								crlf=strchr(contact,'\n');
 								*crlf='\0';
@@ -1034,7 +1053,7 @@ void shoot(char *buff)
 								if (!strncmp(reply, messusern, 
 									strlen(messusern))) {
 									if (verbose > 1) {
-										crlf=strstr(reply, "\r\n\r\n");
+										crlf=STRSTR(reply, "\r\n\r\n");
 										crlf=crlf+4;
 										printf("  received message\n  "
 											"'%s'\n", crlf);

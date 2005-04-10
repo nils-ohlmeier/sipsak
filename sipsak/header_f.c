@@ -1,5 +1,5 @@
 /*
- * $Id: header_f.c,v 1.11 2005/03/27 17:28:57 calrissian Exp $
+ * $Id: header_f.c,v 1.12 2005/04/10 20:25:48 calrissian Exp $
  *
  * Copyright (C) 2002-2004 Fhg Fokus
  *
@@ -16,13 +16,11 @@
  * GNU General Public License for more details.
  */
 
-#include <stdio.h>
-#include <stdlib.h>
-
-#include "header_f.h"
 #include "sipsak.h"
+#include "header_f.h"
 #include "exit_code.h"
 #include "helper.h"
+
 
 /* add a Via Header Field in the message. */
 void add_via(char *mes)
@@ -43,8 +41,8 @@ void add_via(char *mes)
 		printf("can't add our Via Header Line because file is too big\n");
 		exit_code(2);
 	}
-	via=strstr(mes, "\nVIA_STR");
-	via2=strstr(mes, "\nVIA_SHORT_STR");
+	via=STRSTR(mes, "\nVIA_STR");
+	via2=STRSTR(mes, "\nVIA_SHORT_STR");
 	if (via==NULL && via2==NULL ){
 		/* We doesn't find a Via so we insert our via
 		   direct after the first line. */
@@ -89,16 +87,16 @@ void cpy_vias(char *reply, char *dest){
 	char *first_via, *middle_via, *last_via, *backup;
 
 	/* lets see if we find any via */
-	if ((first_via=strstr(reply, "VIA_STR"))==NULL &&
-		(first_via=strstr(reply, "\nVIA_SHORT_STR"))==NULL ){
+	if ((first_via=STRSTR(reply, "VIA_STR"))==NULL &&
+		(first_via=STRSTR(reply, "\nVIA_SHORT_STR"))==NULL ){
 		printf("error: the received message doesn't contain a Via header\n");
 		exit_code(3);
 	}
 	last_via=first_via+4;
 	middle_via=last_via;
 	/* proceed additional via lines */
-	while ((middle_via=strstr(last_via, "VIA_STR"))!=NULL ||
-		   (middle_via=strstr(last_via, "\nVIA_SHORT_STR"))!=NULL )
+	while ((middle_via=STRSTR(last_via, "VIA_STR"))!=NULL ||
+		   (middle_via=STRSTR(last_via, "\nVIA_SHORT_STR"))!=NULL )
 		last_via=middle_via+4;
 	last_via=strchr(last_via, '\n');
 	middle_via=strchr(dest, '\n')+1;
@@ -122,14 +120,14 @@ void cpy_to(char *reply, char *dest) {
 	char *src_to, *dst_to, *backup, *tmp;
 
 	/* find the position where we want to insert the To */
-	if ((dst_to=strstr(dest, "TO_STR"))==NULL &&
-		(dst_to=strstr(dest, "\nTO_SHORT_STR"))==NULL) {
+	if ((dst_to=STRSTR(dest, "TO_STR"))==NULL &&
+		(dst_to=STRSTR(dest, "\nTO_SHORT_STR"))==NULL) {
 		printf("error: could not find To in the reply\n");
 		exit_code(2);
 	}
 	/* find the To we want to copy */
-	if ((src_to=strstr(reply, "TO_STR"))==NULL && 
-		(src_to=strstr(reply, "\nTO_SHORT_STR"))==NULL) {
+	if ((src_to=STRSTR(reply, "TO_STR"))==NULL && 
+		(src_to=STRSTR(reply, "\nTO_SHORT_STR"))==NULL) {
 		if (verbose > 0)
 			printf("warning: could not find To in reply. "
 				"trying with original To\n");
@@ -158,7 +156,7 @@ void cpy_to(char *reply, char *dest) {
 void set_maxforw(char *mes){
 	char *max, *backup, *crlfi;
 
-	if ((max=strstr(mes, "MAX_FRW_STR"))==NULL){
+	if ((max=STRSTR(mes, "MAX_FRW_STR"))==NULL){
 		/* no max-forwards found so insert it after the first line*/
 		max=strchr(mes,'\n');
 		if (!max) {
@@ -222,7 +220,7 @@ void uri_replace(char *mes, char *uri)
 		exit_code(255);
 	}
 	strncpy(backup, foo, strlen(foo)+1);
-	foo=strstr(mes, "sip");
+	foo=STRSTR(mes, "sip");
 	strncpy(foo, uri, strlen(uri));
 	strncpy(foo+strlen(uri), SIP20_STR, SIP20_STR_LEN);
 	strncpy(foo+strlen(uri)+SIP20_STR_LEN, backup, strlen(backup)+1);
@@ -235,8 +233,8 @@ void uri_replace(char *mes, char *uri)
 void set_cl(char* mes, int contentlen) {
 	char *cl, *cr, *backup;
 
-	if ((cl=strstr(ack, CON_LEN_STR)) == NULL &&
-		(cl=strstr(ack, CON_LEN_SHORT_STR)) == NULL) {
+	if ((cl=STRSTR(ack, CON_LEN_STR)) == NULL &&
+		(cl=STRSTR(ack, CON_LEN_SHORT_STR)) == NULL) {
 		printf("missing Content-Lenght in message\n");
 		return;
 	}
@@ -269,7 +267,7 @@ void build_ack(char *invite, char *reply, char *ack) {
 	char *body;
 	int len;
 
-	body = strstr(invite, "\r\n\r\n");
+	body = STRSTR(invite, "\r\n\r\n");
 	if (body) {
 		body++; body++;
 		len = body - invite;
@@ -287,7 +285,7 @@ void warning_extract(char *message)
 	char *warning, *end, *mid, *server;
 	int srvsize;
 
-	if ((warning=strstr(message, "Warning:"))==NULL) {
+	if ((warning=STRSTR(message, "Warning:"))==NULL) {
 		if (verbose > 0) printf("'no Warning header found' ");
 		else printf("?? ");
 		return;
@@ -315,7 +313,7 @@ int cseq(char *message)
 	char *cseq;
 	int num=-1;
 
-	cseq=strstr(message, CSEQ_STR);
+	cseq=STRSTR(message, CSEQ_STR);
 	if (cseq) {
 		cseq+=6;
 		num=atoi(cseq);
@@ -342,7 +340,7 @@ void increase_cseq(char *message)
 		return;
 	}
 	cs++;
-	cs_s=strstr(message, CSEQ_STR);
+	cs_s=STRSTR(message, CSEQ_STR);
 	if (cs_s) {
 		cs_s+=6;
 		eol=strchr(cs_s, ' ');

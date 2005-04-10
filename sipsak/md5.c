@@ -1,6 +1,6 @@
 /* 
 
-$Id: md5.c,v 1.2 2004/07/25 17:13:03 calrissian Exp $
+$Id: md5.c,v 1.3 2005/04/10 20:25:48 calrissian Exp $
 
 MD5C.C - RSA Data Security, Inc., MD5 message-digest algorithm
 
@@ -26,11 +26,16 @@ These notices must be retained in any copies of any part of this
 documentation and/or software.
  */
 
-#include <config.h>
+#ifdef HAVE_CONFIG_H
+# include "config.h"
+#endif
 
 #ifndef HAVE_OPENSSL_MD5_H
 
-#include <string.h>
+#ifdef HAVE_STRING_H
+# include <string.h>
+#endif
+
 #include "md5global.h"
 #include "md5.h"
 
@@ -358,4 +363,4 @@ unsigned int len;
 #endif
 }
 
-#endif
+#endif /* ! HAVE_OPENSSL_MD5_H */

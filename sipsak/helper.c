@@ -1,5 +1,5 @@
 /*
- * $Id: helper.c,v 1.21 2005/03/27 17:28:57 calrissian Exp $
+ * $Id: helper.c,v 1.22 2005/04/10 20:25:48 calrissian Exp $
  *
  * Copyright (C) 2002-2004 Fhg Fokus
  *
@@ -15,21 +15,31 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
  */
-#include "config.h"
+#include "sipsak.h"
 
-#include <stdlib.h>
-#include <stdio.h>
-#include <netdb.h>
-#include <unistd.h>
-#include <sys/utsname.h>
-#include <ctype.h>
-#include <arpa/inet.h>
+#ifdef HAVE_NETDB_H
+# include <netdb.h>
+#endif
+#ifdef HAVE_UNISTD_H
+# ifdef HAVE_SYS_TYPES_H
+#  include <sys/types.h>
+# endif
+# include <unistd.h>
+#endif
+#ifdef HAVE_SYS_UTSNAME_H
+# include <sys/utsname.h>
+#endif
+#ifdef HAVE_CTYPE_H
+# include <ctype.h>
+#endif
+#ifdef HAVE_ARPA_INET_H
+# include <arpa/inet.h>
+#endif
 #ifdef HAVE_NETINET_IN_H
-#include <netinet/in.h>
+# include <netinet/in.h>
 #endif
 
 #include "helper.h"
-#include "sipsak.h"
 #include "exit_code.h"
 
 /* take either a dot.decimal string of ip address or a 
@@ -175,7 +185,7 @@ void get_fqdn(){
 void replace_string(char *mess, char *search, char *replacement){
 	char *backup, *insert;
 
-	insert=strstr(mess, search);
+	insert=STRSTR(mess, search);
 	if (insert==NULL){
 		if (verbose > 2)
 			printf("warning: could not find this '%s' replacement string in "
@@ -192,7 +202,7 @@ void replace_string(char *mess, char *search, char *replacement){
 			strcpy(insert, replacement);
 			strcpy(insert+strlen(replacement), backup);
 			free(backup);
-			insert=strstr(mess, search);
+			insert=STRSTR(mess, search);
 		}
 	}
 }

@@ -1,5 +1,5 @@
 /*
- * $Id: sipsak.h,v 1.26 2005/03/27 17:28:57 calrissian Exp $
+ * $Id: sipsak.h,v 1.27 2005/04/10 20:25:48 calrissian Exp $
  *
  * Copyright (C) 2002-2004 Fhg Fokus
  *
@@ -19,40 +19,52 @@
 #ifndef SIPSAK_H
 #define SIPSAK_H
 
-#include <sys/types.h>
-#include <regex.h>
-
 #if HAVE_CONFIG_H
-#include <config.h>
+# include "config.h"
 #endif
 
+#ifdef HAVE_STDIO_H
+# include <stdio.h>
+#endif
+#ifdef HAVE_STDLIB_H
+# include <stdlib.h>
+#endif
+#ifdef HAVE_SYS_TYPES_H
+# include <sys/types.h>
+#endif
+#ifdef HAVE_REGEX_H
+# include <regex.h>
+#endif
 #ifdef HAVE_SYS_PARAM_H
-#include <sys/param.h>
+# include <sys/param.h>
 #endif
 
 #ifdef HAVE_STRCASESTR
-#define __USE_GNU
-#define strstr strcasestr
-#endif
-
-#ifdef HAVE_STRING_H
-#include <string.h>
-#endif
-
-#define SIPSAK_VERSION PACKAGE_VERSION
-#define BUFSIZE		4096
-#ifdef HAVE_SYS_PARAM_H
-#define FQDN_SIZE   MAXHOSTNAMELEN + 1
+# define __USE_GNU
+# define STRSTR(s1,s2) strcasestr(s1,s2)
 #else
-#define FQDN_SIZE   100
+# define STRSTR(s1,s2) strstr(s1,s2)
+#endif
+#ifdef HAVE_STRING_H
+# include <string.h>
+#endif
+
+#ifdef HAVE_SYS_PARAM_H
+# define FQDN_SIZE   MAXHOSTNAMELEN + 1
+#else
+# define FQDN_SIZE   100
 #endif
 
 #ifdef HAVE_CONFIG_H
-#define SIP_T1 DEFAULT_TIMEOUT
+# define SIP_T1 DEFAULT_TIMEOUT
 #else
-#define SIP_T1 500
+# define SIP_T1 500
 #endif
+
 #define SIP_T2 8*SIP_T1
+
+#define SIPSAK_VERSION PACKAGE_VERSION
+#define BUFSIZE		4096
 
 #define REQ_REG 1
 #define REQ_REM 2
