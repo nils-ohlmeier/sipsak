@@ -1,5 +1,5 @@
 /*
- * $Id: shoot.c,v 1.44 2005/04/10 20:57:28 calrissian Exp $
+ * $Id: shoot.c,v 1.45 2005/04/11 20:27:59 calrissian Exp $
  *
  * Copyright (C) 2002-2004 Fhg Fokus
  * Copyright (C) 2004-2005 Nils Ohlmeier
@@ -32,6 +32,12 @@
 #  include <time.h>
 # endif
 #endif /* TIME_WITH_SYS_TIME */
+#ifdef HAVE_UNISTD_H
+# ifdef HAVE_SYS_TYPES_H
+#  include <sys/types.h>
+# endif
+# include <unistd.h>
+#endif
 #ifdef HAVE_SYS_SOCKET_H
 # include <sys/socket.h>
 #endif
