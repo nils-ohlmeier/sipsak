@@ -101,6 +101,12 @@ With the given
 an authentication will be tryed on received '401 Unauthorized'. Authorization
 will be tryed on time. If this option is omitted an authorization with an
 empty password ("") will be tryed.
+.IP "-A, --timing"
+prints only the timing values of the test run if verbosity is zero because no 
+.BR -v 
+was given. If one or more 
+.BR -v 
+were given this option will be ignored.
 .IP "-b, --apendix-begin NUMBER"
 The starting number which is appended to the user name in the usrloc mode.
 This 
