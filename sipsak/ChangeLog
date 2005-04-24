@@ -1,3 +1,10 @@
+* version 0.8.12
+  - Nagios compliant return codes (-N)
+  - use strcasestr if available for case-insensitive compareings
+  - ACK will be send for 40[17] replies on INVITE
+  - just return the timing values of the operation (-A)
+  - relaxed Contact check of option -C
+  - numeric (-n) is now on by default
 * version 0.8.11
   - try authentication with empty password instead of username if no
     password is given
