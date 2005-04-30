@@ -1,5 +1,5 @@
 /*
- * $Id: sipsak.c,v 1.88 2005/04/10 20:57:28 calrissian Exp $
+ * $Id: sipsak.c,v 1.89 2005/04/30 12:44:34 calrissian Exp $
  *
  * Copyright (C) 2002-2004 Fhg Fokus
  * Copyright (C) 2004-2005 Nils Ohlmeier
@@ -745,7 +745,7 @@ int main(int argc, char *argv[])
 	
 	/* this is not a cryptographic random number generator,
 	   but hey this is only a test-tool => should be satisfying*/
-	srand(time(0));
+	srand(time(0) ^ getpid());
 	
 	if (processes > 1) {
 		if (signal(SIGCHLD , sigchld_handler)  == SIG_ERR ) {
