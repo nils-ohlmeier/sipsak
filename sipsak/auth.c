@@ -1,5 +1,5 @@
 /*
- * $Id: auth.c,v 1.20 2005/04/10 20:57:28 calrissian Exp $
+ * $Id: auth.c,v 1.21 2005/04/30 12:45:13 calrissian Exp $
  *
  * Copyright (C) 2002-2004 Fhg Fokus
  * Copyright (C) 2004-2005 Nils Ohlmeier
@@ -256,7 +256,7 @@ void insert_auth(char *message, char *authreq)
 			snprintf(insert, QOP_STR_LEN+QOPAUTH_STR_LEN+3, "%s%s, ", QOP_STR, QOPAUTH_STR);
 			insert+=strlen(insert);
 			nonce_count++;
-			snprintf(insert, NC_STR_LEN+13, "%s%x, ", NC_STR, nonce_count);
+			snprintf(insert, NC_STR_LEN+13, "%s%08x, ", NC_STR, nonce_count);
 			insert+=strlen(insert);
 			cnonce=(unsigned int)rand();
 			/* FIXME: RANDMAX has probably 4 bytes on 32 arch, but 64 bits..? */
@@ -268,7 +268,7 @@ void insert_auth(char *message, char *authreq)
 				printf("failed to allocate memory\n");
 				exit_code(255);
 			}
-			snprintf(qop_tmp, 10+8, "%x:%x:auth:", nonce_count, cnonce);
+			snprintf(qop_tmp, 10+8, "%08x:%x:auth:", nonce_count, cnonce);
 		}
 		/* if no password is given we try it with empty password */
 		if (!password)
