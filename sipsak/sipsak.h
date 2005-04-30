@@ -1,5 +1,5 @@
 /*
- * $Id: sipsak.h,v 1.28 2005/04/10 20:57:28 calrissian Exp $
+ * $Id: sipsak.h,v 1.29 2005/04/30 12:46:05 calrissian Exp $
  *
  * Copyright (C) 2002-2004 Fhg Fokus
  * Copyright (C) 2004-2005 Nils Ohlmeier
@@ -51,7 +51,11 @@
 #endif
 
 #ifdef HAVE_SYS_PARAM_H
-# define FQDN_SIZE   MAXHOSTNAMELEN + 1
+# ifdef MAXHOSTNAMELEN
+#  define FQDN_SIZE   MAXHOSTNAMELEN + 1
+# else
+#  define FQDN_SIZE   100
+# endif
 #else
 # define FQDN_SIZE   100
 #endif
