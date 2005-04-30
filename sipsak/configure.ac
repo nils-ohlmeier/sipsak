@@ -2,7 +2,7 @@
 # Process this file with autoconf to produce a configure script.
 
 AC_PREREQ(2.59)
-AC_INIT([sipsak],[0.8.12],[develop@ohlmeier.org])
+AC_INIT([sipsak],[0.8.13pre],[develop@ohlmeier.org])
 AM_INIT_AUTOMAKE
 AM_MAINTAINER_MODE
 AC_CONFIG_SRCDIR([sipsak.c])
@@ -64,7 +64,7 @@ AC_HEADER_TIME
 # Checks for library functions.
 AC_FUNC_MALLOC
 AC_FUNC_SELECT_ARGTYPES
-AC_CHECK_FUNCS([getchar gethostbyname gethostname gettimeofday inet_ntop memset ntohs regcomp select socket strchr strstr uname],,[AC_MSG_ERROR([missing required function (see above)])])
+AC_CHECK_FUNCS([getchar gethostbyname gethostname getpid gettimeofday inet_ntop memset ntohs regcomp select socket strchr strstr uname],,[AC_MSG_ERROR([missing required function (see above)])])
 AC_CHECK_FUNCS([getdomainname getopt_long strcasestr])
 
 AC_CHECK_LIB(crypto, MD5_Init,
