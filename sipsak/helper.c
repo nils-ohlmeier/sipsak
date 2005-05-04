@@ -1,5 +1,5 @@
 /*
- * $Id: helper.c,v 1.23 2005/04/10 20:57:28 calrissian Exp $
+ * $Id$
  *
  * Copyright (C) 2002-2004 Fhg Fokus
  * Copyright (C) 2004-2005 Nils Ohlmeier
@@ -118,12 +118,12 @@ void get_fqdn(){
 	memset(&hlp, 0, sizeof(hlp));
 
 	if (hostname) {
-		strcpy(fqdn, hostname);
-		strcpy(hname, hostname);
+		strncpy(fqdn, hostname, FQDN_SIZE);
+		strncpy(hname, hostname, 100);
 	}
 	else {
 		if ((uname(&un))==0) {
-			strcpy(hname, un.nodename);
+			strncpy(hname, un.nodename, 100);
 		}
 		else {
 			if (gethostname(&hname[0], namelen) < 0) {
@@ -139,10 +139,10 @@ void get_fqdn(){
 				exit_code(2);
 			}
 			if (strcmp(&dname[0],"(none)")!=0)
-				sprintf(fqdn, "%s.%s", hname, dname);
+				snprintf(fqdn, FQDN_SIZE, "%s.%s", hname, dname);
 		}
 		else {
-			strcpy(fqdn, hname);
+			strncpy(fqdn, hname, FQDN_SIZE);
 		}
 #endif
 	}
@@ -151,14 +151,14 @@ void get_fqdn(){
 	if (he) {
 		if (numeric == 1) {
 			snprintf(hlp, 15, "%s", inet_ntoa(*(struct in_addr *) he->h_addr_list[0]));
-			strcpy(fqdn, hlp);
+			strncpy(fqdn, hlp, FQDN_SIZE);
 		}
 		else {
 			if ((strchr(he->h_name, '.'))!=NULL && (strchr(hname, '.'))==NULL) {
-				strcpy(fqdn, he->h_name);
+				strncpy(fqdn, he->h_name, FQDN_SIZE);
 			}
 			else {
-				strcpy(fqdn, hname);
+				strncpy(fqdn, hname, FQDN_SIZE);
 			}
 		}
 	}
@@ -169,7 +169,7 @@ void get_fqdn(){
 	if ((strchr(fqdn, '.'))==NULL) {
 		if (hostname) {
 			printf("WARNING: %s is not resolvable... continouing anyway\n", fqdn);
-			strcpy(fqdn, hostname);
+			strncpy(fqdn, hostname, FQDN_SIZE);
 		}
 		else {
 			printf("error: this FQDN or IP is not valid: %s\n", fqdn);
