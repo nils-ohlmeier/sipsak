@@ -264,10 +264,10 @@ void insert_auth(char *message, char *authreq)
 			insert+=strlen(insert);
 			nonce_count++;
 			if (nczeros != 0) {
-				snprintf(insert, NC_STR_LEN+13, "%s%08x, ", NC_STR, nonce_count);
+				snprintf(insert, NC_STR_LEN+11, "%s%08x, ", NC_STR, nonce_count);
 			}
 			else {
-				snprintf(insert, NC_STR_LEN+13, "%s%x, ", NC_STR, nonce_count);
+				snprintf(insert, NC_STR_LEN+11, "%s%x, ", NC_STR, nonce_count);
 			}
 			insert+=strlen(insert);
 			cnonce=(unsigned int)rand();
@@ -282,10 +282,10 @@ void insert_auth(char *message, char *authreq)
 			}
 			memset(qop_tmp, 0, 100);
 			if (nczeros != 0) {
-				snprintf(qop_tmp, 10+8, "%08x:%x:auth:", nonce_count, cnonce);
+				snprintf(qop_tmp, 8+8+8, "%08x:%x:auth:", nonce_count, cnonce);
 			}
 			else {
-				snprintf(qop_tmp, 10+8, "%x:%x:auth:", nonce_count, cnonce);
+				snprintf(qop_tmp, 8+8+8, "%x:%x:auth:", nonce_count, cnonce);
 			}
 		}
 		/* if no password is given we try it with empty password */
