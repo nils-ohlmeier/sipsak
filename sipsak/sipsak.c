@@ -1,5 +1,5 @@
 /*
- * $Id: sipsak.c,v 1.89 2005/04/30 12:44:34 calrissian Exp $
+ * $Id$
  *
  * Copyright (C) 2002-2004 Fhg Fokus
  * Copyright (C) 2004-2005 Nils Ohlmeier
@@ -144,6 +144,7 @@ void print_long_help() {
 		"  --search=REGEXP            search for a RegExp in replies and return error\n"
 		"                             on failfure\n"
 		"  --timing                   print the timing informations at the end\n"
+		"  --noncec-zeros             dont use leading zeros in nonce count\n"
 		);
 	exit_code(0);
 }
@@ -205,6 +206,7 @@ void print_help() {
 		"  -O STRING         Content-Disposition value\n"
 		"  -P NUMBER         Number of processes to start\n"
 		"  -A                print timing informations\n"
+		"  -Z                dont use leading zeros in nonce-count\n"
 		);
 		exit_code(0);
 }
@@ -262,6 +264,7 @@ int main(int argc, char *argv[])
 		{"auth-username", 1, 0, 'u'},
 		{"no-crlf", 0, 0, 'L'},
 		{"timing", 0, 0, 'A'},
+		{"noncec-zeros", 0, 0, 'Z'},
 		{0, 0, 0, 0}
 	};
 #endif
@@ -270,7 +273,7 @@ int main(int argc, char *argv[])
 	warning_ext=rand_rem=nonce_count=replace_b=invite=message = 0;
 	sleep_ms=empty_contact=nagios_warn=timing = 0;
 	namebeg=nameend=maxforw= -1;
-	numeric=via_ins=redirects=fix_crlf=processes  = 1;
+	numeric=via_ins=redirects=fix_crlf=processes=nczeros  = 1;
 	username=password=replace_str=hostname=contact_uri=mes_body = NULL;
 	con_dis=auth_username = NULL;
 	re = NULL;
@@ -287,9 +290,9 @@ int main(int argc, char *argv[])
 
 	/* lots of command line switches to handle*/
 #ifdef HAVE_GETOPT_LONG
-	while ((c=getopt_long(argc, argv, "a:AB:b:c:C:de:f:Fg:GhH:iIl:Lm:MnNo:O:p:P:q:r:Rs:t:Tu:UvVwW:x:z", l_opts, &option_index)) != EOF){
+	while ((c=getopt_long(argc, argv, "a:Ab:B:c:C:de:f:Fg:GhH:iIl:Lm:MnNo:O:p:P:q:r:Rs:t:Tu:UvVwW:x:zZ", l_opts, &option_index)) != EOF){
 #else
-	while ((c=getopt(argc,argv,"a:AB:b:c:C:de:f:Fg:GhH:iIl:Lm:MnNo:O:p:P:q:r:Rs:t:Tu:UvVwW:x:z")) != EOF){
+	while ((c=getopt(argc,argv,"a:Ab:B:c:C:de:f:Fg:GhH:iIl:Lm:MnNo:O:p:P:q:r:Rs:t:Tu:UvVwW:x:zZ")) != EOF){
 #endif
 		switch(c){
 			case 'a':
@@ -591,6 +594,9 @@ int main(int argc, char *argv[])
 #endif
 			case 'z':
 				rand_rem=1;
+				break;
+			case 'Z':
+				nczeros=0;
 				break;
 			default:
 				printf("error: unknown parameter %c\n", c);
