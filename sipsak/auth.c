@@ -1,5 +1,5 @@
 /*
- * $Id: auth.c,v 1.21 2005/04/30 12:45:13 calrissian Exp $
+ * $Id$
  *
  * Copyright (C) 2002-2004 Fhg Fokus
  * Copyright (C) 2004-2005 Nils Ohlmeier
@@ -87,6 +87,7 @@ void insert_auth(char *message, char *authreq)
 		printf("failed to allocate memory\n");
 		exit_code(255);
 	}
+	memset(backup, 0, strlen(insert)+1);
 	strncpy(backup, insert, strlen(insert)+1);
 
 	begin=STRSTR(authreq, WWWAUTH_STR);
@@ -98,11 +99,12 @@ void insert_auth(char *message, char *authreq)
 		/* make a copy of the auth header to prevent that our searches
 		   hit content of other header fields */
 		end=strchr(begin, '\n');
-		auth=malloc((size_t)((end-begin)+1));
+		auth=malloc((size_t)(end-begin+1));
 		if (!auth) {
 			printf("failed to allocate memory\n");
 			exit_code(255);
 		}
+		memset(auth, 0, (size_t)(end-begin+1));
 		strncpy(auth, begin, (size_t)(end-begin));
 		*(auth+(end-begin))='\0';
 		/* we support Digest and MD5 only */
@@ -138,6 +140,7 @@ void insert_auth(char *message, char *authreq)
 				printf("failed to allocate memory\n");
 				exit_code(255);
 			}
+			memset(usern, 0, strlen(username)+10);
 			if (nameend>0)
 				snprintf(usern, strlen(username)+10, "%s%i", username, namebeg);
 			else
@@ -150,6 +153,7 @@ void insert_auth(char *message, char *authreq)
 			printf("failed to allocate memory\n");
 			exit_code(255);
 		}
+		memset(method, 0, (size_t)(end-message+1));
 		strncpy(method, message, (size_t)(end-message));
 		*(method+(end-message))='\0';
 		/* extract the uri also */
@@ -161,6 +165,7 @@ void insert_auth(char *message, char *authreq)
 			printf("failed to allocate memory\n");
 			exit_code(255);
 		}
+		memset(uri, 0, (size_t)(end-begin+1));
 		strncpy(uri, begin, (size_t)(end-begin));
 		*(uri+(end-begin))='\0';
 
@@ -197,6 +202,7 @@ void insert_auth(char *message, char *authreq)
 				printf("failed to allocate memory\n");
 				exit_code(255);
 			}
+			memset(realm, 0, (size_t)(end-begin+1));
 			strncpy(realm, begin, (size_t)(end-begin));
 			*(realm+(end-begin))='\0';
 		}
@@ -244,6 +250,7 @@ void insert_auth(char *message, char *authreq)
 				printf("failed to allocate memory\n");
 				exit_code(255);
 			}
+			memset(nonce, 0, (size_t)(end-begin+1));
 			strncpy(nonce, begin, (size_t)(end-begin));
 			*(nonce+(end-begin))='\0';
 		}
@@ -268,6 +275,7 @@ void insert_auth(char *message, char *authreq)
 				printf("failed to allocate memory\n");
 				exit_code(255);
 			}
+			memset(qop_tmp, 0, 100);
 			snprintf(qop_tmp, 10+8, "%08x:%x:auth:", nonce_count, cnonce);
 		}
 		/* if no password is given we try it with empty password */
@@ -304,7 +312,7 @@ void insert_auth(char *message, char *authreq)
 
 		snprintf(insert, RESPONSE_STR_LEN+1, RESPONSE_STR);
 		insert+=RESPONSE_STR_LEN;
-		snprintf(insert, sizeof(resp_hex)+5,"\"%s\"\r\n", &resp_hex[0]);
+		snprintf(insert, sizeof(resp_hex)+8,"\"%s\"\r\n", &resp_hex[0]);
 		insert+=strlen(insert);
 		/* the auth header is complete, reinsert the rest of the request */
 		strncpy(insert, backup, strlen(backup));
