@@ -363,6 +363,11 @@ Activates the randomly removing of old bindings in the usrloc mode. How many
 per cent of the bindings will be removed, is determined by the 
 USRLOC_REMOVE_PERCENT define within the code (set it before compilation).
 Multiple removing of bindings is possible, and cannot be prevented.
+.IP "-Z, --noncec-zeros"
+Do not insert leading zeros into the nonce count field of the Authorization
+header. Although RFC2617 requires that this number is 8 digits long, some
+server have problem with authentication when the nc contains leading zero.
+Thus you can turn this off, to allow successfull authentication.
 .SH RETURN VALUES
 The return value 0 means that a 200 was received. 1 means something else 
 then 1xx or 2xx was received.
