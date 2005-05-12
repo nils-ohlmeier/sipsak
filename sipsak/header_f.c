@@ -1,5 +1,5 @@
 /*
- * $Id: header_f.c,v 1.13 2005/04/10 20:57:28 calrissian Exp $
+ * $Id$
  *
  * Copyright (C) 2002-2004 Fhg Fokus
  * Copyright (C) 2004-2005 Nils Ohlmeier
@@ -234,8 +234,8 @@ void uri_replace(char *mes, char *uri)
 void set_cl(char* mes, int contentlen) {
 	char *cl, *cr, *backup;
 
-	if ((cl=STRSTR(ack, CON_LEN_STR)) == NULL &&
-		(cl=STRSTR(ack, CON_LEN_SHORT_STR)) == NULL) {
+	if ((cl=STRSTR(mes, CON_LEN_STR)) == NULL &&
+		(cl=STRSTR(mes, CON_LEN_SHORT_STR)) == NULL) {
 		printf("missing Content-Lenght in message\n");
 		return;
 	}
