@@ -494,7 +494,11 @@ int main(int argc, char *argv[])
 				break;
 			case 's':
 				/* we try to extract as much informationas we can from the uri*/
-				if (!strncmp(optarg,"sip",3)){
+				if (!strncmp(optarg,"sips",4)){
+					printf("error: sips is not supported yet\n");
+					exit_code(2);
+        }
+        else if (!strncmp(optarg,"sip",3)){
 					if ((delim=strchr(optarg,':'))!=NULL){
 						delim++;
 						if ((delim2=strchr(delim,'@'))!=NULL){

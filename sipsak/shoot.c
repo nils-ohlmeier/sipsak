@@ -1,5 +1,5 @@
 /*
- * $Id: shoot.c,v 1.45 2005/04/11 20:27:59 calrissian Exp $
+ * $Id$
  *
  * Copyright (C) 2002-2004 Fhg Fokus
  * Copyright (C) 2004-2005 Nils Ohlmeier
@@ -657,7 +657,7 @@ void shoot(char *buff)
 						else printf("\n");
 						/* we'll try to handle 301 and 302 here, other 3xx 
 						   are to complex */
-						regcomp(&redexp, "^SIP/[0-9]\\.[0-9] 30[1-2] ", 
+						regcomp(&redexp, "^SIP/[0-9]\\.[0-9] 30[125] ", 
 							REG_EXTENDED|REG_NOSUB|REG_ICASE);
 						if (regexec(&redexp, reply, 0, 0, 0)==0) {
 							/* try to find the contact in the redirect */
@@ -697,6 +697,9 @@ void shoot(char *buff)
 										exit_code(3);
 									}
 								}
+                else if (rport != 5060) {
+                  rport = 5060;
+                }
 								/* correct our request */
 								uri_replace(buff, contact);
 								if ((foo=strchr(contact,'@'))!=NULL){
