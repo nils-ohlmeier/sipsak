@@ -263,12 +263,7 @@ void insert_auth(char *message, char *authreq)
 			snprintf(insert, QOP_STR_LEN+QOPAUTH_STR_LEN+3, "%s%s, ", QOP_STR, QOPAUTH_STR);
 			insert+=strlen(insert);
 			nonce_count++;
-			if (nczeros != 0) {
-				snprintf(insert, NC_STR_LEN+11, "%s%08x, ", NC_STR, nonce_count);
-			}
-			else {
-				snprintf(insert, NC_STR_LEN+11, "%s%x, ", NC_STR, nonce_count);
-			}
+			snprintf(insert, NC_STR_LEN+11, "%s%08x, ", NC_STR, nonce_count);
 			insert+=strlen(insert);
 			cnonce=(unsigned int)rand();
 			/* FIXME: RANDMAX has probably 4 bytes on 32 arch, but 64 bits..? */
@@ -281,12 +276,7 @@ void insert_auth(char *message, char *authreq)
 				exit_code(255);
 			}
 			memset(qop_tmp, 0, 100);
-			if (nczeros != 0) {
-				snprintf(qop_tmp, 8+8+8, "%08x:%x:auth:", nonce_count, cnonce);
-			}
-			else {
-				snprintf(qop_tmp, 8+8+8, "%x:%x:auth:", nonce_count, cnonce);
-			}
+			snprintf(qop_tmp, 8+8+8, "%08x:%x:auth:", nonce_count, cnonce);
 		}
 		/* if no password is given we try it with empty password */
 		if (!password)

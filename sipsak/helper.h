@@ -1,5 +1,5 @@
 /*
- * $Id: helper.h,v 1.6 2005/04/10 20:57:28 calrissian Exp $
+ * $Id$
  *
  * Copyright (C) 2002-2004 Fhg Fokus
  * Copyright (C) 2004-2005 Nils Ohlmeier
@@ -26,7 +26,9 @@
 # include <time.h>
 #endif
 
-long getaddress(char *host);
+unsigned long getaddress(char *host);
+
+unsigned long getsrvaddress(char *host, int *port);
 
 void get_fqdn();
 

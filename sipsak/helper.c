@@ -39,6 +39,9 @@
 #ifdef HAVE_NETINET_IN_H
 # include <netinet/in.h>
 #endif
+#ifdef HAVE_RULI_H
+#  include <ruli.h>
+#endif
 
 #include "helper.h"
 #include "exit_code.h"
@@ -56,8 +59,7 @@ contact: farhan@hotfoon.com
   a badly behaving dns system remains inside (you send to 0.0.0.0)
 */
 
-long getaddress(char *host)
-{
+unsigned long getaddress(char *host) {
 	int i=0;
 	int dotcount=0;
 	char *p = host;
@@ -102,6 +104,66 @@ long getaddress(char *host)
 	lp = (long *) (pent->h_addr);
 	l = *lp;
 	return l;
+}
+
+unsigned long getsrvaddress(char *host, int *port) {
+#ifdef HAVE_RULI_H
+	int srv_code;
+
+	ruli_sync_t *sync_query = ruli_sync_query("_sip._udp", host, -1, RULI_RES_OPT_SEARCH | RULI_RES_OPT_SRV_NOINET6 | RULI_RES_OPT_SRV_NOSORT6);
+
+	/* sync query failure? */
+	if (!sync_query) {
+		printf("DNS SRV lookup failed for: %s\n", host);
+		exit_code(2);
+	}
+
+	srv_code = ruli_sync_srv_code(sync_query);
+	/* timeout? */
+	if (srv_code == RULI_SRV_CODE_ALARM) {
+		printf("Timeout during DNS SRV lookup for: %s\n", host);
+		ruli_sync_delete(sync_query);
+		exit_code(2);
+	}
+	/* service provided? */
+	else if (srv_code == RULI_SRV_CODE_UNAVAILABLE) {
+		printf("SRV service not provided for: %s\n", host);
+		ruli_sync_delete(sync_query);
+		exit_code(2);
+	}
+	else if (srv_code) {
+		int rcode = ruli_sync_rcode(sync_query);
+		if (verbose > 1)
+			printf("SRV query failed for: %s, srv_code=%d, rcode=%d\n", host, srv_code, rcode);
+		ruli_sync_delete(sync_query);
+		return 0;
+	}
+
+	ruli_list_t *srv_list = ruli_sync_srv_list(sync_query);
+
+	int srv_list_size = ruli_list_size(srv_list);
+
+	if (srv_list_size < 1) {
+		printf("Empty SRV list for: %s\n", host);
+		exit_code(2);
+	}
+
+	ruli_srv_entry_t *entry = (ruli_srv_entry_t *) ruli_list_get(srv_list, 0);
+	ruli_list_t *addr_list = &entry->addr_list;
+	int addr_list_size = ruli_list_size(addr_list);
+
+	if (addr_list_size < 1) {
+		printf("missing addresses in SRV lookup for: %s\n", host);
+		ruli_sync_delete(sync_query);
+		exit_code(2);
+	}
+
+	*port = entry->port;
+	ruli_addr_t *addr = (ruli_addr_t *) ruli_list_get(addr_list, 0);
+	return addr->addr.ipv4.s_addr;
+#else
+	return 0;
+#endif // HAVE_RULI_H
 }
 
 /* because the full qualified domain name is needed by many other
