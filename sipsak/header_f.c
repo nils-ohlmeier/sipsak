@@ -275,7 +275,7 @@ void build_ack(char *invite, char *reply, char *ack) {
 		memcpy(ack, invite, len);
 		*(ack+len+1) = '\0';
 		replace_string(ack, "INVITE", "ACK");
-		cpy_to(ack,reply);
+		cpy_to(reply, ack);
 		set_cl(ack, 0);
 	}
 }
