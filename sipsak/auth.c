@@ -125,10 +125,21 @@ void insert_auth(char *message, char *authreq)
 		if ((begin=STRSTR(auth, "algorithm="))!=NULL) {
 			begin+=10;
 			if ((strncmp(begin, "MD5", 3))!=0 && (strncmp(begin, "\"MD5\"", 5))!=0) {
+#ifdef HAVE_STRNCASECMP
+        printf("\nWARNING: algorithm in response is not written RFC compliant!!!\n");
+#else
 				printf("\n%s\nerror: unsupported authentication algorithm\n", 
 					authreq);
 				exit_code(2);
+#endif
 			}
+#ifdef HAVE_STRNCASECMP
+      else if ((strncasecmp(begin, "MD5", 3))!=0 && (strncasecmp(begin, "\"MD5\"", 5))!=0) {
+				printf("\n%s\nerror: unsupported authentication algorithm\n", 
+					authreq);
+				exit_code(2);
+      }
+#endif
 		}
 		/* we need the username at some points */
 		if (auth_username != NULL) {

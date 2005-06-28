@@ -313,7 +313,11 @@ int main(int argc, char *argv[])
 				*(mes_body+strlen(optarg)) = '\0';
 				break;
 			case 'C':
+#ifdef HAVE_STRNCASECMP
+				if (!strncasecmp(optarg, "empty", 5) || !strncasecmp(optarg, "none", 4)) {
+#else
 				if (!strncmp(optarg, "empty", 5) || !strncmp(optarg, "none", 4)) {
+#endif
 					empty_contact = 1;
 				}
 				else if (((delim=STRSTR(optarg,"sip:"))!=NULL) ||
@@ -436,7 +440,11 @@ int main(int argc, char *argv[])
 				break;
 			case 'o':
 				sleep_ms = 0;
+#ifdef HAVE_STRNCASECMP
+				if (strncasecmp(optarg, "rand", 4)==0) {
+#else
 				if (strncmp(optarg, "rand", 4)==0) {
+#endif
 					sleep_ms = -2;
 				}
 				else {
@@ -491,11 +499,19 @@ int main(int argc, char *argv[])
 				break;
 			case 's':
 				/* we try to extract as much informationas we can from the uri*/
+#ifdef HAVE_STRNCASECMP
+				if (!strncasecmp(optarg,"sips",4)){
+#else
 				if (!strncmp(optarg,"sips",4)){
+#endif
 					printf("error: sips is not supported yet\n");
 					exit_code(2);
         }
+#ifdef HAVE_STRNCASECMP
+        else if (!strncasecmp(optarg,"sip",3)){
+#else
         else if (!strncmp(optarg,"sip",3)){
+#endif
 					if ((delim=strchr(optarg,':'))!=NULL){
 						delim++;
 						if ((delim2=strchr(delim,'@'))!=NULL){
@@ -583,6 +599,12 @@ int main(int argc, char *argv[])
 #endif
 #ifdef HAVE_RULI_H
 				printf(", SRV_SUPPORT");
+#endif
+#ifdef HAVE_STRCASESTR
+        printf(", STR_CASE_INSENSITIVE");
+#endif
+#ifdef HAVE_STRNCASECMP
+        printf(", CMP_CASE_INSENSITIVE");
 #endif
 				printf("\n");
 				exit_code(0);

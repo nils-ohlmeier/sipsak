@@ -50,7 +50,7 @@ AC_HEADER_TIME
 AC_FUNC_MALLOC
 AC_FUNC_SELECT_ARGTYPES
 AC_CHECK_FUNCS([getchar gethostbyname gethostname getpid gettimeofday inet_ntop memset ntohs regcomp select socket strchr strstr uname],,[AC_MSG_ERROR([missing required function (see above)])])
-AC_CHECK_FUNCS([getdomainname getopt_long strcasestr])
+AC_CHECK_FUNCS([getdomainname getopt_long strncasecmp strcasestr])
 
 AC_CHECK_LIB(crypto, MD5_Init,
  LIBS="$LIBS -lcrypto"
