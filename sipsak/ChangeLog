@@ -1,3 +1,10 @@
+* version 0.8.13
+  - nonce count contains the required leading zeros now
+  - content length is printed as integer and not as hex value
+  - DNS SRV lookup support through libruli (for target URI, outbound proxy and
+    redirects)
+  - all comparisons are now case in-sensitiv if suport by the system
+  - destination port can be given in the outbound proxy argument
 * version 0.8.12
   - Nagios compliant return codes (-N)
   - use strcasestr if available for case-insensitive compareings

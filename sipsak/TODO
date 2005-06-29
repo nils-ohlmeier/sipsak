@@ -7,8 +7,6 @@ ToDo List (no order):
  - increase hostname detection for the Via line
  - endless randtrash mode with logfile
  - support for IPv6
- - DNS SRV support
- - case in-sensitive
  - TCP support
  - RR support
 

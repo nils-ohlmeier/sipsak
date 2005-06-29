@@ -1,4 +1,4 @@
-# $Id: AUTHORS,v 1.2 2005/04/10 20:57:01 calrissian Exp $
+# $Id$
 # The format of this file was inspired by the Linux kernel CREDITS file.
 # 
 # Authors and contributors are listed alphabetically (first name).
@@ -8,7 +8,7 @@
 
 N: Nils Ohlmeier
 C: calrissian
-E: develop@ohlmeier.org
+E: nils@sipsak.org
 W: http://www.ohlmeier.org
 P: BAD6CA40   B5E7 4FB0 800F 0A2C E3E9  4073 C7C3 F275 BAD6 CA40
 D: the original author and main developer

@@ -1,9 +1,9 @@
 .\" Process this file with
 .\" groff -man -Tascii sipsak.1
 .\"
-.TH SIPSAK 1 "JULY 2002" Linux "User Manuals"
+.TH SIPSAK 1 "JULY 2002 - JUNE 2005" Linux "User Manuals"
 .SH NAME
-sipsak \- a utility for various tests on sip server
+sipsak \- a utility for various tests on sip servers and user agents
 .SH SYNOPSIS
 .B sipsak [-dFGhiILnNMRTUVvwz] [-a
 .I PASSWORD
@@ -93,6 +93,13 @@ stress mode for SIP servers.
 .B sipsak 
 keeps sending requests to a SIP server at high pace.
 
+.PP
+If libruli (http://www.nongnu.org/ruli/) support is compiled into the
+.B sipsak
+binary, then first a SRV lookup for _sip._udp.hostname is made. And if this
+lookup fails a normal A lookup is made. If a port was given in the target
+URI the SRV lookup is omitted. Failover, load distribution and other 
+transports are not supported yet.
 
 .SH OPTIONS
 .IP "-a, --pasword PASSWORD"
@@ -258,10 +265,11 @@ will sleep for
 ms before it starts the next cycle in the usrloc mode. This will slow down
 the whole test process to be more realistic. Each cycle will be still completed
 as fast as possible, but the whole test will be slowed down.
-.IP "-p, --outbound-proxy HOSTNAME"
+.IP "-p, --outbound-proxy HOSTNAME[:PORT]"
 the address of the hostname is the target where the request will be sent to 
 (outgoing proxy). Use this if the destination host is different then the host
-part of the request uri.
+part of the request uri. The hostname is resolved via DNS SRV if supported
+(see description for SRV resolving) and no port is given.
 .IP "-P, --processes NUMBER"
 Start
 .BR NUMBER
@@ -296,6 +304,8 @@ full
 .BR SIPURI
 : 
 .I sip:test@foo.bar:123
+See the note in the description part about SRV lookups for details how the 
+hostname of this URI is converted into an IP and port.
 .IP "-t, --trash-chars NUMBER"
 This parameter specifies the maximum of trashed characters in the randtrash 
 mode. If omitted 
@@ -349,8 +359,9 @@ This parameter increases the output verbosity. No
 means nearly no output except in traceroute and error messages. The maximum
 of three v's prints out the content of all packets received and sent.
 .IP "-V, --version"
-Prints out only the name and version number of 
-.B sipsak.
+Prints out the name and version number of 
+.B sipsak
+and the options which were compiled into the binary.
 .IP "-w, --extract-ip"
 Activates the extraction of the IP or hostname from the Warning header field.
 .IP "-W, --nagios-warn NUMBER"
@@ -396,13 +407,7 @@ Many servers may decide NOT to include SIP "Warning" header fields.
 Unfortunately, this makes displaying IP addresses of SIP servers
 in traceroute mode impossible.
 
-.B sipsak
-is case sensitive (not RFC conform). So all the header fields are only found
-if they are written like in RFC3261.
-
 IPv6 is not supported.
-
-DNS/SRV is not supported.
 
 Missing support for the Record-Route and Route header.
 
@@ -412,6 +417,6 @@ be various bugs. Please feel free to mail them to the author.
 
 
 .SH AUTHOR
-Nils Ohlmeier <develop at ohlmeier dot org>
+Nils Ohlmeier <nils at sipsak dot org>
 .SH "SEE ALSO"
 .BR traceroute (8)
