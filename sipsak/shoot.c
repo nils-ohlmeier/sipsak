@@ -685,6 +685,7 @@ void shoot(char *buff)
 								*foo='\0';
 							if ((crlf=strchr(contact,':'))!=NULL){
 								crlf++;
+								rport = 0;
 								/* extract the needed information*/
 								if ((foo=strchr(crlf,':'))!=NULL){
 									*foo='\0';
@@ -697,9 +698,6 @@ void shoot(char *buff)
 										exit_code(3);
 									}
 								}
-                else if (rport != 5060) {
-                  rport = 5060;
-                }
 								/* correct our request */
 								uri_replace(buff, contact);
 								if ((foo=strchr(contact,'@'))!=NULL){
@@ -707,12 +705,18 @@ void shoot(char *buff)
 									crlf=foo;
 								}
 								/* get the new destination IP*/
-								address = getaddress(crlf);
-								if (address == 1){
+								if (!rport)
+									address = getsrvaddress(crlf, &rport);
+								if (!address)
+									address = getaddress(crlf);
+								if (!address){
 									printf("error: cannot determine host "
 										"address from Contact of redirect:"
 										"\n%s\n", reply);
 									exit_code(2);
+								}
+								if (!rport) {
+									rport = 5060;
 								}
 							}
 							else{

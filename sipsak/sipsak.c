@@ -461,9 +461,27 @@ int main(int argc, char *argv[])
 				*(con_dis+strlen(optarg)) = '\0';
 				break;
 			case 'p':
-				address = getaddress(optarg);
+				if ((delim=strchr(optarg,':'))!=NULL){
+					*delim = '\0';
+					delim++;
+					rport = atoi(delim);
+					if (!rport) {
+						printf("error: non-numerical outbound proxy port "
+							"number\n");
+						exit_code(2);
+					}
+				}
+				if (!rport)
+					address = getsrvaddress(optarg, &rport);
+				if (!address)
+					address = getaddress(optarg);
+				if (!address){
+					printf("error:unable to determine the outbound proxy "
+						"address\n");
+					exit_code(2);
+				}
 				break;
-		        case 'P':
+	        case 'P':
 				processes=atoi(optarg);
 				if (!processes) {
 					printf("error: non-numerical number of processes\n");
