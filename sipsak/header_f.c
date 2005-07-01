@@ -29,12 +29,12 @@ void add_via(char *mes)
 	char *via_line, *via, *via2, *backup; 
 
 	/* first build our own Via-header-line */
-	via_line = malloc(VIA_SIP_STR_LEN+strlen(fqdn)+15);
+	via_line = malloc(VIA_SIP_STR_LEN+strlen(fqdn)+15+24);
 	if (!via_line) {
 		printf("failed to allocate memory\n");
 		exit_code(255);
 	}
-	snprintf(via_line, VIA_SIP_STR_LEN+strlen(fqdn)+5+10, "%s%s:%i;rport\r\n", VIA_SIP_STR, fqdn, lport);
+	snprintf(via_line, VIA_SIP_STR_LEN+strlen(fqdn)+15+24, "%s%s:%i;branch=z9hG4bK.%08x;rport\r\n", VIA_SIP_STR, fqdn, lport, rand());
 	if (verbose > 2)
 		printf("our Via-Line: %s\n", via_line);
 
@@ -42,8 +42,8 @@ void add_via(char *mes)
 		printf("can't add our Via Header Line because file is too big\n");
 		exit_code(2);
 	}
-	via=STRSTR(mes, "\nVIA_STR");
-	via2=STRSTR(mes, "\nVIA_SHORT_STR");
+	via=STRCASESTR(mes, VIA_STR);
+	via2=STRCASESTR(mes, VIA_SHORT_STR);
 	if (via==NULL && via2==NULL ){
 		/* We doesn't find a Via so we insert our via
 		   direct after the first line. */
@@ -88,16 +88,16 @@ void cpy_vias(char *reply, char *dest){
 	char *first_via, *middle_via, *last_via, *backup;
 
 	/* lets see if we find any via */
-	if ((first_via=STRSTR(reply, "VIA_STR"))==NULL &&
-		(first_via=STRSTR(reply, "\nVIA_SHORT_STR"))==NULL ){
+	if ((first_via=STRCASESTR(reply, VIA_STR))==NULL &&
+		(first_via=STRCASESTR(reply, VIA_SHORT_STR))==NULL ){
 		printf("error: the received message doesn't contain a Via header\n");
 		exit_code(3);
 	}
 	last_via=first_via+4;
 	middle_via=last_via;
 	/* proceed additional via lines */
-	while ((middle_via=STRSTR(last_via, "VIA_STR"))!=NULL ||
-		   (middle_via=STRSTR(last_via, "\nVIA_SHORT_STR"))!=NULL )
+	while ((middle_via=STRCASESTR(last_via, VIA_STR))!=NULL ||
+		   (middle_via=STRCASESTR(last_via, VIA_SHORT_STR))!=NULL )
 		last_via=middle_via+4;
 	last_via=strchr(last_via, '\n');
 	middle_via=strchr(dest, '\n')+1;
@@ -121,14 +121,14 @@ void cpy_to(char *reply, char *dest) {
 	char *src_to, *dst_to, *backup, *tmp;
 
 	/* find the position where we want to insert the To */
-	if ((dst_to=STRSTR(dest, "TO_STR"))==NULL &&
-		(dst_to=STRSTR(dest, "\nTO_SHORT_STR"))==NULL) {
-		printf("error: could not find To in the reply\n");
+	if ((dst_to=STRCASESTR(dest, TO_STR))==NULL &&
+		(dst_to=STRCASESTR(dest, TO_SHORT_STR))==NULL) {
+		printf("error: could not find To in the destination\n");
 		exit_code(2);
 	}
 	/* find the To we want to copy */
-	if ((src_to=STRSTR(reply, "TO_STR"))==NULL && 
-		(src_to=STRSTR(reply, "\nTO_SHORT_STR"))==NULL) {
+	if ((src_to=STRCASESTR(reply, TO_STR))==NULL && 
+		(src_to=STRCASESTR(reply, TO_SHORT_STR))==NULL) {
 		if (verbose > 0)
 			printf("warning: could not find To in reply. "
 				"trying with original To\n");
@@ -157,7 +157,7 @@ void cpy_to(char *reply, char *dest) {
 void set_maxforw(char *mes){
 	char *max, *backup, *crlfi;
 
-	if ((max=STRSTR(mes, "MAX_FRW_STR"))==NULL){
+	if ((max=STRCASESTR(mes, MAX_FRW_STR))==NULL){
 		/* no max-forwards found so insert it after the first line*/
 		max=strchr(mes,'\n');
 		if (!max) {
@@ -221,7 +221,7 @@ void uri_replace(char *mes, char *uri)
 		exit_code(255);
 	}
 	strncpy(backup, foo, strlen(foo)+1);
-	foo=STRSTR(mes, "sip");
+	foo=STRCASESTR(mes, "sip");
 	strncpy(foo, uri, strlen(uri));
 	strncpy(foo+strlen(uri), SIP20_STR, SIP20_STR_LEN);
 	strncpy(foo+strlen(uri)+SIP20_STR_LEN, backup, strlen(backup)+1);
@@ -234,9 +234,9 @@ void uri_replace(char *mes, char *uri)
 void set_cl(char* mes, int contentlen) {
 	char *cl, *cr, *backup;
 
-	if ((cl=STRSTR(mes, CON_LEN_STR)) == NULL &&
-		(cl=STRSTR(mes, CON_LEN_SHORT_STR)) == NULL) {
-		printf("missing Content-Lenght in message\n");
+	if ((cl=STRCASESTR(mes, CON_LEN_STR)) == NULL &&
+		(cl=STRCASESTR(mes, CON_LEN_SHORT_STR)) == NULL) {
+		printf("missing Content-Length in message\n");
 		return;
 	}
 	cr = strchr(cl, '\n');
@@ -268,13 +268,17 @@ void build_ack(char *invite, char *reply, char *ack) {
 	char *body;
 	int len;
 
-	body = STRSTR(invite, "\r\n\r\n");
+	body = STRCASESTR(invite, "\r\n\r\n");
 	if (body) {
-		body++; body++;
+		body+=4;
 		len = body - invite;
 		memcpy(ack, invite, len);
-		*(ack+len+1) = '\0';
+		*(ack+len) = '\0';
 		replace_string(ack, "INVITE", "ACK");
+		if((body = uri_from_contact(reply))!= NULL) {
+			uri_replace(ack,body);
+			free(body);
+		}
 		cpy_to(reply, ack);
 		set_cl(ack, 0);
 	}
@@ -286,17 +290,20 @@ void warning_extract(char *message)
 	char *warning, *end, *mid, *server;
 	int srvsize;
 
-	if ((warning=STRSTR(message, "Warning:"))==NULL) {
-		if (verbose > 0) printf("'no Warning header found' ");
-		else printf("?? ");
+	if ((warning=STRCASESTR(message, "Warning:"))==NULL) {
+		if (verbose > 0) 
+			printf("'no Warning header found' ");
+		else 
+			printf("?? ");
 		return;
 	}
 	end=strchr(warning, '"');
 	end--;
 	warning=strchr(warning, '3');
-	warning=warning+4;
+	warning+=4;
 	mid=strchr(warning, ':');
-	if (mid) end=mid;
+	if (mid)
+		end=mid;
 	srvsize=end - warning + 1;
 	server=malloc((size_t)srvsize);
 	if (!server) {
@@ -309,12 +316,13 @@ void warning_extract(char *message)
 	free(server);
 }
 
+/* tries to find and return the number in the CSeq header */
 int cseq(char *message)
 {
 	char *cseq;
 	int num=-1;
 
-	cseq=STRSTR(message, CSEQ_STR);
+	cseq=STRCASESTR(message, CSEQ_STR);
 	if (cseq) {
 		cseq+=6;
 		num=atoi(cseq);
@@ -330,6 +338,7 @@ int cseq(char *message)
 	return 0;
 }
 
+/* if it find the Cseq number in the message it will increased by one */
 void increase_cseq(char *message)
 {
 	int cs;
@@ -341,7 +350,7 @@ void increase_cseq(char *message)
 		return;
 	}
 	cs++;
-	cs_s=STRSTR(message, CSEQ_STR);
+	cs_s=STRCASESTR(message, CSEQ_STR);
 	if (cs_s) {
 		cs_s+=6;
 		eol=strchr(cs_s, ' ');
@@ -359,4 +368,50 @@ void increase_cseq(char *message)
 	}
 	else if (verbose > 1)
 		printf("'CSeq' not found in message\n");
+}
+
+/* return the URI from the Contact of the message if found */
+char* uri_from_contact(char *message)
+{
+	char *contact, *end, *tmp, c;
+
+	/* try to find the contact in the redirect */
+	if ((contact=STRCASESTR(message, CONT_STR))==NULL && 
+		(contact=STRCASESTR(message, CONT_SHORT_STR))==NULL ) {
+		if(verbose > 1)
+			printf("'Contact' not found in the message\n");
+		return NULL;
+	}
+
+	if((end=strchr(contact,'\r'))!=NULL) {
+		c = '\r';
+		*end = '\0';
+	}
+	else {
+		c = '\0';
+		end = contact + strlen(contact);
+	}
+
+	tmp = NULL;
+
+	if ((contact=STRCASESTR(contact, "sip:"))!=NULL) {
+		if ((tmp=strchr(contact+4, ';'))!=NULL) {
+			*end = c;
+			end = tmp;
+			c = *end;
+			*end = '\0';
+		}
+		if ((tmp=strchr(contact+4, '>'))!=NULL) {
+			*end = c;
+			end = tmp;
+			c = *end;
+			*end = '\0';
+		}
+		tmp = malloc(strlen(contact)+1);
+		memcpy(tmp,contact,strlen(contact)+1);
+	}
+	
+	*end = c;
+
+	return tmp;
 }

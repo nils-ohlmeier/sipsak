@@ -123,7 +123,7 @@ void shoot(char *buff)
 	int cseqcmp = 0;
 	int rem_namebeg = 0;
 	double big_delay, tmp_delay, senddiff;
-	char *contact, *foo, *bar, *lport_str;
+	char *contact, *foo, *lport_str;
 	char *crlf = NULL;
 	char reply[BUFSIZE];
 	fd_set	fd;
@@ -302,7 +302,7 @@ void shoot(char *buff)
 				nameend=trashchar;
 			else
 				printf("warning: number of trashed chars to big. setting to "
-					"request lenght\n");
+					"request length\n");
 		}
 		nretries=nameend-1;
 		trash_random(buff);
@@ -452,7 +452,7 @@ void shoot(char *buff)
 				else {
 					i--;
 					dontrecv = 0;
-					if (strncmp(buff, "ACK", 3) == 0) {
+					if (STRNCASECMP(buff, "ACK", 3) == 0) {
 						swap_buffers(buff, ack);
 						increase_cseq(buff);
 					}
@@ -661,70 +661,47 @@ void shoot(char *buff)
 							REG_EXTENDED|REG_NOSUB|REG_ICASE);
 						if (regexec(&redexp, reply, 0, 0, 0)==0) {
 							/* try to find the contact in the redirect */
-							if ((foo=STRSTR(reply, CONT_STR))==NULL &&
-								(foo=STRSTR(reply, "\nCONT_SHORT_STR"))==NULL ) {
+							contact = uri_from_contact(reply);
+							if (contact==NULL) {
 								printf("error: cannot find Contact in this "
 									"redirect:\n%s\n", reply);
 								exit_code(3);
 							}
-							crlf=strchr(foo, '\n');
-							if ((contact=strchr(foo, '\r'))!=NULL 
-							&& contact<crlf)
-								crlf=contact;
-							bar=malloc((size_t)(crlf-foo+1));
-							strncpy(bar, foo, (size_t)(crlf-foo));
-							*(bar+(crlf-foo))='\0';
-							if ((contact=STRSTR(bar, "sip"))==NULL) {
-								printf("error: cannot find sip in the Contact "
-									"of this redirect:\n%s\n", reply);
-								exit_code(3);
-							}
-							if ((foo=strchr(contact, ';'))!=NULL)
+							/* correct our request */
+							uri_replace(buff, contact);
+							/* extract the needed information*/
+							rport = 0;
+							address = 0;
+							if ((foo=strchr(contact+4,':'))!=NULL) {
 								*foo='\0';
-							if ((foo=strchr(contact, '>'))!=NULL)
-								*foo='\0';
-							if ((crlf=strchr(contact,':'))!=NULL){
-								crlf++;
-								rport = 0;
-								/* extract the needed information*/
-								if ((foo=strchr(crlf,':'))!=NULL){
-									*foo='\0';
-									foo++;
-									rport = atoi(foo);
-									if (rport == 0) {
-										printf("error: cannot handle the port "
-											"in the uri in Contact:\n%s\n", 
-											reply);
-										exit_code(3);
-									}
-								}
-								/* correct our request */
-								uri_replace(buff, contact);
-								if ((foo=strchr(contact,'@'))!=NULL){
-									foo++;
-									crlf=foo;
-								}
-								/* get the new destination IP*/
-								if (!rport)
-									address = getsrvaddress(crlf, &rport);
-								if (!address)
-									address = getaddress(crlf);
-								if (!address){
-									printf("error: cannot determine host "
-										"address from Contact of redirect:"
-										"\n%s\n", reply);
-									exit_code(2);
-								}
-								if (!rport) {
-									rport = 5060;
+								rport = atoi(++foo);
+								if (rport == 0) {
+									printf("error: cannot handle the port "
+										"in the uri in Contact:\n%s\n", 
+										reply);
+									exit_code(3);
 								}
 							}
-							else{
-								printf("error: missing : in Contact of this "
-									"redirect:\n%s\n", reply);
-								exit_code(3);
+
+							/* get the new destination IP*/
+							if ((foo=strchr(contact+4,'@'))!=NULL)
+								foo++;
+							else
+								foo=contact+4;
+							if (!rport)
+								address = getsrvaddress(foo, &rport);
+							if (!address)
+								address = getaddress(foo);
+							if (!address){
+								printf("error: cannot determine host "
+									"address from Contact of redirect:"
+									"\n%s\n", reply);
+								exit_code(2);
 							}
-							free(bar);
+							if (!rport) {
+								rport = 5060;
+							}
+							free(contact);
 							memset(&addr, 0, sizeof(addr));
 							redirected=1;
 							i=nretries;
@@ -747,7 +724,7 @@ void shoot(char *buff)
 						insert_auth(buff, reply);
 						if (verbose > 2)
 							printf("\nreceived:\n%s\n", reply);
-						if (strncmp(buff, "INVITE", 6) == 0) {
+						if (STRNCASECMP(buff, "INVITE", 6) == 0) {
 							build_ack(buff, reply, ack);
 							swap_buffers(buff, ack);
 							dontrecv = 1;
@@ -819,9 +796,9 @@ void shoot(char *buff)
 							crlf++;
 							printf("(%.3f ms) %s\n", 
 								deltaT(&sendtime, &recvtime), reply);
-							contact=STRSTR(crlf, CONT_STR);
+							contact=STRCASESTR(crlf, CONT_STR);
 							if (!contact)
-								contact=STRSTR(crlf, "\nCONT_SHORT_STR");
+								contact=STRCASESTR(crlf, CONT_SHORT_STR);
 							if (contact){
 								crlf=strchr(contact,'\n');
 								*crlf='\0';
@@ -839,7 +816,7 @@ void shoot(char *buff)
 					else if (usrloc == 1||invite == 1||message == 1) {
 						if (regexec(&proexp, reply, 0, 0, 0)==0) {
 							if (verbose > 2)
-								printf("\nignoring provisinal "
+								printf("\nignoring provisional "
 									"response\n");
 							retryAfter = SIP_T2;
 							dontsend = 1;
@@ -928,7 +905,7 @@ void shoot(char *buff)
 								break;
 							case INV_RECV:
 								/* see if we received our invite */
-								if (!strncmp(reply, messusern, 
+								if (!STRNCASECMP(reply, messusern, 
 									strlen(messusern))) {
 									if (verbose > 1)
 										printf("\t\treceived invite\n");
@@ -948,7 +925,7 @@ void shoot(char *buff)
 								break;
 							case INV_OK_RECV:
 								/* did we received our ok ? */
-								if (strncmp(reply, INV_STR, INV_STR_LEN)==0) {
+								if (STRNCASECMP(reply, INV_STR, INV_STR_LEN)==0) {
 									if (verbose>0)
 										printf("ignoring INVITE "
 											"retransmission\n");
@@ -981,7 +958,7 @@ void shoot(char *buff)
 								else
 									sprintf(messusern, "%s sip:%s", ACK_STR, 
 										username);
-								if (strncmp(reply, messusern, 
+								if (STRNCASECMP(reply, messusern, 
 									strlen(messusern))==0) {
 									if (verbose > 1)
 										printf("\t\tack received\n");
@@ -1063,10 +1040,10 @@ void shoot(char *buff)
 							case MES_RECV:
 								/* we sent the message and look if its 
 								   forwarded to us */
-								if (!strncmp(reply, messusern, 
+								if (!STRNCASECMP(reply, messusern, 
 									strlen(messusern))) {
 									if (verbose > 1) {
-										crlf=STRSTR(reply, "\r\n\r\n");
+										crlf=STRCASESTR(reply, "\r\n\r\n");
 										crlf=crlf+4;
 										printf("  received message\n  "
 											"'%s'\n", crlf);
@@ -1088,7 +1065,7 @@ void shoot(char *buff)
 							case MES_OK_RECV:
 								/* we sent our reply on the message and
 								   look if this is also forwarded to us */
-								if (strncmp(reply, MES_STR, MES_STR_LEN)==0) {
+								if (STRNCASECMP(reply, MES_STR, MES_STR_LEN)==0) {
 									if (verbose>0)
 										printf("ignoring MESSAGE "
 											"retransmission\n");
@@ -1182,7 +1159,7 @@ void shoot(char *buff)
 									nanosleep(&sleep_ms_s, &sleep_rem);
 								break;
 							case UNREG_REP:
-								if (strncmp(reply, MES_STR, MES_STR_LEN)==0) {
+								if (STRNCASECMP(reply, MES_STR, MES_STR_LEN)==0) {
 									if (verbose>0)
 										printf("ignoring MESSAGE "
 											"retransmission\n");
@@ -1280,9 +1257,8 @@ void shoot(char *buff)
 									printf("failed to find newline\n");
 									exit_code(254);
 								}
-								*crlf='\0';
-								printf("   %s\n   provisional received; still"
-									" waiting for a final response\n", reply);
+								printf("   %.*s\n   provisional received; still"
+									" waiting for a final response\n", crlf - reply, reply);
 							}
 							retryAfter = SIP_T2;
 							dontsend = 1;
@@ -1304,14 +1280,31 @@ void shoot(char *buff)
 									printf("failed to find newline\n");
 									exit_code(254);
 								}
-								*crlf='\0';
-								printf("   %s\n   final received\n", reply);
+								printf("   %.*s\n   final received\n", crlf - reply, reply);
 							}
 							else if (verbose>0) printf("%s\n", reply);
 							else if (timing) printf("%.3f ms\n", 
 										deltaT(&firstsendt, &recvtime));
 							if (regexec(&okexp, reply, 0, 0, 0)==0)
+							{
+								if (STRNCASECMP(buff, "INVITE", 6) == 0) {
+									build_ack(buff, reply, ack);
+									/* ACK must be in new transaction */
+									if((foo = STRCASESTR(ack,"branch=z9hG4bK.")) != NULL) {
+										snprintf(fstr,9,"%08x",rand());
+										memcpy(foo+15,fstr,8);
+									}
+									if (verbose > 1)
+						 	      		printf("Sending ACK\n%s\n", ack);
+									if (csock == -1) {
+										sendto(usock, ack, strlen(ack), 0, (struct sockaddr *)&addr, sizeof(addr));
+									}
+									else {
+										send(csock, ack, strlen(ack), 0);
+									}
+								}
 								on_success(reply);
+							}
 							else
 								exit_code(1);
 						}

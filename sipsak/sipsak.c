@@ -313,15 +313,11 @@ int main(int argc, char *argv[])
 				*(mes_body+strlen(optarg)) = '\0';
 				break;
 			case 'C':
-#ifdef HAVE_STRNCASECMP
-				if (!strncasecmp(optarg, "empty", 5) || !strncasecmp(optarg, "none", 4)) {
-#else
-				if (!strncmp(optarg, "empty", 5) || !strncmp(optarg, "none", 4)) {
-#endif
+				if (!STRNCASECMP(optarg, "empty", 5) || !STRNCASECMP(optarg, "none", 4)) {
 					empty_contact = 1;
 				}
-				else if (((delim=STRSTR(optarg,"sip:"))!=NULL) ||
-					((delim=STRSTR(optarg,"sips:"))!=NULL)) {
+				else if (((delim=STRCASESTR(optarg,"sip:"))!=NULL) ||
+					((delim=STRCASESTR(optarg,"sips:"))!=NULL)) {
 			 		if (strchr(optarg,'@')<delim) {
 						printf("error: missing '@' in Contact uri\n");
 						exit_code(2);
@@ -440,11 +436,7 @@ int main(int argc, char *argv[])
 				break;
 			case 'o':
 				sleep_ms = 0;
-#ifdef HAVE_STRNCASECMP
-				if (strncasecmp(optarg, "rand", 4)==0) {
-#else
-				if (strncmp(optarg, "rand", 4)==0) {
-#endif
+				if (STRNCASECMP(optarg, "rand", 4)==0) {
 					sleep_ms = -2;
 				}
 				else {
@@ -517,19 +509,11 @@ int main(int argc, char *argv[])
 				break;
 			case 's':
 				/* we try to extract as much informationas we can from the uri*/
-#ifdef HAVE_STRNCASECMP
-				if (!strncasecmp(optarg,"sips",4)){
-#else
-				if (!strncmp(optarg,"sips",4)){
-#endif
+				if (!STRNCASECMP(optarg,"sips",4)){
 					printf("error: sips is not supported yet\n");
 					exit_code(2);
         }
-#ifdef HAVE_STRNCASECMP
-        else if (!strncasecmp(optarg,"sip",3)){
-#else
-        else if (!strncmp(optarg,"sip",3)){
-#endif
+        else if (!STRNCASECMP(optarg,"sip",3)){
 					if ((delim=strchr(optarg,':'))!=NULL){
 						delim++;
 						if ((delim2=strchr(delim,'@'))!=NULL){

@@ -67,8 +67,8 @@ void insert_auth(char *message, char *authreq)
 	auth=begin=end=insert=backup=realm=usern=nonce=method=uri = NULL;
 
 	/* prevent double auth insertion */
-	if ((begin=STRSTR(message, AUTH_STR))!=NULL ||
-			(begin=STRSTR(message, PROXYAUZ_STR))!=NULL) {
+	if ((begin=STRCASESTR(message, AUTH_STR))!=NULL ||
+			(begin=STRCASESTR(message, PROXYAUZ_STR))!=NULL) {
 		printf("\nrequest:\n%s\nresponse:\n%s\nerror: authorization failed\n  "
 			"     request already contains (Proxy-) Authorization, but "
 			"received 40[1|7], see above\n", message, authreq);
@@ -90,9 +90,9 @@ void insert_auth(char *message, char *authreq)
 	memset(backup, 0, strlen(insert)+1);
 	strncpy(backup, insert, strlen(insert)+1);
 
-	begin=STRSTR(authreq, WWWAUTH_STR);
+	begin=STRCASESTR(authreq, WWWAUTH_STR);
 	if (begin==NULL) {
-		begin=STRSTR(authreq, PROXYAUTH_STR);
+		begin=STRCASESTR(authreq, PROXYAUTH_STR);
 		proxy_auth = 1;
 	}
 	if (begin) {
@@ -108,38 +108,23 @@ void insert_auth(char *message, char *authreq)
 		strncpy(auth, begin, (size_t)(end-begin));
 		*(auth+(end-begin))='\0';
 		/* we support Digest and MD5 only */
-		if ((begin=STRSTR(auth, "Basic"))!=NULL) {
+		if ((begin=STRCASESTR(auth, "Basic"))!=NULL) {
 			printf("%s\nerror: authentication method Basic is deprecated since"
 				" RFC 3261 and not supported by sipsak\n", authreq);
 			exit_code(3);
 		}
-#ifdef HAVE_STRCASESTR
-		if ((begin=(char*)strcasestr(auth, "Digest"))==NULL) {
-#else
-		if ((begin=STRSTR(auth, "Digest"))==NULL) {
-#endif
+		if ((begin=STRCASESTR(auth, "Digest"))==NULL) {
 			printf("%s\nerror: couldn't find authentication method Digest in "
 				"the 40[1|7] response above\n", authreq);
 			exit_code(3);
 		}
-		if ((begin=STRSTR(auth, "algorithm="))!=NULL) {
+		if ((begin=STRCASESTR(auth, "algorithm="))!=NULL) {
 			begin+=10;
-			if ((strncmp(begin, "MD5", 3))!=0 && (strncmp(begin, "\"MD5\"", 5))!=0) {
-#ifdef HAVE_STRNCASECMP
-        printf("\nWARNING: algorithm in response is not written RFC compliant!!!\n");
-#else
+			if ((STRNCASECMP(begin, "MD5", 3))!=0 && (STRNCASECMP(begin, "\"MD5\"", 5))!=0) {
 				printf("\n%s\nerror: unsupported authentication algorithm\n", 
 					authreq);
 				exit_code(2);
-#endif
 			}
-#ifdef HAVE_STRNCASECMP
-      else if ((strncasecmp(begin, "MD5", 3))!=0 && (strncasecmp(begin, "\"MD5\"", 5))!=0) {
-				printf("\n%s\nerror: unsupported authentication algorithm\n", 
-					authreq);
-				exit_code(2);
-      }
-#endif
 		}
 		/* we need the username at some points */
 		if (auth_username != NULL) {
@@ -196,7 +181,7 @@ void insert_auth(char *message, char *authreq)
 		snprintf(insert, ALGO_MD5_STR_LEN+1, ALGO_MD5_STR);
 		insert+=ALGO_MD5_STR_LEN;
 		/* search for the realm, copy it to request and extract it for hash*/
-		if ((begin=STRSTR(auth, REALM_STR))!=NULL) {
+		if ((begin=STRCASESTR(auth, REALM_STR))!=NULL) {
 			end=strchr(begin, ',');
 			if (!end)
 				end=strchr(begin, '\r');
@@ -222,7 +207,7 @@ void insert_auth(char *message, char *authreq)
 			exit_code(3);
 		}
 		/* copy opaque if needed */
-		if ((begin=STRSTR(auth, OPAQUE_STR))!=NULL) {
+		if ((begin=STRCASESTR(auth, OPAQUE_STR))!=NULL) {
 			end=strchr(begin, ',');
 			if (!end) {
 				end=strchr(begin, '\r');
@@ -235,8 +220,8 @@ void insert_auth(char *message, char *authreq)
 			insert++;
 		}
 		/* lets see if qop=auth is uspported */
-		if ((begin=STRSTR(auth, QOP_STR))!=NULL) {
-			if (STRSTR(begin, QOPAUTH_STR)==NULL) {
+		if ((begin=STRCASESTR(auth, QOP_STR))!=NULL) {
+			if (STRCASESTR(begin, QOPAUTH_STR)==NULL) {
 				printf("\nresponse\n%s\nerror: qop \"auth\" not supported by"
 					" server\n", authreq);
 				exit_code(3);
@@ -244,7 +229,7 @@ void insert_auth(char *message, char *authreq)
 			qop_auth=1;
 		}
 		/* search, copy and extract the nonce */
-		if ((begin=STRSTR(auth, NONCE_STR))!=NULL) {
+		if ((begin=STRCASESTR(auth, NONCE_STR))!=NULL) {
 			end=strchr(begin, ',');
 			if (!end)
 				end=strchr(begin, '\r');

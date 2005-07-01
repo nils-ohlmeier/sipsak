@@ -1,5 +1,5 @@
 /*
- * $Id: header_f.h,v 1.5 2005/04/10 20:57:28 calrissian Exp $
+ * $Id$
  *
  * Copyright (C) 2002-2004 Fhg Fokus
  * Copyright (C) 2004-2005 Nils Ohlmeier
@@ -39,4 +39,6 @@ void warning_extract(char *message);
 int cseq(char *message);
 
 void increase_cseq(char *message);
+
+char* uri_from_contact(char *message);
 #endif

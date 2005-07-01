@@ -248,7 +248,7 @@ void get_fqdn(){
 void replace_string(char *mess, char *search, char *replacement){
 	char *backup, *insert;
 
-	insert=STRSTR(mess, search);
+	insert=STRCASESTR(mess, search);
 	if (insert==NULL){
 		if (verbose > 2)
 			printf("warning: could not find this '%s' replacement string in "
@@ -265,7 +265,7 @@ void replace_string(char *mess, char *search, char *replacement){
 			strcpy(insert, replacement);
 			strcpy(insert+strlen(replacement), backup);
 			free(backup);
-			insert=STRSTR(mess, search);
+			insert=STRCASESTR(mess, search);
 		}
 	}
 }

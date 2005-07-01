@@ -42,9 +42,14 @@
 
 #ifdef HAVE_STRCASESTR
 # define __USE_GNU
-# define STRSTR(s1,s2) strcasestr(s1,s2)
+# define STRCASESTR(s1,s2) strcasestr(s1,s2)
 #else
-# define STRSTR(s1,s2) strstr(s1,s2)
+# define STRCASESTR(s1,s2) strstr(s1,s2)
+#endif
+#ifndef HAVE_STRNCASECMP
+# define STRNCASECMP(s1,s2,s3) strncasecmp(s1,s2,s3)
+#else
+# define STRNCASECMP(s1,s2,s3) strncmp(s1,s2,s3)
 #endif
 #ifdef HAVE_STRING_H
 # include <string.h>
@@ -68,6 +73,8 @@
 
 #define SIP_T2 8*SIP_T1
 
+#define SIP_TFINAL 30000
+
 #define SIPSAK_VERSION PACKAGE_VERSION
 #define BUFSIZE		4096
 
@@ -81,9 +88,6 @@
 
 #define VIA_SIP_STR "Via: SIP/2.0/UDP "
 #define VIA_SIP_STR_LEN (sizeof(VIA_SIP_STR) - 1)
-
-#define MAX_FRW_STR "Max-Forwards: "
-#define MAX_FRW_STR_LEN (sizeof(MAX_FRW_STR) - 1)
 
 #define SIP20_STR " SIP/2.0\r\n"
 #define SIP20_STR_LEN (sizeof(SIP20_STR) - 1)
@@ -108,32 +112,39 @@
 
 #define FROM_STR "From: "
 #define FROM_STR_LEN (sizeof(FROM_STR) - 1)
-#define FROM_SHORT_STR "f: "
+#define FROM_SHORT_STR "\nf: "
 #define FROM_SHORT_STR_LEN (sizeof(FROM_SHORT_STR) - 1)
 
 #define TO_STR "To: "
 #define TO_STR_LEN (sizeof(TO_STR) - 1)
-#define TO_SHORT_STR "t: "
+#define TO_SHORT_STR "\nt: "
 #define TO_SHORT_STR_LEN (sizeof(TO_SHORT_STR) - 1)
 
 #define VIA_STR "Via: "
 #define VIA_STR_LEN (sizeof(VIA_STR) - 1)
-#define VIA_SHORT_STR "v: "
+#define VIA_SHORT_STR "\nv: "
 #define VIA_SHORT_STR_LEN (sizeof(VIA_SHORT_STR) - 1)
 
 #define CALL_STR "Call-ID: "
 #define CALL_STR_LEN (sizeof(CALL_STR) - 1)
+#define CALL_SHORT_STR "\ni: "
+#define CALL_SHORT_STR_LEN (sizeof(CALL_SHORT_STR) - 1)
+
+#define MAX_FRW_STR "Max-Forwards: "
+#define MAX_FRW_STR_LEN (sizeof(MAX_FRW_STR) - 1)
 
 #define CSEQ_STR "CSeq: "
 #define CSEQ_STR_LEN (sizeof(CSEQ_STR) - 1)
 
 #define CONT_STR "Contact: "
 #define CONT_STR_LEN (sizeof(CONT_STR) - 1)
-#define CONT_SHORT_STR "m: "
+#define CONT_SHORT_STR "\nm: "
 #define CONT_SHORT_STR_LEN (sizeof(CONT_SHORT_STR) - 1)
 
 #define CON_TYP_STR "Content-Type: "
 #define CON_TYP_STR_LEN (sizeof(CON_TYP_STR) - 1)
+#define CON_TYP_SHORT_STR "\nc: "
+#define CON_TYP_SHORT_STR_LEN (sizeof(CON_TYP_SHORT_STR) - 1)
 
 #define CON_DIS_STR "Content-Disposition: "
 #define CON_DIS_STR_LEN (sizeof(CON_DIS_STR) - 1)
@@ -146,7 +157,7 @@
 
 #define CON_LEN_STR "Content-Length: "
 #define CON_LEN_STR_LEN (sizeof(CON_LEN_STR) - 1)
-#define CON_LEN_SHORT_STR "l: "
+#define CON_LEN_SHORT_STR "\nl: "
 #define CON_LEN_SHORT_STR_LEN (sizeof(CON_LEN_SHORT_STR) - 1)
 
 #define RR_STR "Record-Route: "
