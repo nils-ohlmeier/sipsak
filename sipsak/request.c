@@ -193,6 +193,7 @@ void create_msg(char *buff, int action){
 				"%s%u@%s\r\n"
 				"%s%i %s\r\n"
 				"%s0\r\n"
+				"%ssip:sipsak_conf@%s:%i\r\n"
 				"%ssipsak %s\r\n"
 				"\r\n", 
 				SIP200_STR, 
@@ -201,6 +202,7 @@ void create_msg(char *buff, int action){
 				CALL_STR, c, fqdn, 
 				CSEQ_STR, 3*namebeg+2, INV_STR, 
 				CON_LEN_STR,
+				CONT_STR, fqdn, lport,
 				UA_STR, SIPSAK_VERSION);
 			sprintf(ack, 
 				"%s sip:%s%s%s"

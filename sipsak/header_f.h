@@ -32,6 +32,8 @@ void uri_replace(char *mes, char *uri);
 
 void set_cl(char* mes, int contentlen);
 
+void cpy_rr(char* src, char *dst, int route);
+
 void build_ack(char *invite, char *reply, char *ack);
 
 void warning_extract(char *message);

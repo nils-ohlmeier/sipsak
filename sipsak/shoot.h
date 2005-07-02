@@ -1,5 +1,5 @@
 /*
- * $Id: shoot.h,v 1.5 2005/04/10 20:57:28 calrissian Exp $
+ * $Id$
  *
  * Copyright (C) 2002-2004 Fhg Fokus
  * Copyright (C) 2004-2005 Nils Ohlmeier
@@ -32,6 +32,6 @@
 # endif
 #endif
 
-void shoot(char *buff);
+void shoot(char *buff, int buff_size);
 
 #endif

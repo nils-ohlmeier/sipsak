@@ -86,12 +86,237 @@
 #define DEFAULT_TIMEOUT 5000
 #endif
 
-/*
-shot written by ashhar farhan, is not bound by any licensing at all.
-you are free to use this code as you deem fit. just dont blame the author
-for any problems you may have using it.
-bouquets and brickbats to farhan@hotfoon.com
-*/
+struct timezone tz;
+struct timeval sendtime, recvtime, tv, firstsendt, starttime, delaytime;
+int dontsend, dontrecv, usock, csock, retryAfter, randretrys, retrans_s_c;
+int i, send_counter;
+double senddiff;
+//char received[BUFSIZE];
+#ifdef RAW_SUPPORT
+int rawsock;
+#endif
+
+void send_message(char* mes, struct sockaddr *dest) {
+	int ret;
+
+	if (dontsend == 0) {
+		/* lets fire the request to the server and store when we did */
+		if (csock == -1) {
+			ret = sendto(usock, mes, strlen(mes), 0, dest, sizeof(struct sockaddr));
+		}
+		else {
+			ret = send(csock, mes, strlen(mes), 0);
+		}
+		(void)gettimeofday(&sendtime, &tz);
+		if (ret==-1) {
+			printf("\n");
+			perror("send failure");
+			exit_code(2);
+		}
+		send_counter++;
+	}
+	else {
+		dontsend = 0;
+	}
+}
+
+int check_for_message(char *recv, int size) {
+	fd_set	fd;
+	int ret = 0;
+	struct pollfd sockerr;
+
+	if (dontrecv == 0) {
+		/* set the timeout and wait for a response */
+		tv.tv_sec = retryAfter/1000;
+		tv.tv_usec = (retryAfter % 1000) * 1000;
+
+		FD_ZERO(&fd);
+		FD_SET(usock, &fd); 
+		if (csock != -1)
+			FD_SET(csock, &fd); 
+#ifdef RAW_SUPPORT
+		if (rawsock != -1)
+			FD_SET(rawsock, &fd); 
+#endif
+
+		ret = select(FD_SETSIZE, &fd, NULL, NULL, &tv);
+		(void)gettimeofday(&recvtime, &tz);
+	}
+	else {
+		dontrecv = 0;
+	}
+
+	if (ret == 0)
+	{
+		/* store the time of our first send */
+		if (send_counter==0)
+			memcpy(&firstsendt, &sendtime, sizeof(struct timeval));
+		if (retryAfter == SIP_T1)
+			memcpy(&starttime, &sendtime, sizeof(struct timeval));
+		/* lets see if we at least received an icmp error */
+		if (csock == -1) 
+			sockerr.fd=usock;
+		else
+			sockerr.fd=csock;
+		sockerr.events=POLLERR;
+		if ((poll(&sockerr, 1, 10))==1) {
+			if (sockerr.revents && POLLERR) {
+				if (csock == -1)
+					recvfrom(usock, recv, size, 0, NULL, 0);
+				else
+					recvfrom(csock, recv, size, 0, NULL, 0);
+				printf("\n");
+				perror("send failure");
+				if (randtrash == 1) 
+					printf ("last message before send failure:\n%s\n", request);
+				exit_code(3);
+			}
+		}
+		/* printout that we did not received anything */
+		if (trace == 1) {
+			printf("%i: timeout after %i ms\n", i, retryAfter);
+			i--;
+		}
+		else if (usrloc == 1||invite == 1||message == 1) {
+			printf("timeout after %i ms\n", retryAfter);
+			i--;
+		}
+		else if (verbose>0) 
+			printf("** timeout after %i ms**\n", retryAfter);
+		if (randtrash == 1) {
+			printf("did not get a response on this request:\n%s\n", request);
+			if (i+1 < nameend) {
+				if (randretrys == 2) {
+					printf("sended the following message three "
+							"times without getting a response:\n%s\n"
+							"give up further retransmissions...\n", request);
+					exit_code(3);
+				}
+				else {
+					printf("resending it without additional "
+							"random changes...\n\n");
+					randretrys++;
+				}
+			}
+		}
+		senddiff = deltaT(&starttime, &recvtime);
+		if (senddiff > (float)64 * (float)SIP_T1) {
+			if (verbose>0)
+				printf("*** giving up, no response after %.3f ms\n", senddiff);
+			exit_code(3);
+		}
+		/* set retry time according to RFC3261 */
+		if (retryAfter *2 < SIP_T2)
+			retryAfter = retryAfter * 2;
+		else
+			retryAfter = SIP_T2;
+		retrans_s_c++;
+		if (delaytime.tv_sec == 0)
+			memcpy(&delaytime, &sendtime, sizeof(struct timeval));
+		/* if we did not exit until here lets try another send */
+		return -1;
+	}
+	else if ( ret == -1 ) {
+		perror("select error");
+		exit_code(2);
+	}
+	else if (FD_ISSET(usock, &fd) || ((csock != -1) && FD_ISSET(csock, &fd))) {
+		if (FD_ISSET(usock, &fd))
+			ret = usock;
+		else
+			ret = csock;
+		/* no timeout, no error ... something has happened :-) */
+	 	if (trace == 0 && usrloc ==0 && invite == 0 && message == 0 && randtrash == 0 && (verbose > 1))
+			printf ("\nmessage received:\n");
+	}
+#ifdef RAW_SUPPORT
+	else if ((rawsock != -1) && FD_ISSET(rawsock, &fd)) {
+		if (verbose > 1)
+			printf("\nreceived ICMP packet");
+		ret = rawsock;
+	}
+#endif
+	else {
+		printf("\nselect returned succesfuly, nothing received\n");
+		return -1;
+	}
+	return ret;
+}
+
+int recv_message(char *buf, int size) {
+	int ret = 0;
+	int sock = 0;
+#ifdef RAW_SUPPORT
+	struct sockaddr_in faddr;
+	struct ip 		*r_ip_hdr, *s_ip_hdr;
+	struct icmp 	*icmp_hdr;
+	struct udphdr 	*udp_hdr;
+	size_t r_ip_len, s_ip_len, icmp_len;
+	int srcport, dstport;
+	unsigned int flen;
+	char fstr[INET_ADDRSTRLEN];
+#endif
+
+	sock = check_for_message(buf, size);
+	if (sock <= 1) {
+		return -1;
+	}
+	if (sock != rawsock) {
+		ret = recvfrom(sock, buf, size, 0, NULL, 0);
+	}
+#ifdef RAW_SUPPORT
+	else {
+		/* lets check if the ICMP message matches with our 
+		   sent packet */
+		flen = sizeof(faddr);
+		memset(&faddr, 0, sizeof(struct sockaddr));
+		ret = recvfrom(rawsock, buf, size, 0, (struct sockaddr *)&faddr, &flen);
+		if (ret == -1) {
+			perror("error while trying to read from icmp raw socket");
+			exit_code(2);
+		}
+		r_ip_hdr = (struct ip *) buf;
+		r_ip_len = r_ip_hdr->ip_hl << 2;
+
+		icmp_hdr = (struct icmp *) (buf + r_ip_len);
+		icmp_len = ret - r_ip_len;
+
+		if (icmp_len < 8) {
+			if (verbose > 1)
+				printf(": ignoring (ICMP header length below 8 bytes)\n");
+			return 0;
+		}
+		else if (icmp_len < 36) {
+			if (verbose > 1)
+				printf(": ignoring (ICMP message too short to contain IP and UDP header)\n");
+			return 0;
+		}
+		s_ip_hdr = (struct ip *) ((char *)icmp_hdr + 8);
+		s_ip_len = s_ip_hdr->ip_hl << 2;
+		if (s_ip_hdr->ip_p == IPPROTO_UDP) {
+			udp_hdr = (struct udphdr *) ((char *)s_ip_hdr + s_ip_len);
+			srcport = ntohs(udp_hdr->uh_sport);
+			dstport = ntohs(udp_hdr->uh_dport);
+			if ((srcport == lport) && (dstport == rport)) {
+				inet_ntop(AF_INET, &faddr.sin_addr, fstr, INET_ADDRSTRLEN);
+				printf(" (type: %u, code: %u): from %s\n", icmp_hdr->icmp_type, icmp_hdr->icmp_code, fstr);
+				exit_code(3);
+			}
+			else {
+				if (verbose > 2)
+					printf(": ignoring (ICMP error does not match send data)\n");
+				return 0;
+			}
+		}
+		else {
+			if (verbose > 1)
+				printf(": ignoring (ICMP data is not a UDP packet)\n");
+			return 0;
+		}
+	}
+#endif
+	return ret;
+}
 
 /* if a reply was received successfuly, return success, unless 
  * reply matching is enabled and no match occured
@@ -108,40 +333,29 @@ inline static void on_success(char *reply)
 }
 
 /* this is the main function with the loops and modes */
-void shoot(char *buff)
+void shoot(char *buff, int buff_size)
 {
 	struct sockaddr_in	addr;
-	struct timeval	tv, sendtime, recvtime, firstsendt, delaytime, starttime;
-	struct timezone tz;
+	//struct timeval	tv, sendtime, recvtime, firstsendt, delaytime, starttime;
+	//struct timezone tz;
 	struct timespec sleep_ms_s, sleep_rem;
-	struct pollfd 	sockerr;
-	int redirected, retryAfter, nretries;
-	int usock, csock, i, len, ret;
-	int dontsend, dontrecv, cseqtmp, rand_tmp;
-	int rem_rand, retrans_r_c, retrans_s_c;
-	int randretrys = 0;
+	int redirected, nretries;
+	int ret;
+	int cseqtmp, rand_tmp;
+	int rem_rand, retrans_r_c;
+	//int randretrys = 0;
 	int cseqcmp = 0;
 	int rem_namebeg = 0;
-	double big_delay, tmp_delay, senddiff;
+	double big_delay, tmp_delay;
 	char *contact, *foo, *lport_str;
 	char *crlf = NULL;
 	char reply[BUFSIZE];
-	fd_set	fd;
+	//fd_set	fd;
 	socklen_t slen;
-	regex_t redexp, proexp, okexp, tmhexp, errexp, authexp;
+	regex_t redexp, proexp, okexp, tmhexp, errexp, authexp, replyexp;
 	enum usteps { REG_REP, INV_RECV, INV_OK_RECV, INV_ACK_RECV, MES_RECV, 
 					MES_OK_RECV, UNREG_REP};
 	enum usteps usrlocstep = REG_REP;
-#ifdef RAW_SUPPORT
-	struct sockaddr_in faddr;
-	struct ip 		*r_ip_hdr, *s_ip_hdr;
-	struct icmp 	*icmp_hdr;
-	struct udphdr 	*udp_hdr;
-	size_t r_ip_len, s_ip_len, icmp_len;
-	int srcport, dstport, rawsock;
-	unsigned int flen;
-	char fstr[INET_ADDRSTRLEN];
-#endif
 
 	/* the vars are filled by configure */
 	nretries = DEFAULT_RETRYS;
@@ -234,6 +448,8 @@ void shoot(char *buff)
 		replace_string(buff, "$replace$", replace_str);
 
 	/* set all regular expression to simplfy the result code indetification */
+	regcomp(&replyexp, "^SIP/[0-9]\\.[0-9] ", 
+		REG_EXTENDED|REG_NOSUB|REG_ICASE); 
 	regcomp(&proexp, "^SIP/[0-9]\\.[0-9] 1[0-9][0-9] ", 
 		REG_EXTENDED|REG_NOSUB|REG_ICASE); 
 	regcomp(&okexp, "^SIP/[0-9]\\.[0-9] 200 ", 
@@ -319,6 +535,8 @@ void shoot(char *buff)
 		if(via_ins == 1)
 			add_via(buff);
 	}
+
+	request = buff;
 
 	/* if we got a redirect this loop ensures sending to the 
 	   redirected server*/
@@ -410,217 +628,11 @@ void shoot(char *buff)
 				sleep_ms_s.tv_nsec = (rand_tmp % 1000) * 1000;
 			}
 
-			if (dontsend == 0) {
-				/* lets fire the request to the server and store when we did */
-				if (csock == -1) {
-					ret = sendto(usock, buff, strlen(buff), 0, (struct sockaddr *)&addr, sizeof(addr));
-				}
-				else {
-					ret = send(csock, buff, strlen(buff), 0);
-				}
-				(void)gettimeofday(&sendtime, &tz);
-				if (ret==-1) {
-					printf("\n");
-					perror("send failure");
-					exit_code(2);
-				}
-			}
-			else {
-				i--;
-				dontsend = 0;
-			}
+			send_message(request, (struct sockaddr *)&addr);
 
 			/* in flood we are only interested in sending so skip the rest */
 			if (flood == 0) {
-				if (! dontrecv) {
-					/* set the timeout and wait for a response */
-					tv.tv_sec = retryAfter/1000;
-					tv.tv_usec = (retryAfter % 1000) * 1000;
-
-					FD_ZERO(&fd);
-					FD_SET(usock, &fd); 
-					if (csock != -1)
-						FD_SET(csock, &fd); 
-#ifdef RAW_SUPPORT
-					if (rawsock != -1)
-						FD_SET(rawsock, &fd); 
-#endif
-
-					ret = select(FD_SETSIZE, &fd, NULL, NULL, &tv);
-					(void)gettimeofday(&recvtime, &tz);
-				}
-				else {
-					i--;
-					dontrecv = 0;
-					if (STRNCASECMP(buff, "ACK", 3) == 0) {
-						swap_buffers(buff, ack);
-						increase_cseq(buff);
-					}
-					if (usrlocstep == INV_OK_RECV) {
-						increase_cseq(confirm);
-						increase_cseq(ack);
-						usrlocstep = INV_RECV;
-					}
-					continue;
-				}
-
-				if (ret == 0)
-				{
-					/* store the time of our first send */
-					if (i==0)
-						memcpy(&firstsendt, &sendtime, sizeof(struct timeval));
-					if (retryAfter == SIP_T1)
-						memcpy(&starttime, &sendtime, sizeof(struct timeval));
-					/* lets see if we at least received an icmp error */
-					if (csock == -1) 
-						sockerr.fd=usock;
-					else
-						sockerr.fd=csock;
-					sockerr.events=POLLERR;
-					if ((poll(&sockerr, 1, 10))==1) {
-						if (sockerr.revents && POLLERR) {
-							if (csock == -1)
-								recv(usock, reply, strlen(reply), 0);
-							else
-								recv(csock, reply, strlen(reply), 0);
-							printf("\n");
-							perror("send failure");
-							if (randtrash == 1) 
-								printf ("last message before send failure:"
-									"\n%s\n", buff);
-							exit_code(3);
-						}
-					}
-					/* printout that we did not received anything */
-					if (trace == 1) {
-						printf("%i: timeout after %i ms\n", i, 
-									retryAfter);
-						i--;
-					}
-					else if (usrloc == 1||invite == 1||message == 1) {
-						printf("timeout after %i ms\n", retryAfter);
-						i--;
-					}
-					else if (verbose>0) printf("** timeout after %i ms**\n", 
-										retryAfter);
-					if (randtrash == 1) {
-						printf("did not get a response on this request:"
-							"\n%s\n", buff);
-						if (i+1 < nameend) {
-							if (randretrys == 2) {
-								printf("sended the following message three "
-									"times without getting a response:\n%s\n"
-									"give up further retransmissions...\n", 
-									buff);
-								exit_code(3);
-							}
-							else {
-								printf("resending it without additional "
-									"random changes...\n\n");
-								randretrys++;
-							}
-						}
-					}
-					senddiff = deltaT(&starttime, &recvtime);
-					if (senddiff > (float)64 * (float)SIP_T1) {
-						if (verbose>0)
-							printf("*** giving up, no response after %.3f ms\n",
-								senddiff);
-						else if (timing)
-							printf("%.3f ms\n", senddiff);
-						exit_code(3);
-					}
-					/* set retry time according to RFC3261 */
-					if (retryAfter *2 < SIP_T2)
-						retryAfter = retryAfter * 2;
-					else
-						retryAfter = SIP_T2;
-					retrans_s_c++;
-					if (delaytime.tv_sec == 0)
-						memcpy(&delaytime, &sendtime, sizeof(struct timeval));
-					/* if we did not exit until here lets try another send */
-					continue;
-				}
-				else if ( ret == -1 ) {
-					perror("select error");
-					exit_code(2);
-				}
-				else if (FD_ISSET(usock, &fd) || ((csock != -1) && FD_ISSET(csock, &fd))) {
-					/* no timeout, no error ... something has happened :-) */
-				 	if (trace == 0 && usrloc ==0 && invite == 0 && message == 0 && randtrash == 0 && (verbose > 1))
-						printf ("\nmessage received:\n");
-				}
-#ifdef RAW_SUPPORT
-				else if ((rawsock != -1) && FD_ISSET(rawsock, &fd)) {
-					if (verbose > 1)
-						printf("\nreceived ICMP packet");
-				}
-#endif
-				else {
-					printf("\nselect returned succesfuly, nothing received\n");
-					continue;
-				}
-
-				/* we are retrieving only the extend of a decent 
-				   MSS = 1500 bytes */
-				len = sizeof(addr);
-				if (FD_ISSET(usock, &fd)) {
-					ret = recv(usock, reply, BUFSIZE, 0);
-				}
-				else if ((csock != -1) && (FD_ISSET(csock, &fd))) {
-					ret = recv(csock, reply, BUFSIZE, 0);
-				}
-#ifdef RAW_SUPPORT
-				else if ((rawsock != -1) && (FD_ISSET(rawsock, &fd))) {
-					/* lets check if the ICMP message matches with our 
-					   sent packet */
-					flen = sizeof(faddr);
-					memset(&faddr, 0, sizeof(addr));
-					ret = recvfrom(rawsock, reply, BUFSIZE, 0, (struct sockaddr *)&faddr, &flen);
-					if (ret == -1) {
-						perror("error while trying to read from icmp raw socket");
-						exit_code(2);
-					}
-					r_ip_hdr = (struct ip *) reply;
-					r_ip_len = r_ip_hdr->ip_hl << 2;
-
-					icmp_hdr = (struct icmp *) (reply + r_ip_len);
-					icmp_len = ret - r_ip_len;
-
-					if (icmp_len < 8) {
-						if (verbose > 1)
-							printf(": ignoring (ICMP header length below 8 bytes)\n");
-						continue;
-					}
-					else if (icmp_len < 36) {
-						if (verbose > 1)
-							printf(": ignoring (ICMP message too short to contain IP and UDP header)\n");
-						continue;
-					}
-					s_ip_hdr = (struct ip *) ((char *)icmp_hdr + 8);
-					s_ip_len = s_ip_hdr->ip_hl << 2;
-					if (s_ip_hdr->ip_p == IPPROTO_UDP) {
-						udp_hdr = (struct udphdr *) ((char *)s_ip_hdr + s_ip_len);
-						srcport = ntohs(udp_hdr->uh_sport);
-						dstport = ntohs(udp_hdr->uh_dport);
-						if ((srcport == lport) && (dstport == rport)) {
-							inet_ntop(AF_INET, &faddr.sin_addr, fstr, INET_ADDRSTRLEN);
-							printf(" (type: %u, code: %u): from %s\n", icmp_hdr->icmp_type, icmp_hdr->icmp_code, fstr);
-							exit_code(3);
-						}
-						else {
-							if (verbose > 2)
-								printf(": ignoring (ICMP error does not match send data)\n");
-							continue;
-						}
-					}
-					else {
-						if (verbose > 1)
-							printf(": ignoring (ICMP data is not a UDP packet)\n");
-						continue;
-					}
-				}
-#endif
+				ret = recv_message(&reply[0], sizeof(reply));
 				if(ret > 0)
 				{
 					reply[ret] = '\0';
@@ -634,6 +646,19 @@ void shoot(char *buff)
 						if (tmp_delay > big_delay) big_delay = tmp_delay;
 						delaytime.tv_sec = 0;
 						delaytime.tv_usec = 0;
+					}
+					/* send ACK for non-provisional reply on INVITE */
+					if ((strncmp(request, "INVITE", 6)==0) && 
+							(regexec(&replyexp, reply, 0, 0, 0)==0) && 
+							(regexec(&proexp, reply, 0, 0, 0)!=0)) { 
+						build_ack(request, reply, ack);
+						/* lets fire the ACK to the server */
+						if (csock == -1) {
+							ret = sendto(usock, ack, strlen(ack), 0, (struct sockaddr *)&addr, sizeof(addr));
+						}
+						else {
+							ret = send(csock, ack, strlen(ack), 0);
+						}
 					}
 					/* check for old CSeq => ignore retransmission */
 					if (usrloc == 0 && invite == 0 && message == 0)
@@ -914,6 +939,8 @@ void shoot(char *buff)
 									cpy_vias(reply, confirm);
 									cpy_to(reply, confirm);
 									strcpy(buff, confirm);
+									build_ack(request, confirm, ack);
+									strcpy(request, confirm);
 									usrlocstep=INV_OK_RECV;
 								}
 								else {
@@ -956,8 +983,7 @@ void shoot(char *buff)
 									sprintf(messusern, "%s sip:%s%i", ACK_STR, 
 										username, namebeg);
 								else
-									sprintf(messusern, "%s sip:%s", ACK_STR, 
-										username);
+									sprintf(messusern, "%s sip:sipsak_conf", ACK_STR);
 								if (STRNCASECMP(reply, messusern, 
 									strlen(messusern))==0) {
 									if (verbose > 1)
@@ -1291,8 +1317,7 @@ void shoot(char *buff)
 									build_ack(buff, reply, ack);
 									/* ACK must be in new transaction */
 									if((foo = STRCASESTR(ack,"branch=z9hG4bK.")) != NULL) {
-										snprintf(fstr,9,"%08x",rand());
-										memcpy(foo+15,fstr,8);
+										snprintf(foo+15, 9, "%08x", rand());
 									}
 									if (verbose > 1)
 						 	      		printf("Sending ACK\n%s\n", ack);
@@ -1311,6 +1336,9 @@ void shoot(char *buff)
 					} /* redirect, auth, and modes */
 		
 				} /* ret > 0 */
+				else if (ret == -1) {
+					continue;
+				}
 				else {
 					if (usrloc == 1)
 						printf("failed\n");

@@ -263,6 +263,52 @@ void set_cl(char* mes, int contentlen) {
 		printf("New message with changed Content-Length:\n%s\n", mes);
 }
 
+/* copies the Record-Route header from src to dst.
+ * if route is set Record-Route will be replaced by Route */
+void cpy_rr(char* src, char *dst, int route) {
+	char *rr, *cr, *cr2, *backup;
+	int len;
+
+	cr = strchr(dst, '\n');
+	if (cr == NULL) {
+		printf("failed to end of line in destination\n");
+		exit_code(3);
+	}
+	cr++;
+	backup=malloc(strlen(cr)+1);
+	if (!backup) {
+		printf("failed to allocate memory\n");
+		exit_code(255);
+	}
+	strncpy(backup, cr, strlen(cr)+1);
+	rr = strstr(src, RR_STR);
+	if (route == 0)
+		len = RR_STR_LEN;
+	else
+		len = ROUTE_STR_LEN;
+	while (rr != NULL) {
+		if (route == 0) {
+			strncpy(cr, RR_STR, RR_STR_LEN);
+		}
+		else {
+			strncpy(cr, ROUTE_STR, ROUTE_STR_LEN);
+		}
+		cr += len;
+		cr2 = strchr(rr, '\n');
+		if (cr2 == NULL) {
+			printf("error: failed to find end of line\n");
+			exit_code(3);
+		}
+		strncpy(cr, rr + RR_STR_LEN, (cr2 - (rr + len) + 1));
+		cr+=(cr2 - (rr + RR_STR_LEN) + 1);
+		rr = strstr(++rr, RR_STR);
+	}
+	strncpy(cr, backup, strlen(backup)+1);
+	free(backup);
+	if (verbose > 2)
+		printf("New message with inserted Route:\n%s\n", dst);
+}
+
 /* build an ACK from the given invite and reply.
  * NOTE: space has to be allocated allready for the ACK */
 void build_ack(char *invite, char *reply, char *ack) {
@@ -282,6 +328,7 @@ void build_ack(char *invite, char *reply, char *ack) {
 		}
 		cpy_to(reply, ack);
 		set_cl(ack, 0);
+		cpy_rr(reply, ack, 1);
 	}
 }
 
@@ -424,7 +471,7 @@ void parse_uri(char *uri, char **scheme, char **user, char **host, int *port)
 	}
 }
 
-/* return the URI from the Contact of the message if found */
+/* return a copy of the URI from the Contact of the message if found */
 char* uri_from_contact(char *message)
 {
 	char *contact, *end, *tmp, c;
@@ -439,6 +486,10 @@ char* uri_from_contact(char *message)
 
 	if((end=strchr(contact,'\r'))!=NULL) {
 		c = '\r';
+		*end = '\0';
+	}
+	else if((end=strchr(contact,'\n'))!=NULL) {
+		c = '\n';
 		*end = '\0';
 	}
 	else {

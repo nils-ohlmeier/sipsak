@@ -274,7 +274,7 @@ int main(int argc, char *argv[])
 	numeric=via_ins=redirects=fix_crlf=processes = 1;
 	username=password=replace_str=hostname=contact_uri=mes_body = NULL;
 	con_dis=auth_username = NULL;
-	scheme = user = host = backup = NULL;
+	scheme = user = host = backup = request = NULL;
 	re = NULL;
 	address = 0;
 	rport = port = 0;
@@ -471,7 +471,7 @@ int main(int argc, char *argv[])
 					exit_code(2);
 				}
 				break;
-	        case 'P':
+			case 'P':
 				processes=str_to_int(optarg);
 				if (!processes) {
 					printf("error: non-numerical number of processes\n");
@@ -515,7 +515,7 @@ int main(int argc, char *argv[])
 					printf("error: sips is not supported yet\n");
 					exit_code(2);
 				}
-        else if (!STRNCASECMP(optarg,"sip",3)){
+				else if (STRNCASECMP(optarg,"sip",3) != 0){
 					printf("error: scheme of sip uri has to be sip\n");
 					exit_code(2);
 				}
@@ -580,10 +580,10 @@ int main(int argc, char *argv[])
 				printf(", SRV_SUPPORT");
 #endif
 #ifdef HAVE_STRCASESTR
-        printf(", STR_CASE_INSENSITIVE");
+				printf(", STR_CASE_INSENSITIVE");
 #endif
 #ifdef HAVE_STRNCASECMP
-        printf(", CMP_CASE_INSENSITIVE");
+				printf(", CMP_CASE_INSENSITIVE");
 #endif
 				printf("\n");
 				exit_code(0);
@@ -782,7 +782,7 @@ int main(int argc, char *argv[])
 			upp = (nameend - namebeg + 1) / processes;
 			namebeg = namebeg + upp * i;
 			nameend = namebeg + upp;
-			shoot(buff);
+			shoot(&buff[0], sizeof(buff));
 		} else {
 			if (lport) {
 				lport++;
@@ -804,7 +804,7 @@ int main(int argc, char *argv[])
 		namebeg = namebeg + upp * i;
 		nameend = namebeg + upp;
 	}
-	shoot(buff);
+	shoot(&buff[0], sizeof(buff));
 
 	/* normaly we won't come back here, but to satisfy the compiler */
 	return 0;

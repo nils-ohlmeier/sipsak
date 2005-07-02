@@ -73,8 +73,6 @@
 
 #define SIP_T2 8*SIP_T1
 
-#define SIP_TFINAL 30000
-
 #define SIPSAK_VERSION PACKAGE_VERSION
 #define BUFSIZE		4096
 
@@ -240,10 +238,9 @@ int file_b, uri_b, trace, via_ins, usrloc, redirects, rand_rem, replace_b;
 int empty_contact, nagios_warn, fix_crlf, timing;
 char *username, *domainname, *password, *replace_str, *hostname, *contact_uri;
 char *mes_body, *con_dis, *auth_username;
-char fqdn[FQDN_SIZE];
-char messusern[FQDN_SIZE];
-char confirm[BUFSIZE];
-char ack[BUFSIZE];
+char fqdn[FQDN_SIZE], messusern[FQDN_SIZE];
+char confirm[BUFSIZE], ack[BUFSIZE];
+char *request;
 regex_t* re;
 int processes;
 

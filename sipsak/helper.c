@@ -355,15 +355,38 @@ int is_number(char *number)
 int str_to_int(char *num)
 {
 	int ret;
+
 #ifdef HAVE_STRTOL
 	ret = strtol(num, NULL, 10);
-	if (errno != 0) {
+	if (errno == EINVAL || errno == ERANGE) {
+		printf("%s\n", num);
+		perror("integer converting error");
+		exit_code(2);
+	}
 #else
-	ret = atoi(num);
+	char backup;
+	int len = strlen(num);
+	char *start = num;
+	char *end = num + len;
+
+	while (!isdigit(*start) && isspace(*start) && start < end)
+		start++;
+	end = start;
+	end++;
+	while (end < num + len && *end != '\0' && !isspace(*end))
+		end++;
+	backup = *end;
+	*end = '\0';
+	if (!is_number(start)) {
+		printf("error: string is not a number: %s\n", start);
+		exit_code(2);
+	}
+	ret = atoi(start);
+	*end = backup;
 	if (ret <= 0) {
-#endif
 		printf("error: failed to convert string to integer: %s\n", num);
 		exit_code(2);
 	}
+#endif
 	return ret;
 }
