@@ -56,6 +56,7 @@
 #endif
 
 #include "helper.h"
+#include "header_f.h"
 #include "shoot.h"
 #include "exit_code.h"
 
@@ -213,8 +214,8 @@ int main(int argc, char *argv[])
 {
 	FILE	*pf;
 	char	buff[BUFSIZE];
-	int	length, c, i, j;
-	char	*delim, *delim2;
+	int	length, c, i, j, port;
+	char	*scheme, *user, *host, *backup;
 	pid_t 	pid;
 	struct timespec ts;
 	int 	upp;
@@ -273,9 +274,10 @@ int main(int argc, char *argv[])
 	numeric=via_ins=redirects=fix_crlf=processes = 1;
 	username=password=replace_str=hostname=contact_uri=mes_body = NULL;
 	con_dis=auth_username = NULL;
+	scheme = user = host = backup = NULL;
 	re = NULL;
 	address = 0;
-	rport = 0;
+	rport = port = 0;
 	expires_t = USRLOC_EXP_DEF;
 	memset(buff, 0, BUFSIZE);
 	memset(confirm, 0, BUFSIZE);
@@ -301,7 +303,7 @@ int main(int argc, char *argv[])
 				timing=1;
 				break;
 			case 'b':
-				if ((namebeg=atoi(optarg))==-1) {
+				if ((namebeg=str_to_int(optarg))==-1) {
 					printf("error: non-numerical appendix begin for the "
 						"username\n");
 					exit_code(2);
@@ -316,31 +318,36 @@ int main(int argc, char *argv[])
 				if (!STRNCASECMP(optarg, "empty", 5) || !STRNCASECMP(optarg, "none", 4)) {
 					empty_contact = 1;
 				}
-				else if (((delim=STRCASESTR(optarg,"sip:"))!=NULL) ||
-					((delim=STRCASESTR(optarg,"sips:"))!=NULL)) {
-			 		if (strchr(optarg,'@')<delim) {
-						printf("error: missing '@' in Contact uri\n");
-						exit_code(2);
-					}
-					else {
-						contact_uri=malloc(strlen(optarg)+1);
-						memset(contact_uri, 0, strlen(optarg)+1);
-						strncpy(contact_uri, optarg, strlen(optarg));
-					}
-				}
 				else if ((strlen(optarg)==1) && (!strncmp(optarg, "*", 1))) {
 					contact_uri=malloc(strlen(optarg)+1);
 					memset(contact_uri, 0, strlen(optarg)+1);
-					strncpy(contact_uri, optarg, strlen(optarg));
+					strcpy(contact_uri, optarg);
 				}
-				else{
+				backup=malloc(strlen(optarg)+1);
+				if (!backup) {
+					printf("error: failed to allocate memory\n");
+					exit_code(2);
+				}
+				memset(backup, 0, strlen(optarg)+1);
+				strcpy(backup, optarg);
+				parse_uri(backup, &scheme, &user, &host, &port);
+				if (scheme == NULL) {
 				    printf("error: REGISTER Contact uri doesn't not contain "
-					   "sip:, *, or is not empty\n");
+					   "sip:, sips:, *, or is not empty\n");
 				    exit_code(2);
+				}
+				else if (user == NULL) {
+					printf("error: missing username in Contact uri\n");
+					exit_code(2);
+				}
+				else {
+					contact_uri=malloc(strlen(optarg)+1);
+					memset(contact_uri, 0, strlen(optarg)+1);
+					strcpy(contact_uri, optarg);
 				}
 				break;
 			case 'c':
-				if ((namebeg=atoi(optarg))==-1) {
+				if ((namebeg=str_to_int(optarg))==-1) {
 					printf("error: non-numerical CSeq maximum\n");
 					exit_code(2);
 				}
@@ -349,7 +356,7 @@ int main(int argc, char *argv[])
 				redirects=0;
 				break;
 			case 'e':
-				if ((nameend=atoi(optarg))==-1) {
+				if ((nameend=str_to_int(optarg))==-1) {
 					printf("error: non-numerical appendix end for the "
 						"username\n");
 					exit_code(2);
@@ -409,7 +416,7 @@ int main(int argc, char *argv[])
 				invite=1;
 				break;
 			case 'l':
-				lport=atoi(optarg);
+				lport=str_to_int(optarg);
 				if (!lport) {
 					printf("error: non-numerical local port number");
 					exit_code(2);
@@ -419,7 +426,7 @@ int main(int argc, char *argv[])
 				fix_crlf=0;
 				break;
 			case 'm':
-				maxforw=atoi(optarg);
+				maxforw=str_to_int(optarg);
 				if (maxforw==-1) {
 					printf("error: non-numerical number of max-forwards\n");
 					exit_code(2);
@@ -440,7 +447,7 @@ int main(int argc, char *argv[])
 					sleep_ms = -2;
 				}
 				else {
-					sleep_ms = atoi(optarg);
+					sleep_ms = str_to_int(optarg);
 					if (!sleep_ms) {
 						printf("error: non-numerical sleep value\n");
 						exit_code(2);
@@ -453,20 +460,11 @@ int main(int argc, char *argv[])
 				*(con_dis+strlen(optarg)) = '\0';
 				break;
 			case 'p':
-				if ((delim=strchr(optarg,':'))!=NULL){
-					*delim = '\0';
-					delim++;
-					rport = atoi(delim);
-					if (!rport) {
-						printf("error: non-numerical outbound proxy port "
-							"number\n");
-						exit_code(2);
-					}
-				}
-				if (!rport)
-					address = getsrvaddress(optarg, &rport);
+				parse_uri(optarg, &scheme, &user, &host, &port);
+				if (!port)
+					address = getsrvaddress(host, &rport);
 				if (!address)
-					address = getaddress(optarg);
+					address = getaddress(host);
 				if (!address){
 					printf("error:unable to determine the outbound proxy "
 						"address\n");
@@ -474,7 +472,7 @@ int main(int argc, char *argv[])
 				}
 				break;
 	        case 'P':
-				processes=atoi(optarg);
+				processes=str_to_int(optarg);
 				if (!processes) {
 					printf("error: non-numerical number of processes\n");
 					exit_code(2);
@@ -498,7 +496,7 @@ int main(int argc, char *argv[])
 				};
 				break;
 			case 'r':
-				rport=atoi(optarg);
+				rport=str_to_int(optarg);
 				if (!rport) {
 					printf("error: non-numerical remote port number\n");
 					exit_code(2);
@@ -508,62 +506,41 @@ int main(int argc, char *argv[])
 				randtrash=1;
 				break;
 			case 's':
-				/* we try to extract as much informationas we can from the uri*/
+				parse_uri(optarg, &scheme, &user, &host, &rport);
+				if (scheme == NULL) {
+					printf("error: missing scheme in sip uri\n");
+					exit_code(2);
+				}
 				if (!STRNCASECMP(optarg,"sips",4)){
 					printf("error: sips is not supported yet\n");
 					exit_code(2);
-        }
-        else if (!STRNCASECMP(optarg,"sip",3)){
-					if ((delim=strchr(optarg,':'))!=NULL){
-						delim++;
-						if ((delim2=strchr(delim,'@'))!=NULL){
-							username=malloc(delim2-delim+1);
-							strncpy(username, delim, delim2-delim);
-							*(username+(delim2-delim)) = '\0';
-							delim2++;
-							delim=delim2;
-						}
-						if ((delim2=strchr(delim,':'))!=NULL){
-							domainname=malloc(strlen(delim)+1);
-							strncpy(domainname, delim, strlen(delim));
-							*(domainname+strlen(delim)) = '\0';
-							*delim2 = '\0';
-							delim2++;
-							rport = atoi(delim2);
-							if (!rport) {
-								printf("error: non-numerical remote port "
-									"number\n");
-								exit_code(2);
-							}
-						}
-						else {
-							domainname=malloc(strlen(delim)+1);
-							strncpy(domainname, delim, strlen(delim));
-							*(domainname+strlen(delim)) = '\0';
-						}
-						if (!rport && !address)
-							address = getsrvaddress(delim, &rport);
-						if (!address)
-							address = getaddress(delim);
-						if (!address){
-							printf("error:unable to determine the remote host "
-								"address\n");
-							exit_code(2);
-						}
-					}
-					else{
-						printf("error: SIPURI doesn't contain a : ?!\n");
-						exit_code(2);
-					}
 				}
-				else{
-					printf("error: SIPURI doesn't not begin with sip\n");
+        else if (!STRNCASECMP(optarg,"sip",3)){
+					printf("error: scheme of sip uri has to be sip\n");
+					exit_code(2);
+				}
+				if (user != NULL) {
+					username = user;
+				}
+				if (host != NULL) {
+					domainname = host;
+				}
+				else {
+					printf("error: missing hostname in sip uri\n");
+					exit_code(2);
+				}
+				if (!rport && !address)
+					address = getsrvaddress(domainname, &rport);
+				if (!address)
+					address = getaddress(domainname);
+				if (!address){
+					printf("error:unable to determine the IP address for: %s\n", domainname);
 					exit_code(2);
 				}
 				uri_b=1;
 				break;			break;
 			case 't':
-				trashchar=atoi(optarg);
+				trashchar=str_to_int(optarg);
 				if (!trashchar) {
 					printf("error: non-numerical number of trashed "
 						"character\n");
@@ -615,10 +592,10 @@ int main(int argc, char *argv[])
 				warning_ext=1;
 				break;
 			case 'W':
-				nagios_warn = atoi(optarg);
+				nagios_warn = str_to_int(optarg);
 				break;
 			case 'x':
-				expires_t=atoi(optarg);
+				expires_t=str_to_int(optarg);
 				break;
 #ifdef HAVE_GETOPT_LONG
 			case 'X':

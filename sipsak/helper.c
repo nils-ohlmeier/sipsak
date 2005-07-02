@@ -40,7 +40,10 @@
 # include <netinet/in.h>
 #endif
 #ifdef HAVE_RULI_H
-#  include <ruli.h>
+# include <ruli.h>
+#endif
+#ifdef HAVE_ERRNO_H
+# include <errno.h>
 #endif
 
 #include "helper.h"
@@ -338,3 +341,29 @@ double deltaT(struct timeval *t1p, struct timeval *t2p)
         return (dt);
 }
 
+/* returns one if the string contains only numbers otherwise zero */
+int is_number(char *number)
+{
+	int digit = 1;
+	while (digit && (*number != '\0')) {
+		digit = isdigit(*number);
+		number++;
+	}
+	return digit;
+}
+
+int str_to_int(char *num)
+{
+	int ret;
+#ifdef HAVE_STRTOL
+	ret = strtol(num, NULL, 10);
+	if (errno != 0) {
+#else
+	ret = atoi(num);
+	if (ret <= 0) {
+#endif
+		printf("error: failed to convert string to integer: %s\n", num);
+		exit_code(2);
+	}
+	return ret;
+}

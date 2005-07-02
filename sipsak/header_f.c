@@ -18,6 +18,7 @@
  */
 
 #include "sipsak.h"
+
 #include "header_f.h"
 #include "exit_code.h"
 #include "helper.h"
@@ -325,7 +326,7 @@ int cseq(char *message)
 	cseq=STRCASESTR(message, CSEQ_STR);
 	if (cseq) {
 		cseq+=6;
-		num=atoi(cseq);
+		num=str_to_int(cseq);
 		if (num < 1) {
 			if (verbose > 2)
 				printf("CSeq found but not convertable\n");
@@ -368,6 +369,59 @@ void increase_cseq(char *message)
 	}
 	else if (verbose > 1)
 		printf("'CSeq' not found in message\n");
+}
+
+/* separates the given URI into the parts by setting the pointer but it
+   destroyes the URI */
+void parse_uri(char *uri, char **scheme, char **user, char **host, int *port)
+{
+	char *col, *col2, *at;
+	col = col2 = at = NULL;
+	*port = 0;
+	*scheme = *user = *host = NULL;
+	if ((col=strchr(uri,':'))!=NULL) {
+		if ((at=strchr(uri,'@'))!=NULL) {
+			*col = '\0';
+			*at = '\0';
+			if (at > col) {
+				*scheme = uri;
+				*user = ++col;
+				*host = ++at;
+				if ((col2=strchr(*host,':'))!=NULL) {
+					*col2 = '\0';
+					*port = str_to_int(++col2);
+				}
+			}
+			else {
+				*user = uri;
+				*host = ++at;
+				*port = str_to_int(++col);
+			}
+		}
+		else {
+			*col = '\0';
+			col++;
+			if ((col2=strchr(col,':'))!=NULL) {
+				*col2 = '\0';
+				*scheme = uri;
+				*host = col;
+				*port = str_to_int(++col2);
+			}
+			else {
+				if (is_number(col)) {
+					*host = uri;
+					*port = str_to_int(col);
+				}
+				else {
+					*scheme = uri;
+					*host = col;
+				}
+			}
+		}
+	}
+	else {
+		*host = uri;
+	}
 }
 
 /* return the URI from the Contact of the message if found */

@@ -674,7 +674,7 @@ void shoot(char *buff)
 							address = 0;
 							if ((foo=strchr(contact+4,':'))!=NULL) {
 								*foo='\0';
-								rport = atoi(++foo);
+								rport = str_to_int(++foo);
 								if (rport == 0) {
 									printf("error: cannot handle the port "
 										"in the uri in Contact:\n%s\n", 

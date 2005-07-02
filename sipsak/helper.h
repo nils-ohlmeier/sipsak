@@ -42,4 +42,7 @@ void trash_random(char *message);
 
 double deltaT(struct timeval *t1p, struct timeval *t2p);
 
+int is_number(char *number);
+
+int str_to_int(char *num);
 #endif

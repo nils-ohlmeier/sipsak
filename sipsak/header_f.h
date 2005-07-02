@@ -40,5 +40,7 @@ int cseq(char *message);
 
 void increase_cseq(char *message);
 
+void parse_uri(char *uri, char **scheme, char **user, char **host, int *port);
+
 char* uri_from_contact(char *message);
 #endif
