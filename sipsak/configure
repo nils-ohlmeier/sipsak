@@ -3642,7 +3642,8 @@ done
 
 
 
-for ac_header in ctype.h arpa/inet.h getopt.h netdb.h netinet/in.h netinet/in_systm.h limits.h sys/poll.h regex.h stdlib.h stdio.h string.h sys/param.h sys/socket.h sys/time.h unistd.h sys/utsname.h
+
+for ac_header in ctype.h errno.h arpa/inet.h getopt.h netdb.h netinet/in.h netinet/in_systm.h limits.h sys/poll.h regex.h stdlib.h stdio.h string.h sys/param.h sys/socket.h sys/time.h unistd.h sys/utsname.h
 do
 as_ac_Header=`echo "ac_cv_header_$ac_header" | $as_tr_sh`
 if eval "test \"\${$as_ac_Header+set}\" = set"; then
@@ -4844,7 +4845,9 @@ rm -f conftest*
 
 
 
-for ac_func in getchar gethostbyname gethostname getpid gettimeofday inet_ntop memset ntohs regcomp select socket strchr strstr uname
+
+
+for ac_func in getchar gethostbyname gethostname getpid gettimeofday inet_ntop memset ntohs regcomp select socket strchr strcmp strstr strtol uname
 do
 as_ac_var=`echo "ac_cv_func_$ac_func" | $as_tr_sh`
 echo "$as_me:$LINENO: checking for $ac_func" >&5
