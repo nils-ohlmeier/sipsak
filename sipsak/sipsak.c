@@ -214,10 +214,10 @@ int main(int argc, char *argv[])
 {
 	FILE	*pf;
 	char	buff[BUFSIZE];
-	int	length, c, i, j, port;
+	int		c, i, port;
 	char	*scheme, *user, *host, *backup;
 	pid_t 	pid;
-	struct timespec ts;
+	struct 	timespec ts;
 	int 	upp;
 
 #ifdef HAVE_GETOPT_LONG
@@ -269,12 +269,12 @@ int main(int argc, char *argv[])
 	/* some initialisation to be shure */
 	file_b=uri_b=trace=lport=usrloc=flood=verbose=randtrash=trashchar = 0;
 	warning_ext=rand_rem=nonce_count=replace_b=invite=message = 0;
-	sleep_ms=empty_contact=nagios_warn=timing = 0;
+	sleep_ms=empty_contact=nagios_warn=timing=outbound_proxy = 0;
 	namebeg=nameend=maxforw= -1;
 	numeric=via_ins=redirects=fix_crlf=processes = 1;
 	username=password=replace_str=hostname=contact_uri=mes_body = NULL;
 	con_dis=auth_username = NULL;
-	scheme = user = host = backup = request = NULL;
+	scheme = user = host = backup = request = reply = NULL;
 	re = NULL;
 	address = 0;
 	rport = port = 0;
@@ -374,8 +374,7 @@ int main(int argc, char *argv[])
 						printf("error: unable to open the file '%s'.\n", optarg);
 						exit_code(2);
 					}
-					length  = fread(buff, 1, sizeof(buff), pf);
-					if (length >= sizeof(buff)){
+					if (fread(buff, 1, sizeof(buff), pf) >= sizeof(buff)){
 						printf("error:the file is too big. try files of less "
 							"than %i bytes.\n", BUFSIZE);
 						printf("      or recompile the program with bigger "
@@ -385,16 +384,10 @@ int main(int argc, char *argv[])
 					fclose(pf);
 				}
 				else {
-					for(i = 0; i < BUFSIZE - 1; i++) {
-						j = getchar();
-						if (j == EOF)
-							break;
-						else
-							buff[i] = j;
+					if (read_stdin(&buff[0], sizeof(buff)) == 0) {
+						exit_code(0);
 					}
-					length = i;
 				}
-				buff[length] = '\0';
 				file_b=1;
 				break;
 			case 'g':
@@ -470,6 +463,7 @@ int main(int argc, char *argv[])
 						"address\n");
 					exit_code(2);
 				}
+				outbound_proxy=1;
 				break;
 			case 'P':
 				processes=str_to_int(optarg);

@@ -390,3 +390,38 @@ int str_to_int(char *num)
 #endif
 	return ret;
 }
+
+int read_stdin(char *buf, int size)
+{
+	int i, j;
+
+	for(i = 0; i < size - 1; i++) {
+		j = getchar();
+		if (j == EOF) {
+			*(buf + i) = '\0';
+			return i;
+		}
+		else {
+			*(buf + i) = j;
+		}
+	}
+	*(buf + i) = '\0';
+	if (verbose)
+		printf("warning: readin buffer size exceeded\n");
+	return i;
+}
+
+void set_target(struct sockaddr_in *adr, unsigned long target, int port, int socket)
+{
+	memset(adr, 0, sizeof(struct sockaddr_in));
+	adr->sin_addr.s_addr = target;
+	adr->sin_port = htons((short)port);
+	adr->sin_family = AF_INET;
+
+	if (socket != -1) {
+		if (connect(socket, (struct sockaddr *)adr, sizeof(struct sockaddr_in)) == -1) {
+			perror("connecting UDP socket failed");
+			exit_code(2);
+		}
+	}
+}

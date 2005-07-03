@@ -32,6 +32,8 @@
 # endif
 #endif
 
+extern regex_t redexp, proexp, okexp, tmhexp, errexp, authexp, replyexp;
+
 void shoot(char *buff, int buff_size);
 
 #endif

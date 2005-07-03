@@ -28,7 +28,7 @@
 
 /* create a valid sip header for the different modes */
 void create_msg(char *buff, int action){
-	unsigned int c;
+	unsigned int c, d;
 	char *usern=NULL;
 	size_t usern_len;
 
@@ -57,13 +57,14 @@ void create_msg(char *buff, int action){
 	}
 	c=(unsigned int)rand();
 	c+=lport;
+	d=(unsigned int)rand();
 	switch (action){
 		case REQ_REG:
 			/* not elegant but easier :) */
 			if (empty_contact == 1) {
 				sprintf(buff, 
 					"%s sip:%s%s"
-					"%s%s:%i;rport\r\n"
+					"%s%s:%i;branch=z9hG4bK.%08x;rport\r\n"
 					"%ssip:%s%s;tag=%x\r\n"
 					"%ssip:%s%s\r\n"
 					"%s%u@%s\r\n"
@@ -73,11 +74,11 @@ void create_msg(char *buff, int action){
 					"%ssipsak %s\r\n"
 					"\r\n", 
 					REG_STR, domainname, SIP20_STR, 
-					VIA_SIP_STR, fqdn, lport, 
+					VIA_SIP_STR, fqdn, lport, d,
 					FROM_STR, usern, domainname, c,
 					TO_STR, usern, domainname, 
 					CALL_STR, c, fqdn, 
-					CSEQ_STR, 3*namebeg+1, REG_STR, 
+					CSEQ_STR, cseq_counter, REG_STR, 
 					CON_LEN_STR, 
 					MAX_FRW_STR, 
 					UA_STR, SIPSAK_VERSION);
@@ -85,7 +86,7 @@ void create_msg(char *buff, int action){
 			else if (contact_uri!=NULL) {
 				sprintf(buff, 
 					"%s sip:%s%s"
-					"%s%s:%i;rport\r\n"
+					"%s%s:%i;branch=z9hG4bK.%08x;rport\r\n"
 					"%ssip:%s%s;tag=%x\r\n"
 					"%ssip:%s%s\r\n"
 					"%s%u@%s\r\n"
@@ -97,11 +98,11 @@ void create_msg(char *buff, int action){
 					"%ssipsak %s\r\n"
 					"\r\n", 
 					REG_STR, domainname, SIP20_STR, 
-					VIA_SIP_STR, fqdn, lport, 
+					VIA_SIP_STR, fqdn, lport, d,
 					FROM_STR, usern, domainname, c,
 					TO_STR, usern, domainname, 
 					CALL_STR, c, fqdn, 
-					CSEQ_STR, 3*namebeg+1, REG_STR, 
+					CSEQ_STR, cseq_counter, REG_STR, 
 					CONT_STR, contact_uri, 
 					EXP_STR, expires_t, 
 					CON_LEN_STR, 
@@ -111,7 +112,7 @@ void create_msg(char *buff, int action){
 			else{
 				sprintf(buff, 
 					"%s sip:%s%s"
-					"%s%s:%i;rport\r\n"
+					"%s%s:%i;branch=z9hG4bK.%08x;rport\r\n"
 					"%ssip:%s%s;tag=%x\r\n"
 					"%ssip:%s%s\r\n"
 					"%s%u@%s\r\n"
@@ -123,11 +124,11 @@ void create_msg(char *buff, int action){
 					"%ssipsak %s\r\n"
 					"\r\n", 
 					REG_STR, domainname, SIP20_STR, 
-					VIA_SIP_STR, fqdn, lport, 
+					VIA_SIP_STR, fqdn, lport, d,
 					FROM_STR, usern, domainname, c,
 					TO_STR, usern, domainname, 
 					CALL_STR, c, fqdn, 
-					CSEQ_STR, 3*namebeg+1, REG_STR, 
+					CSEQ_STR, cseq_counter, REG_STR, 
 					CONT_STR, usern, fqdn, lport, 
 					EXP_STR, expires_t, 
 					CON_LEN_STR, 
@@ -138,7 +139,7 @@ void create_msg(char *buff, int action){
 		case REQ_REM:
 			sprintf(buff, 
 				"%s sip:%s%s"
-				"%s%s:%i;rport\r\n"
+				"%s%s:%i;branch=z9hG4bK.%08x;rport\r\n"
 				"%ssip:%s%s;tag=%x\r\n"
 				"%ssip:%s%s\r\n"
 				"%s%u@%s\r\n"
@@ -150,11 +151,11 @@ void create_msg(char *buff, int action){
 				"%ssipsak %s\r\n"
 				"\r\n", 
 				REG_STR, domainname, SIP20_STR, 
-				VIA_SIP_STR, fqdn, lport, 
+				VIA_SIP_STR, fqdn, lport, d,
 				FROM_STR, usern, domainname, c,
 				TO_STR, usern, domainname, 
 				CALL_STR, c, fqdn,
-				CSEQ_STR, trashchar, REG_STR, 
+				CSEQ_STR, cseq_counter, REG_STR, 
 				CONT_STR, usern, fqdn, lport, CON_EXP_STR, 
 				EXP_STR, expires_t, 
 				CON_LEN_STR, 
@@ -164,7 +165,7 @@ void create_msg(char *buff, int action){
 		case REQ_INV:
 			sprintf(buff, 
 				"%s sip:%s%s%s"
-				"%s%s:%i;rport\r\n"
+				"%s%s:%i;branch=z9hG4bK.%08x;rport\r\n"
 				"%ssip:sipsak@%s:%i;tag=%x\r\n"
 				"%ssip:%s%s\r\n"
 				"%s%u@%s\r\n"
@@ -176,11 +177,11 @@ void create_msg(char *buff, int action){
 				"%ssipsak %s\r\n"
 				"\r\n", 
 				INV_STR, usern, domainname, SIP20_STR, 
-				VIA_SIP_STR, fqdn, lport, 
+				VIA_SIP_STR, fqdn, lport, d,
 				FROM_STR, fqdn, lport, c,
 				TO_STR, usern, domainname, 
 				CALL_STR, c, fqdn, 
-				CSEQ_STR, 3*namebeg+2, INV_STR, 
+				CSEQ_STR, cseq_counter, INV_STR, 
 				CON_LEN_STR, 
 				CONT_STR, fqdn, lport,
 				SUB_STR, 
@@ -200,13 +201,13 @@ void create_msg(char *buff, int action){
 				FROM_STR, fqdn, lport, c,
 				TO_STR, usern, domainname, c,
 				CALL_STR, c, fqdn, 
-				CSEQ_STR, 3*namebeg+2, INV_STR, 
+				CSEQ_STR, cseq_counter, INV_STR, 
 				CON_LEN_STR,
 				CONT_STR, fqdn, lport,
 				UA_STR, SIPSAK_VERSION);
 			sprintf(ack, 
 				"%s sip:%s%s%s"
-				"%s%s:%i;rport\r\n"
+				"%s%s:%i;branch=z9hG4bK.%08x;rport\r\n"
 				"%ssip:sipsak@%s:%i;tag=%x\r\n"
 				"%ssip:%s%s;tag=%o\r\n"
 				"%s%u@%s\r\n"
@@ -216,11 +217,11 @@ void create_msg(char *buff, int action){
 				"%ssipsak %s\r\n"
 				"\r\n", 
 				ACK_STR, usern, domainname, SIP20_STR, 
-				VIA_SIP_STR, fqdn, lport, 
+				VIA_SIP_STR, fqdn, lport, d,
 				FROM_STR, fqdn, lport, c,
 				TO_STR, usern, domainname, c,
 				CALL_STR, c, fqdn, 
-				CSEQ_STR, 3*namebeg+2, ACK_STR, 
+				CSEQ_STR, cseq_counter, ACK_STR, 
 				CON_LEN_STR, 
 				MAX_FRW_STR, 
 				UA_STR, SIPSAK_VERSION);
@@ -238,7 +239,7 @@ void create_msg(char *buff, int action){
 				if (con_dis)
 					sprintf(buff, 
 						"%s sip:%s%s%s"
-						"%s%s:%i;rport\r\n"
+						"%s%s:%i;branch=z9hG4bK.%08x;rport\r\n"
 						"%ssip:sipsak@%s:%i;tag=%x\r\n"
 						"%ssip:%s%s\r\n"
 						"%s%u@%s\r\n"
@@ -251,13 +252,13 @@ void create_msg(char *buff, int action){
 						"\r\n"
 						"%s", 
 						MES_STR, usern, domainname, SIP20_STR, 
-						VIA_SIP_STR, fqdn, lport, 
+						VIA_SIP_STR, fqdn, lport, d,
 						FROM_STR, fqdn, lport, c,
 						TO_STR, usern, domainname, 
 						CALL_STR, c, fqdn, 
-						CSEQ_STR, 3*namebeg+2, MES_STR, 
+						CSEQ_STR, cseq_counter, MES_STR, 
 						CON_TYP_STR, TXT_PLA_STR, 
-						CON_LEN_STR, (unsigned int)strlen(mes_body), 
+						CON_LEN_STR, strlen(mes_body), 
 						CON_DIS_STR, con_dis,
 						MAX_FRW_STR, 
 						UA_STR, SIPSAK_VERSION,	
@@ -265,7 +266,7 @@ void create_msg(char *buff, int action){
 				else
 					sprintf(buff, 
 						"%s sip:%s%s%s"
-						"%s%s:%i;rport\r\n"
+						"%s%s:%i;branch=z9hG4bK.%08x;rport\r\n"
 						"%ssip:sipsak@%s:%i;tag=%x\r\n"
 						"%ssip:%s%s\r\n"
 						"%s%u@%s\r\n"
@@ -277,13 +278,13 @@ void create_msg(char *buff, int action){
 						"\r\n"
 						"%s", 
 						MES_STR, usern, domainname, SIP20_STR, 
-						VIA_SIP_STR, fqdn, lport, 
+						VIA_SIP_STR, fqdn, lport, d,
 						FROM_STR, fqdn, lport, c,
 						TO_STR, usern, domainname, 
 						CALL_STR, c, fqdn, 
-						CSEQ_STR, 3*namebeg+2, MES_STR, 
+						CSEQ_STR, cseq_counter, MES_STR, 
 						CON_TYP_STR, TXT_PLA_STR, 
-						CON_LEN_STR, (unsigned int)strlen(mes_body), 
+						CON_LEN_STR, strlen(mes_body), 
 						MAX_FRW_STR, 
 						UA_STR, SIPSAK_VERSION,	
 						mes_body);
@@ -291,7 +292,7 @@ void create_msg(char *buff, int action){
 			else {
 				sprintf(buff, 
 					"%s sip:%s%s%s"
-					"%s%s:%i;rport\r\n"
+					"%s%s:%i;branch=z9hG4bK.%08x;rport\r\n"
 					"%ssip:sipsak@%s:%i;tag=%x\r\n"
 					"%ssip:%s%s\r\n"
 					"%s%u@%s\r\n"
@@ -303,13 +304,13 @@ void create_msg(char *buff, int action){
 					"\r\n"
 					"%s%s%i.", 
 					MES_STR, usern, domainname, SIP20_STR, 
-					VIA_SIP_STR, fqdn, lport, 
+					VIA_SIP_STR, fqdn, lport, d,
 					FROM_STR, fqdn, lport, c,
 					TO_STR, usern, domainname, 
 					CALL_STR, c, fqdn, 
-					CSEQ_STR, 3*namebeg+2, MES_STR, 
+					CSEQ_STR, cseq_counter, MES_STR, 
 					CON_TYP_STR, TXT_PLA_STR, 
-					CON_LEN_STR, (unsigned int)(SIPSAK_MES_STR_LEN+strlen(usern)-1), 
+					CON_LEN_STR, (SIPSAK_MES_STR_LEN+strlen(usern)-1), 
 					MAX_FRW_STR, 
 					UA_STR, SIPSAK_VERSION,	
 					SIPSAK_MES_STR, username, namebeg);
@@ -327,7 +328,7 @@ void create_msg(char *buff, int action){
 				FROM_STR, fqdn, lport, c,
 				TO_STR, usern, domainname, c,
 				CALL_STR, c, fqdn, 
-				CSEQ_STR, 3*namebeg+2, MES_STR, 
+				CSEQ_STR, cseq_counter, MES_STR, 
 				CON_LEN_STR,
 				UA_STR, SIPSAK_VERSION);
 			if (username) {
@@ -356,7 +357,7 @@ void create_msg(char *buff, int action){
 				FROM_STR, fqdn, lport, c,
 				TO_STR, usern, domainname,
 				CALL_STR, c, fqdn, 
-				CSEQ_STR, namebeg, OPT_STR, 
+				CSEQ_STR, cseq_counter, OPT_STR, 
 				CONT_STR, fqdn, lport, 
 				CON_LEN_STR, 
 				MAX_FRW_STR, 
@@ -366,7 +367,7 @@ void create_msg(char *buff, int action){
 		case REQ_FLOOD:
 			sprintf(buff, 
 				"%s sip:%s%s"
-				"%s%s:9\r\n"
+				"%s%s:9;branch=z9hG4bK.%08x\r\n"
 				"%ssip:sipsak@%s:9;tag=%x\r\n"
 				"%ssip:%s\r\n"
 				"%s%u@%s\r\n"
@@ -377,11 +378,11 @@ void create_msg(char *buff, int action){
 				"%ssipsak %s\r\n"
 				"\r\n", 
 				FLOOD_METH, domainname, SIP20_STR, 
-				VIA_SIP_STR, fqdn, 
+				VIA_SIP_STR, fqdn, d,
 				FROM_STR, fqdn, c,
 				TO_STR, domainname, 
 				CALL_STR, c, fqdn, 
-				CSEQ_STR, namebeg, FLOOD_METH, 
+				CSEQ_STR, cseq_counter, FLOOD_METH, 
 				CONT_STR, fqdn, 
 				CON_LEN_STR, 
 				MAX_FRW_STR, 
@@ -390,7 +391,7 @@ void create_msg(char *buff, int action){
 		case REQ_RAND:
 			sprintf(buff, 
 				"%s sip:%s%s"
-				"%s%s:%i;rport\r\n"
+				"%s%s:%i;branch=z9hG4bK.%08x;rport\r\n"
 				"%ssip:sipsak@%s:%i;tag=%x\r\n"
 				"%ssip:%s\r\n"
 				"%s%u@%s\r\n"
@@ -401,11 +402,11 @@ void create_msg(char *buff, int action){
 				"%ssipsak %s\r\n"
 				"\r\n", 
 				OPT_STR, domainname, SIP20_STR, 
-				VIA_SIP_STR, fqdn, lport, 
+				VIA_SIP_STR, fqdn, lport, d,
 				FROM_STR, fqdn, lport, c,
 				TO_STR, domainname,	
 				CALL_STR, c, fqdn, 
-				CSEQ_STR, namebeg, OPT_STR, 
+				CSEQ_STR, cseq_counter, OPT_STR, 
 				CONT_STR, fqdn,	lport, 
 				CON_LEN_STR, 
 				MAX_FRW_STR, 

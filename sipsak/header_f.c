@@ -22,6 +22,7 @@
 #include "header_f.h"
 #include "exit_code.h"
 #include "helper.h"
+#include "shoot.h"
 
 
 /* add a Via Header Field in the message. */
@@ -312,23 +313,29 @@ void cpy_rr(char* src, char *dst, int route) {
 /* build an ACK from the given invite and reply.
  * NOTE: space has to be allocated allready for the ACK */
 void build_ack(char *invite, char *reply, char *ack) {
-	char *body;
+	char *tmp;
 	int len;
 
-	body = STRCASESTR(invite, "\r\n\r\n");
-	if (body) {
-		body+=4;
-		len = body - invite;
-		memcpy(ack, invite, len);
-		*(ack+len) = '\0';
-		replace_string(ack, "INVITE", "ACK");
-		if((body = uri_from_contact(reply))!= NULL) {
-			uri_replace(ack,body);
-			free(body);
-		}
-		cpy_to(reply, ack);
+	if ((tmp = STRCASESTR(invite, "\r\n\r\n")) != NULL) {
+		len = (tmp + 4) - invite;
+	}
+	else {
+		len = strlen(invite);
+	}
+	memcpy(ack, invite, len);
+	*(ack+len) = '\0';
+	replace_string(ack, "INVITE", "ACK");
+	cpy_to(reply, ack);
+	if (tmp)
 		set_cl(ack, 0);
+	if (regexec(&okexp, reply, 0, 0, 0)==0) {
 		cpy_rr(reply, ack, 1);
+		/* 200 ACK must be in new transaction */
+		new_branch(ack);
+		if((tmp = uri_from_contact(reply))!= NULL) {
+			uri_replace(ack, tmp);
+			free(tmp);
+		}
 	}
 }
 
@@ -397,7 +404,10 @@ void increase_cseq(char *message)
 		printf("CSeq increase failed because unable to extract CSeq number\n");
 		return;
 	}
-	cs++;
+	if (cs == INT_MAX)
+		cs = 1;
+	else
+		cs++;
 	cs_s=STRCASESTR(message, CSEQ_STR);
 	if (cs_s) {
 		cs_s+=6;
@@ -413,6 +423,7 @@ void increase_cseq(char *message)
 		cs_s+=strlen(cs_s);
 		strncpy(cs_s, backup, strlen(backup));
 		free(backup);
+		cseq_counter = cs;
 	}
 	else if (verbose > 1)
 		printf("'CSeq' not found in message\n");
@@ -519,4 +530,40 @@ char* uri_from_contact(char *message)
 	*end = c;
 
 	return tmp;
+}
+
+/* replace the 8 bytes behind the first magic cookie with a new
+ * random value */
+void new_branch(char *message)
+{
+	char *branch;
+	char backup;
+
+	if((branch = STRCASESTR(message,"branch=z9hG4bK.")) != NULL) {
+		backup = *(branch+15+8);
+		snprintf(branch+15, 9, "%08x", rand());
+		*(branch+15+8) = backup;
+	}
+}
+
+/* increase the CSeq and insert a new branch value */
+void new_transaction(char *message)
+{
+	increase_cseq(message);
+	new_branch(message);
+}
+
+/* just print the first line of the message */
+void print_first_line(char *message)
+{
+	char *crlf;
+
+	crlf=strchr(message, '\n');
+	if (!crlf) {
+		printf("failed to find newline\n");
+		exit_code(254);
+	}
+	else if (*(crlf - 1) == '\r')
+		crlf--;
+	printf("%.*s\n", crlf - message, message);
 }

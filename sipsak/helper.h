@@ -26,6 +26,10 @@
 # include <time.h>
 #endif
 
+#ifdef HAVE_SYS_SELECT_H
+# include <sys/socket.h>
+#endif
+
 unsigned long getaddress(char *host);
 
 unsigned long getsrvaddress(char *host, int *port);
@@ -45,4 +49,8 @@ double deltaT(struct timeval *t1p, struct timeval *t2p);
 int is_number(char *number);
 
 int str_to_int(char *num);
+
+int read_stdin(char *buf, int size);
+
+void set_target(struct sockaddr_in *adr, unsigned long target, int port, int socket);
 #endif

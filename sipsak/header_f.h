@@ -45,4 +45,10 @@ void increase_cseq(char *message);
 void parse_uri(char *uri, char **scheme, char **user, char **host, int *port);
 
 char* uri_from_contact(char *message);
+
+void new_branch(char *message);
+
+void new_transaction(char *message);
+
+void print_first_line(char *message);
 #endif

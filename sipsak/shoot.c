@@ -90,8 +90,8 @@ struct timezone tz;
 struct timeval sendtime, recvtime, tv, firstsendt, starttime, delaytime;
 int dontsend, dontrecv, usock, csock, retryAfter, randretrys, retrans_s_c;
 int i, send_counter;
-double senddiff;
-//char received[BUFSIZE];
+double senddiff, big_delay;
+regex_t redexp, proexp, okexp, tmhexp, errexp, authexp, replyexp;
 #ifdef RAW_SUPPORT
 int rawsock;
 #endif
@@ -149,7 +149,7 @@ int check_for_message(char *recv, int size) {
 	if (ret == 0)
 	{
 		/* store the time of our first send */
-		if (send_counter==0)
+		if (send_counter==1)
 			memcpy(&firstsendt, &sendtime, sizeof(struct timeval));
 		if (retryAfter == SIP_T1)
 			memcpy(&starttime, &sendtime, sizeof(struct timeval));
@@ -246,6 +246,7 @@ int check_for_message(char *recv, int size) {
 int recv_message(char *buf, int size) {
 	int ret = 0;
 	int sock = 0;
+	double tmp_delay;
 #ifdef RAW_SUPPORT
 	struct sockaddr_in faddr;
 	struct ip 		*r_ip_hdr, *s_ip_hdr;
@@ -315,6 +316,21 @@ int recv_message(char *buf, int size) {
 		}
 	}
 #endif
+	*(buf+ ret) = '\0';
+	if (ret > 0) {
+		/* store the time of our first send */
+		if (send_counter == 1)
+			memcpy(&firstsendt, &sendtime, sizeof(struct timeval));
+		retryAfter = SIP_T1;
+		/* store the biggest delay if one occured */
+		if (delaytime.tv_sec != 0) {
+			tmp_delay = deltaT(&delaytime, &recvtime);
+			if (tmp_delay > big_delay)
+				big_delay = tmp_delay;
+			delaytime.tv_sec = 0;
+			delaytime.tv_usec = 0;
+		}
+	}
 	return ret;
 }
 
@@ -322,13 +338,132 @@ int recv_message(char *buf, int size) {
  * reply matching is enabled and no match occured
  */
 
-inline static void on_success(char *reply)
+inline static void on_success(char *rep)
 {
-	if ((reply != NULL) && re && regexec(re, reply, 0, 0, 0)==REG_NOMATCH) {
+	if ((rep != NULL) && re && regexec(re, rep, 0, 0, 0) == REG_NOMATCH) {
 		fprintf(stderr, "error: RegExp failed\n");
 		exit_code(32);
 	} else {
 		exit_code(0);
+	}
+}
+
+void handle_3xx(struct sockaddr_in *tadr)
+{
+	char *uscheme, *uuser, *uhost, *contact;
+
+	printf("** received redirect ");
+	if (warning_ext == 1) {
+		printf("from ");
+		warning_extract(reply);
+		printf("\n");
+	}
+	else
+		printf("\n");
+	/* we'll try to handle 301 and 302 here, other 3xx are to complex */
+	regcomp(&redexp, "^SIP/[0-9]\\.[0-9] 30[125] ", 
+			REG_EXTENDED|REG_NOSUB|REG_ICASE);
+	if (regexec(&redexp, reply, 0, 0, 0) == REG_NOERROR) {
+		/* try to find the contact in the redirect */
+		contact = uri_from_contact(reply);
+		if (contact==NULL) {
+			printf("error: cannot find Contact in this "
+				"redirect:\n%s\n", reply);
+			exit_code(3);
+		}
+		/* correct our request */
+		uri_replace(request, contact);
+		new_transaction(request);
+		/* extract the needed information*/
+		rport = 0;
+		address = 0;
+		parse_uri(contact, &uscheme, &uuser, &uhost, &rport);
+		if (!rport)
+			address = getsrvaddress(uhost, &rport);
+		if (!address)
+			address = getaddress(uhost);
+		if (!address){
+			printf("error: cannot determine host "
+					"address from Contact of redirect:"
+					"\n%s\n", reply);
+			exit_code(2);
+		}
+		if (!rport) {
+			rport = 5060;
+		}
+		free(contact);
+		if (!outbound_proxy)
+			set_target(tadr, address, rport, csock);
+		//i=nretries; ???
+	}
+	else {
+		printf("error: cannot handle this redirect:"
+				"\n%s\n", reply);
+		exit_code(2);
+	}
+}
+
+void trace_reply()
+{
+	char *contact;
+
+	if (regexec(&tmhexp, reply, 0, 0, 0) == REG_NOERROR) {
+		/* we received 483 to many hops */
+		printf("%i: ", i);
+		if (verbose > 2) {
+			printf("(%.3f ms)\n%s\n", 
+				deltaT(&sendtime, &recvtime), reply);
+		}
+		else {
+			warning_extract(reply);
+			printf("(%.3f ms) ", deltaT(&sendtime, &recvtime));
+			print_first_line(reply);
+		}
+		namebeg++;
+		cseq_counter++;
+		maxforw++;
+		create_msg(request, REQ_OPT);
+		add_via(request);
+		return;
+	}
+	else if (regexec(&proexp, reply, 0, 0, 0) == REG_NOERROR) {
+		/* we received a provisional response */
+		printf("%i: ", i);
+		if (verbose > 2) {
+			printf("(%.3f ms)\n%s\n", 
+				deltaT(&sendtime, &recvtime), reply);
+		}
+		else {
+			warning_extract(reply);
+			printf("(%.3f ms) ", deltaT(&sendtime, &recvtime));
+			print_first_line(reply);
+		}
+		retryAfter = SIP_T2;
+		dontsend=1;
+		return;
+	}
+	else {
+		/* anything else then 483 or provisional will
+		   be treated as final */
+		if (maxforw==i)
+			printf("%i: ", i);
+		else
+			printf("\t");
+		warning_extract(reply);
+		printf("(%.3f ms) ", deltaT(&sendtime, &recvtime));
+		print_first_line(reply);
+		if ((contact = STRCASESTR(reply, CONT_STR)) != NULL ||
+				(contact = STRCASESTR(reply, CONT_SHORT_STR)) != NULL) {
+			printf("\t");
+			print_first_line(contact);
+		}
+		else {
+			printf("\twithout Contact header\n");
+		}
+		if (regexec(&okexp, reply, 0, 0, 0) == REG_NOERROR)
+			on_success(reply);
+		else
+			exit_code(1);
 	}
 }
 
@@ -339,20 +474,21 @@ void shoot(char *buff, int buff_size)
 	//struct timeval	tv, sendtime, recvtime, firstsendt, delaytime, starttime;
 	//struct timezone tz;
 	struct timespec sleep_ms_s, sleep_rem;
-	int redirected, nretries;
+	int nretries;
 	int ret;
 	int cseqtmp, rand_tmp;
 	int rem_rand, retrans_r_c;
 	//int randretrys = 0;
-	int cseqcmp = 0;
+	//int cseqcmp = 0;
 	int rem_namebeg = 0;
-	double big_delay, tmp_delay;
-	char *contact, *foo, *lport_str;
+	//double big_delay, tmp_delay;
+	char *lport_str;
+	//char *uscheme, *uuser, *uhost;
 	char *crlf = NULL;
-	char reply[BUFSIZE];
+	char buff2[BUFSIZE];
 	//fd_set	fd;
 	socklen_t slen;
-	regex_t redexp, proexp, okexp, tmhexp, errexp, authexp, replyexp;
+	//regex_t redexp, proexp, okexp, tmhexp, errexp, authexp, replyexp;
 	enum usteps { REG_REP, INV_RECV, INV_OK_RECV, INV_ACK_RECV, MES_RECV, 
 					MES_OK_RECV, UNREG_REP};
 	enum usteps usrlocstep = REG_REP;
@@ -361,11 +497,11 @@ void shoot(char *buff, int buff_size)
 	nretries = DEFAULT_RETRYS;
 	/* retryAfter = DEFAULT_TIMEOUT; */
 	retryAfter = SIP_T1;
+	cseq_counter = 1;
 
 	/* initalize some local vars */
-	redirected = 1;
 	dontsend=dontrecv=retrans_r_c=retrans_s_c = 0;
-	big_delay=tmp_delay = 0;
+	big_delay= 0;
 	delaytime.tv_sec = 0;
 	delaytime.tv_usec = 0;
 
@@ -448,11 +584,11 @@ void shoot(char *buff, int buff_size)
 		replace_string(buff, "$replace$", replace_str);
 
 	/* set all regular expression to simplfy the result code indetification */
-	regcomp(&replyexp, "^SIP/[0-9]\\.[0-9] ", 
+	regcomp(&replyexp, "^SIP/[0-9]\\.[0-9] [1-6][0-9][0-9]", 
 		REG_EXTENDED|REG_NOSUB|REG_ICASE); 
 	regcomp(&proexp, "^SIP/[0-9]\\.[0-9] 1[0-9][0-9] ", 
 		REG_EXTENDED|REG_NOSUB|REG_ICASE); 
-	regcomp(&okexp, "^SIP/[0-9]\\.[0-9] 200 ", 
+	regcomp(&okexp, "^SIP/[0-9]\\.[0-9] 2[0-9][0-9] ", 
 		REG_EXTENDED|REG_NOSUB|REG_ICASE); 
 	regcomp(&redexp, "^SIP/[0-9]\\.[0-9] 3[0-9][0-9] ", 
 		REG_EXTENDED|REG_NOSUB|REG_ICASE);
@@ -488,7 +624,7 @@ void shoot(char *buff, int buff_size)
 			else
 				usrlocstep=MES_RECV;
 		}
-		cseqcmp=1;
+		//cseqcmp=1;
 	}
 	else if (trace == 1){
 		/* for trace we need some spezial initis */
@@ -538,26 +674,7 @@ void shoot(char *buff, int buff_size)
 
 	request = buff;
 
-	/* if we got a redirect this loop ensures sending to the 
-	   redirected server*/
-	while (redirected == 1) {
-		/* we don't want to send for ever */
-		redirected=0;
-
-		/* destination socket init here because it could be changed in a 
-		   case of a redirect */
-		memset(&addr, 0, sizeof(addr));
-		addr.sin_addr.s_addr = address;
-		addr.sin_port = htons((short)rport);
-		addr.sin_family = AF_INET;
-	
-		if (csock != -1) {
-			ret = connect(csock, (struct sockaddr *)&addr, sizeof(addr));
-			if (ret==-1) {
-				perror("connecting UDP socket failed");
-				exit_code(2);
-			}
-		}
+	set_target(&addr, address, rport, csock);
 
 		/* here we go for the number of nretries which strongly depends on the 
 		   mode */
@@ -632,112 +749,30 @@ void shoot(char *buff, int buff_size)
 
 			/* in flood we are only interested in sending so skip the rest */
 			if (flood == 0) {
-				ret = recv_message(&reply[0], sizeof(reply));
+				ret = recv_message(&buff2[0], sizeof(buff2));
 				if(ret > 0)
 				{
-					reply[ret] = '\0';
-					/* store the time of our first send */
-					if (i==0)
-						memcpy(&firstsendt, &sendtime, sizeof(struct timeval));
-					retryAfter = SIP_T1;
-					/* store the biggest delay if one occured */
-					if (delaytime.tv_sec != 0) {
-						tmp_delay = deltaT(&delaytime, &recvtime);
-						if (tmp_delay > big_delay) big_delay = tmp_delay;
-						delaytime.tv_sec = 0;
-						delaytime.tv_usec = 0;
-					}
+					reply = &buff2[0];
 					/* send ACK for non-provisional reply on INVITE */
 					if ((strncmp(request, "INVITE", 6)==0) && 
-							(regexec(&replyexp, reply, 0, 0, 0)==0) && 
-							(regexec(&proexp, reply, 0, 0, 0)!=0)) { 
+							(regexec(&replyexp, reply, 0, 0, 0) == REG_NOERROR) && 
+							(regexec(&proexp, reply, 0, 0, 0) == REG_NOMATCH)) { 
 						build_ack(request, reply, ack);
 						/* lets fire the ACK to the server */
-						if (csock == -1) {
-							ret = sendto(usock, ack, strlen(ack), 0, (struct sockaddr *)&addr, sizeof(addr));
-						}
-						else {
-							ret = send(csock, ack, strlen(ack), 0);
-						}
+						send_message(ack, (struct sockaddr *)&addr);
 					}
 					/* check for old CSeq => ignore retransmission */
-					if (usrloc == 0 && invite == 0 && message == 0)
-						cseqcmp = namebeg;
+					//if (usrloc == 0 && invite == 0 && message == 0)
+					//	cseqcmp = namebeg;
 					cseqtmp = cseq(reply);
-					if ((0 < cseqtmp) && (cseqtmp < cseqcmp)) {
+					if ((0 < cseqtmp) && (cseqtmp < cseq_counter)) {
 						if (verbose>0)
 							printf("ignoring retransmission\n");
 						retrans_r_c++;
 						dontsend = 1;
 						continue;
 					}
-					/* lets see if received a redirect */
-					if (redirects == 1 && regexec(&redexp, reply, 0, 0, 0)==0) {
-						printf("** received redirect ");
-						if (warning_ext == 1) {
-							printf("from ");
-							warning_extract(reply);
-							printf("\n");
-						}
-						else printf("\n");
-						/* we'll try to handle 301 and 302 here, other 3xx 
-						   are to complex */
-						regcomp(&redexp, "^SIP/[0-9]\\.[0-9] 30[125] ", 
-							REG_EXTENDED|REG_NOSUB|REG_ICASE);
-						if (regexec(&redexp, reply, 0, 0, 0)==0) {
-							/* try to find the contact in the redirect */
-							contact = uri_from_contact(reply);
-							if (contact==NULL) {
-								printf("error: cannot find Contact in this "
-									"redirect:\n%s\n", reply);
-								exit_code(3);
-							}
-							/* correct our request */
-							uri_replace(buff, contact);
-							/* extract the needed information*/
-							rport = 0;
-							address = 0;
-							if ((foo=strchr(contact+4,':'))!=NULL) {
-								*foo='\0';
-								rport = str_to_int(++foo);
-								if (rport == 0) {
-									printf("error: cannot handle the port "
-										"in the uri in Contact:\n%s\n", 
-										reply);
-									exit_code(3);
-								}
-							}
-
-							/* get the new destination IP*/
-							if ((foo=strchr(contact+4,'@'))!=NULL)
-								foo++;
-							else
-								foo=contact+4;
-							if (!rport)
-								address = getsrvaddress(foo, &rport);
-							if (!address)
-								address = getaddress(foo);
-							if (!address){
-								printf("error: cannot determine host "
-									"address from Contact of redirect:"
-									"\n%s\n", reply);
-								exit_code(2);
-							}
-							if (!rport) {
-								rport = 5060;
-							}
-							free(contact);
-							memset(&addr, 0, sizeof(addr));
-							redirected=1;
-							i=nretries;
-						}
-						else {
-							printf("error: cannot handle this redirect:"
-								"\n%s\n", reply);
-							exit_code(2);
-						}
-					} /* if redircts... */
-					else if (regexec(&authexp, reply, 0, 0, 0)==0) {
+					else if (regexec(&authexp, reply, 0, 0, 0) == REG_NOERROR) {
 						if (!username) {
 							printf("%s\nerror: received 401 but cannot "
 								"authentication without a username\n", reply);
@@ -746,100 +781,21 @@ void shoot(char *buff, int buff_size)
 						/* prevents a strange error */
 						regcomp(&authexp, "^SIP/[0-9]\\.[0-9] 40[17] ", 
 							REG_EXTENDED|REG_NOSUB|REG_ICASE);
-						insert_auth(buff, reply);
+						insert_auth(request, reply);
 						if (verbose > 2)
 							printf("\nreceived:\n%s\n", reply);
-						if (STRNCASECMP(buff, "INVITE", 6) == 0) {
-							build_ack(buff, reply, ack);
-							swap_buffers(buff, ack);
-							dontrecv = 1;
-						}
-						else {
-							increase_cseq(buff);
-						}
+						new_transaction(buff);
+						continue;
 					} /* if auth...*/
+					/* lets see if received a redirect */
+					if (redirects == 1 && regexec(&redexp, reply, 0, 0, 0) == REG_NOERROR) {
+						handle_3xx(&addr);
+					} /* if redircts... */
 					else if (trace == 1) {
-						if (regexec(&tmhexp, reply, 0, 0, 0)==0) {
-							/* we received 483 to many hops */
-							printf("%i: ", i);
-							if (verbose > 2) {
-								printf("(%.3f ms)\n%s\n", 
-									deltaT(&sendtime, &recvtime), reply);
-							}
-							else {
-								warning_extract(reply);
-								crlf=strchr(reply, '\n');
-								if (!crlf) {
-									printf("failed to find newline\n");
-									exit_code(254);
-								}
-								*crlf='\0';
-								printf("(%.3f ms) %s\n", 
-									deltaT(&sendtime, &recvtime), reply);
-							}
-							namebeg++;
-							cseqcmp++;
-							maxforw++;
-							create_msg(buff, REQ_OPT);
-							add_via(buff);
-							continue;
-						}
-						else if (regexec(&proexp, reply, 0, 0, 0)==0) {
-							/* we received a provisional response */
-							printf("%i: ", i);
-							if (verbose > 2) {
-								printf("(%.3f ms)\n%s\n", 
-									deltaT(&sendtime, &recvtime), reply);
-							}
-							else {
-								warning_extract(reply);
-								crlf=strchr(reply, '\n');
-								if (!crlf) {
-									printf("failed to find newline\n");
-									exit_code(254);
-								}
-								*crlf='\0';
-								printf("(%.3f ms) %s\n", 
-									deltaT(&sendtime, &recvtime), reply);
-							}
-							retryAfter = SIP_T2;
-							dontsend=1;
-							continue;
-						}
-						else {
-							/* anything else then 483 or provisional will
-							   be treated as final */
-							if (maxforw==i) printf("%i: ", i);
-							else printf("\t");
-							warning_extract(reply);
-							crlf=strchr(reply,'\n');
-							if (!crlf) {
-								printf("failed to find newline\n");
-								exit_code(254);
-							}
-							*crlf='\0';
-							crlf++;
-							printf("(%.3f ms) %s\n", 
-								deltaT(&sendtime, &recvtime), reply);
-							contact=STRCASESTR(crlf, CONT_STR);
-							if (!contact)
-								contact=STRCASESTR(crlf, CONT_SHORT_STR);
-							if (contact){
-								crlf=strchr(contact,'\n');
-								*crlf='\0';
-								printf("\t%s\n", contact);
-							}
-							else {
-								printf("\twithout Contact header\n");
-							}
-							if (regexec(&okexp, reply, 0, 0, 0)==0)
-								on_success(reply);
-							else
-								exit_code(1);
-						}
+						trace_reply();
 					} /* if trace ... */
 					else if (usrloc == 1||invite == 1||message == 1) {
-						if (regexec(&proexp, reply, 0, 0, 0)==0) {
+						if (regexec(&proexp, reply, 0, 0, 0) == REG_NOERROR) {
 							if (verbose > 2)
 								printf("\nignoring provisional "
 									"response\n");
@@ -851,7 +807,7 @@ void shoot(char *buff, int buff_size)
 							case REG_REP:
 								/* we have sent a register and look 
 								   at the response now */
-								if (regexec(&okexp, reply, 0, 0, 0)==0) {
+								if (regexec(&okexp, reply, 0, 0, 0) == REG_NOERROR) {
 									if (verbose > 1)
 										printf ("\tOK\n");
 									if (verbose > 2)
@@ -899,7 +855,7 @@ void shoot(char *buff, int buff_size)
 											> USRLOC_REMOVE_PERCENT) {
 										namebeg++;
 										create_msg(buff, REQ_REG);
-										cseqcmp++;
+										cseq_counter++;
 									}
 									else {
 										/* to prevent only removing of low
@@ -908,20 +864,20 @@ void shoot(char *buff, int buff_size)
 										rem_namebeg = namebeg;
 										namebeg = ((float)rem_rand/RAND_MAX)
 													* namebeg;
-										cseqcmp++;
-										trashchar=cseqcmp;
+										cseq_counter++;
+										trashchar=cseq_counter;
 										create_msg(buff, REQ_REM);
 										usrlocstep=UNREG_REP;
 									}
 								}
 								else if (invite == 1) {
 									create_msg(buff, REQ_INV);
-									cseqcmp++;
+									cseq_counter++;
 									usrlocstep=INV_RECV;
 								}
 								else if (message == 1) {
 									create_msg(buff, REQ_MES);
-									cseqcmp++;
+									cseq_counter++;
 									usrlocstep=MES_RECV;
 								}
 								if (sleep_ms != 0) {
@@ -960,7 +916,7 @@ void shoot(char *buff, int buff_size)
 									dontsend=1;
 									continue;
 								}
-								if (regexec(&okexp, reply, 0, 0, 0)==0) {
+								if (regexec(&okexp, reply, 0, 0, 0) == REG_NOERROR) {
 									if (verbose > 1)
 										printf("\treply received\n");
 									if (verbose > 2)
@@ -1030,7 +986,7 @@ void shoot(char *buff, int buff_size)
 												> USRLOC_REMOVE_PERCENT) {
 											namebeg++;
 											create_msg(buff, REQ_REG);
-											cseqcmp=cseqcmp+2;
+											cseq_counter+=2;
 											usrlocstep=REG_REP;
 										}
 										else {
@@ -1040,8 +996,8 @@ void shoot(char *buff, int buff_size)
 											rem_namebeg = namebeg;
 											namebeg = ((float)rem_rand/RAND_MAX)
 														* namebeg;
-											cseqcmp++;
-											trashchar=cseqcmp;
+											cseq_counter++;
+											trashchar=cseq_counter;
 											create_msg(buff, REQ_REM);
 											usrlocstep=UNREG_REP;
 										}
@@ -1049,7 +1005,7 @@ void shoot(char *buff, int buff_size)
 									else {
 										namebeg++;
 										create_msg(buff, REQ_INV);
-										cseqcmp=cseqcmp+3;
+										cseq_counter+=3;
 										usrlocstep=INV_RECV;
 									}
 								}
@@ -1099,7 +1055,7 @@ void shoot(char *buff, int buff_size)
 									dontsend=1;
 									continue;
 								}
-								if (regexec(&okexp, reply, 0, 0, 0)==0) {
+								if (regexec(&okexp, reply, 0, 0, 0) == REG_NOERROR) {
 									if (verbose > 1)
 										printf("  reply received\n\n");
 									else if (verbose>0 && nameend>0)
@@ -1142,7 +1098,7 @@ void shoot(char *buff, int buff_size)
 												> USRLOC_REMOVE_PERCENT) {
 											namebeg++;
 											create_msg(buff, REQ_REG);
-											cseqcmp=cseqcmp+2;
+											cseq_counter+=2;
 											usrlocstep=REG_REP;
 										}
 										else {
@@ -1152,8 +1108,8 @@ void shoot(char *buff, int buff_size)
 											rem_namebeg = namebeg;
 											namebeg = ((float)rem_rand/RAND_MAX)
 														* namebeg;
-											cseqcmp++;
-											trashchar=cseqcmp;
+											cseq_counter++;
+											trashchar=cseq_counter;
 											create_msg(buff, REQ_REM);
 											usrlocstep=UNREG_REP;
 										}
@@ -1161,7 +1117,7 @@ void shoot(char *buff, int buff_size)
 									else {
 										namebeg++;
 										create_msg(buff, REQ_MES);
-										cseqcmp=cseqcmp+3;
+										cseq_counter+=3;
 										usrlocstep=MES_RECV;
 									}
 								}
@@ -1193,7 +1149,7 @@ void shoot(char *buff, int buff_size)
 									dontsend=1;
 									continue;
 								}
-								if (regexec(&okexp, reply, 0, 0, 0)==0) {
+								if (regexec(&okexp, reply, 0, 0, 0) == REG_NOERROR) {
 									if (verbose > 1) printf("   OK\n\n");
 									else if (verbose>0 && nameend>0)
 										printf("Binding removal for %s%i "
@@ -1204,7 +1160,7 @@ void shoot(char *buff, int buff_size)
 									namebeg = rem_namebeg;
 									namebeg++;
 									create_msg(buff, REQ_REG);
-									cseqcmp++;
+									cseq_counter++;
 									usrlocstep=REG_REP;
 									i--;
 								}
@@ -1229,7 +1185,7 @@ void shoot(char *buff, int buff_size)
 					else if (randtrash == 1) {
 						/* in randomzing trash we are expexting 4?? error codes
 						   everything else should not be normal */
-						if (regexec(&errexp, reply, 0, 0, 0)==0) {
+						if (regexec(&errexp, reply, 0, 0, 0) == REG_NOERROR) {
 							if (verbose > 2)
 								printf("received:\n%s\n", reply);
 							if (verbose > 1) {
@@ -1266,7 +1222,7 @@ void shoot(char *buff, int buff_size)
 					else {
 						/* in the normal send and reply case anything other 
 						   then 1xx will be treated as final response*/
-						if (regexec(&proexp, reply, 0, 0, 0)==0) {
+						if (regexec(&proexp, reply, 0, 0, 0) == REG_NOERROR) {
 							if (verbose > 1) {
 								printf("%s\n\n", reply);
 								printf("** reply received ");
@@ -1311,23 +1267,8 @@ void shoot(char *buff, int buff_size)
 							else if (verbose>0) printf("%s\n", reply);
 							else if (timing) printf("%.3f ms\n", 
 										deltaT(&firstsendt, &recvtime));
-							if (regexec(&okexp, reply, 0, 0, 0)==0)
+							if (regexec(&okexp, reply, 0, 0, 0) == REG_NOERROR)
 							{
-								if (STRNCASECMP(buff, "INVITE", 6) == 0) {
-									build_ack(buff, reply, ack);
-									/* ACK must be in new transaction */
-									if((foo = STRCASESTR(ack,"branch=z9hG4bK.")) != NULL) {
-										snprintf(foo+15, 9, "%08x", rand());
-									}
-									if (verbose > 1)
-						 	      		printf("Sending ACK\n%s\n", ack);
-									if (csock == -1) {
-										sendto(usock, ack, strlen(ack), 0, (struct sockaddr *)&addr, sizeof(addr));
-									}
-									else {
-										send(csock, ack, strlen(ack), 0);
-									}
-								}
 								on_success(reply);
 							}
 							else
@@ -1336,7 +1277,7 @@ void shoot(char *buff, int buff_size)
 					} /* redirect, auth, and modes */
 		
 				} /* ret > 0 */
-				else if (ret == -1) {
+				else if (ret == -1) { // we did not got anything back, send again
 					continue;
 				}
 				else {
@@ -1362,7 +1303,6 @@ void shoot(char *buff, int buff_size)
 			}
 		} /* for nretries */
 
-	} /* while redirected */
 	if (randtrash == 1) exit_code(0);
 	printf("** give up retransmissioning....\n");
 	if (retrans_r_c>0 && (verbose > 1))
