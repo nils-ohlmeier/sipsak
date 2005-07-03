@@ -145,6 +145,7 @@ void print_long_help() {
 		"  --search=REGEXP            search for a RegExp in replies and return error\n"
 		"                             on failfure\n"
 		"  --timing                   print the timing informations at the end\n"
+		"  --symmetric                send and received on the same port\n"
 		);
 	exit_code(0);
 }
@@ -206,6 +207,7 @@ void print_help() {
 		"  -O STRING         Content-Disposition value\n"
 		"  -P NUMBER         Number of processes to start\n"
 		"  -A                print timing informations\n"
+		"  -S                use same port for receiving and sending\n"
 		);
 		exit_code(0);
 }
@@ -263,13 +265,14 @@ int main(int argc, char *argv[])
 		{"auth-username", 1, 0, 'u'},
 		{"no-crlf", 0, 0, 'L'},
 		{"timing", 0, 0, 'A'},
+		{"symmetric", 0, 0, 'S'},
 		{0, 0, 0, 0}
 	};
 #endif
 	/* some initialisation to be shure */
 	file_b=uri_b=trace=lport=usrloc=flood=verbose=randtrash=trashchar = 0;
 	warning_ext=rand_rem=nonce_count=replace_b=invite=message = 0;
-	sleep_ms=empty_contact=nagios_warn=timing=outbound_proxy = 0;
+	sleep_ms=empty_contact=nagios_warn=timing=outbound_proxy=symmetric = 0;
 	namebeg=nameend=maxforw= -1;
 	numeric=via_ins=redirects=fix_crlf=processes = 1;
 	username=password=replace_str=hostname=contact_uri=mes_body = NULL;
@@ -289,9 +292,9 @@ int main(int argc, char *argv[])
 
 	/* lots of command line switches to handle*/
 #ifdef HAVE_GETOPT_LONG
-	while ((c=getopt_long(argc, argv, "a:Ab:B:c:C:de:f:Fg:GhH:iIl:Lm:MnNo:O:p:P:q:r:Rs:t:Tu:UvVwW:x:z", l_opts, &option_index)) != EOF){
+	while ((c=getopt_long(argc, argv, "a:Ab:B:c:C:de:f:Fg:GhH:iIl:Lm:MnNo:O:p:P:q:r:Rs:St:Tu:UvVwW:x:z", l_opts, &option_index)) != EOF){
 #else
-	while ((c=getopt(argc,argv,"a:Ab:B:c:C:de:f:Fg:GhH:iIl:Lm:MnNo:O:p:P:q:r:Rs:t:Tu:UvVwW:x:z")) != EOF){
+	while ((c=getopt(argc,argv,"a:Ab:B:c:C:de:f:Fg:GhH:iIl:Lm:MnNo:O:p:P:q:r:Rs:St:Tu:UvVwW:x:z")) != EOF){
 #endif
 		switch(c){
 			case 'a':
@@ -533,6 +536,10 @@ int main(int argc, char *argv[])
 				}
 				uri_b=1;
 				break;			break;
+			case 'S':
+				printf("warning: symmetric does not work with a-symmetric servers\n");
+				symmetric=1;
+				break;
 			case 't':
 				trashchar=str_to_int(optarg);
 				if (!trashchar) {

@@ -131,7 +131,8 @@ int check_for_message(char *recv, int size) {
 		tv.tv_usec = (retryAfter % 1000) * 1000;
 
 		FD_ZERO(&fd);
-		FD_SET(usock, &fd); 
+		if (usock != -1)
+			FD_SET(usock, &fd); 
 		if (csock != -1)
 			FD_SET(csock, &fd); 
 #ifdef RAW_SUPPORT
@@ -220,8 +221,8 @@ int check_for_message(char *recv, int size) {
 		perror("select error");
 		exit_code(2);
 	}
-	else if (FD_ISSET(usock, &fd) || ((csock != -1) && FD_ISSET(csock, &fd))) {
-		if (FD_ISSET(usock, &fd))
+	else if (((usock != -1) && FD_ISSET(usock, &fd)) || ((csock != -1) && FD_ISSET(csock, &fd))) {
+		if ((usock != -1) && FD_ISSET(usock, &fd))
 			ret = usock;
 		else
 			ret = csock;
@@ -505,29 +506,26 @@ void shoot(char *buff, int buff_size)
 	delaytime.tv_sec = 0;
 	delaytime.tv_usec = 0;
 
-	/* create the un-connected socket */
-	usock = (int)socket(PF_INET, SOCK_DGRAM, IPPROTO_UDP);
-	if (usock==-1) {
-		perror("unconnected UDP socket creation failed");
-		exit_code(2);
-	}
+	csock = usock = -1;
 
 	memset(&addr, 0, sizeof(addr));
 	addr.sin_family=AF_INET;
 	addr.sin_addr.s_addr = htonl( INADDR_ANY );
 	addr.sin_port = htons((short)lport);
-	if (bind( usock, (struct sockaddr *) &addr, sizeof(addr) )==-1) {
-		perror("unconnected UDP socket binding failed");
-		exit_code(2);
+
+	/* create the un-connected socket */
+	if (!symmetric) {
+		usock = (int)socket(PF_INET, SOCK_DGRAM, IPPROTO_UDP);
+		if (usock==-1) {
+			perror("unconnected UDP socket creation failed");
+			exit_code(2);
+		}
+		if (bind( usock, (struct sockaddr *) &addr, sizeof(addr) )==-1) {
+			perror("unconnected UDP socket binding failed");
+			exit_code(2);
+		}
 	}
 
-	/* for the via line we need our listening port number */
-	if (lport==0){
-		memset(&addr, 0, sizeof(addr));
-		slen=sizeof(addr);
-		getsockname(usock, (struct sockaddr *)&addr, &slen);
-		lport=ntohs(addr.sin_port);
-	}
 
 #ifdef RAW_SUPPORT
 	/* try to create the raw socket */
@@ -544,19 +542,26 @@ void shoot(char *buff, int buff_size)
 			exit_code(2);
 		}
 
-		addr.sin_family=AF_INET;
-		addr.sin_addr.s_addr = htonl( INADDR_ANY );
-		addr.sin_port = htons((short)0);
+		if (!symmetric)
+			addr.sin_port = htons((short)0);
 		if (bind( csock, (struct sockaddr *) &addr, sizeof(addr) )==-1) {
 			perror("connected UDP socket binding failed");
 			exit_code(2);
 		}
 #ifdef RAW_SUPPORT
 	}
-	else {
-		csock = -1;
-	}
 #endif
+
+	/* for the via line we need our listening port number */
+	if (lport==0){
+		memset(&addr, 0, sizeof(addr));
+		slen=sizeof(addr);
+		if (symmetric)
+			getsockname(csock, (struct sockaddr *)&addr, &slen);
+		else
+			getsockname(usock, (struct sockaddr *)&addr, &slen);
+		lport=ntohs(addr.sin_port);
+	}
 
 	if (sleep_ms != 0) {
 		if (sleep_ms == -2) {
