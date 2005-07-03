@@ -113,6 +113,10 @@ void send_message(char* mes, struct sockaddr *dest) {
 			perror("send failure");
 			exit_code(2);
 		}
+#ifdef HAVE_INET_NTOP
+		if (verbose > 2)
+			printf("send to: %s:%i\n", target_dot, rport);
+#endif
 		send_counter++;
 	}
 	else {
@@ -228,7 +232,7 @@ int check_for_message(char *recv, int size) {
 			ret = csock;
 		/* no timeout, no error ... something has happened :-) */
 	 	if (trace == 0 && usrloc ==0 && invite == 0 && message == 0 && randtrash == 0 && (verbose > 1))
-			printf ("\nmessage received:\n");
+			printf ("\nmessage received");
 	}
 #ifdef RAW_SUPPORT
 	else if ((rawsock != -1) && FD_ISSET(rawsock, &fd)) {
@@ -248,6 +252,10 @@ int recv_message(char *buf, int size) {
 	int ret = 0;
 	int sock = 0;
 	double tmp_delay;
+#ifdef HAVE_INET_NTOP
+	struct sockaddr_in peer_adr;
+	socklen_t psize = sizeof(peer_adr);
+#endif
 #ifdef RAW_SUPPORT
 	struct sockaddr_in faddr;
 	struct ip 		*r_ip_hdr, *s_ip_hdr;
@@ -256,7 +264,6 @@ int recv_message(char *buf, int size) {
 	size_t r_ip_len, s_ip_len, icmp_len;
 	int srcport, dstport;
 	unsigned int flen;
-	char fstr[INET_ADDRSTRLEN];
 #endif
 
 	sock = check_for_message(buf, size);
@@ -300,8 +307,15 @@ int recv_message(char *buf, int size) {
 			srcport = ntohs(udp_hdr->uh_sport);
 			dstport = ntohs(udp_hdr->uh_dport);
 			if ((srcport == lport) && (dstport == rport)) {
-				inet_ntop(AF_INET, &faddr.sin_addr, fstr, INET_ADDRSTRLEN);
-				printf(" (type: %u, code: %u): from %s\n", icmp_hdr->icmp_type, icmp_hdr->icmp_code, fstr);
+				printf(" (type: %u, code: %u)", icmp_hdr->icmp_type, icmp_hdr->icmp_code);
+#ifdef HAVE_INET_NTOP
+				if (inet_ntop(AF_INET, &faddr.sin_addr, &source_dot[0], INET_ADDRSTRLEN) != NULL)
+					printf(": from %s\n", source_dot);
+				else
+					printf("\n");
+#else
+				printf("\n");
+#endif
 				exit_code(3);
 			}
 			else {
@@ -331,6 +345,15 @@ int recv_message(char *buf, int size) {
 			delaytime.tv_sec = 0;
 			delaytime.tv_usec = 0;
 		}
+#ifdef HAVE_INET_NTOP
+		if ((verbose > 2) && (getpeername(sock, (struct sockaddr *)&peer_adr, &psize) == 0) && (inet_ntop(peer_adr.sin_family, &peer_adr.sin_addr, &source_dot[0], INET_ADDRSTRLEN) != NULL)) {
+			printf(" from: %s:%i\n", source_dot, ntohs(peer_adr.sin_port));
+		}
+		else if (verbose > 1)
+			printf(":\n");
+#else
+		printf(":\n");
+#endif
 	}
 	return ret;
 }

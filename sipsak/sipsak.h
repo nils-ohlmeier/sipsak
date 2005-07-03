@@ -39,6 +39,9 @@
 #ifdef HAVE_SYS_PARAM_H
 # include <sys/param.h>
 #endif
+#ifdef HAVE_NETINET_IN_H
+# include <netinet/in.h>
+#endif
 
 #ifdef HAVE_STRCASESTR
 # define __USE_GNU
@@ -240,6 +243,7 @@ char *username, *domainname, *password, *replace_str, *hostname, *contact_uri;
 char *mes_body, *con_dis, *auth_username;
 char fqdn[FQDN_SIZE], messusern[FQDN_SIZE];
 char confirm[BUFSIZE], ack[BUFSIZE];
+char target_dot[INET_ADDRSTRLEN], source_dot[INET_ADDRSTRLEN];
 char *request, *reply;
 regex_t* re;
 

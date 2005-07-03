@@ -418,6 +418,10 @@ void set_target(struct sockaddr_in *adr, unsigned long target, int port, int soc
 	adr->sin_port = htons((short)port);
 	adr->sin_family = AF_INET;
 
+#ifdef HAVE_INET_NTOP
+	inet_ntop(adr->sin_family, &adr->sin_addr, &target_dot[0], INET_ADDRSTRLEN);
+#endif
+
 	if (socket != -1) {
 		if (connect(socket, (struct sockaddr *)adr, sizeof(struct sockaddr_in)) == -1) {
 			perror("connecting UDP socket failed");

@@ -4846,8 +4846,7 @@ rm -f conftest*
 
 
 
-
-for ac_func in getchar gethostbyname gethostname getpid gettimeofday inet_ntop memset ntohs regcomp select socket strchr strcmp strstr strtol uname
+for ac_func in getchar gethostbyname gethostname getpid gettimeofday memset ntohs regcomp select socket strchr strcmp strstr strtol uname
 do
 as_ac_var=`echo "ac_cv_func_$ac_func" | $as_tr_sh`
 echo "$as_me:$LINENO: checking for $ac_func" >&5
@@ -4956,7 +4955,8 @@ done
 
 
 
-for ac_func in getdomainname getopt_long strncasecmp strcasestr
+
+for ac_func in getdomainname getopt_long inet_ntop strncasecmp strcasestr
 do
 as_ac_var=`echo "ac_cv_func_$ac_func" | $as_tr_sh`
 echo "$as_me:$LINENO: checking for $ac_func" >&5
