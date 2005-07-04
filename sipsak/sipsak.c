@@ -77,7 +77,7 @@ void print_version() {
 	printf(
 		" shoot  : sipsak [-f FILE] [-L] -s SIPURI\n"
 		" trace  : sipsak -T -s SIPURI\n"
-		" usrloc : sipsak -U [-I|M] [-b NUMBER] [-e NUMBER] [-x NUMBER] [-z] -s SIPURI\n"
+		" usrloc : sipsak -U [-I|M] [-b NUMBER] [-e NUMBER] [-x NUMBER] [-z NUMBER] -s SIPURI\n"
 		" usrloc : sipsak -I|M [-b NUMBER] [-e NUMBER] -s SIPURI\n"
 		" usrloc : sipsak -U [-C SIPURI] [-x NUMBER] -s SIPURI\n"
 		" message: sipsak -M [-B STRING] [-O STRING] -s SIPURI\n"
@@ -112,7 +112,7 @@ void print_long_help() {
 		"  --sleep=NUMBER             sleep number ms before sending next request\n"
 		);
 	printf("  --expires=NUMBER           the expires header field value (default: 15)\n"
-		"  --remove-bindings          activates randomly removing of user bindings\n"
+		"  --remove-bindings=NUMBER   activates randomly removing of user bindings\n"
 		"  --flood-mode               activates the flood mode\n"
 		"  --cseq-max=NUMBER          the maximum CSeq number for flood mode "
 			"(default: 2^31)\n"
@@ -172,7 +172,7 @@ void print_help() {
 		"  -e NUMBER         the ending numer of the appendix to the user name\n"
 		"  -o NUMBER         sleep number ms before sending next request\n"
 		"  -x NUMBER         the expires header field value (default: 15)\n"
-		"  -z                activates randomly removing of user bindings\n"
+		"  -z NUMBER         activates randomly removing of user bindings\n"
 		"  -F                activates the flood mode\n"
 		);
 	printf(
@@ -238,7 +238,7 @@ int main(int argc, char *argv[])
 		{"appendix-end", 1, 0, 'e'},
 		{"sleep", 1, 0, 'o'},
 		{"expires", 1, 0, 'x'},
-		{"remove-bindings", 0, 0, 'z'},
+		{"remove-bindings", 1, 0, 'z'},
 		{"flood-mode", 0, 0, 'F'},
 		{"cseq-max", 1, 0, 'c'},
 		{"random-mode", 0, 0, 'R'},
@@ -292,9 +292,9 @@ int main(int argc, char *argv[])
 
 	/* lots of command line switches to handle*/
 #ifdef HAVE_GETOPT_LONG
-	while ((c=getopt_long(argc, argv, "a:Ab:B:c:C:de:f:Fg:GhH:iIl:Lm:MnNo:O:p:P:q:r:Rs:St:Tu:UvVwW:x:z", l_opts, &option_index)) != EOF){
+	while ((c=getopt_long(argc, argv, "a:Ab:B:c:C:de:f:Fg:GhH:iIl:Lm:MnNo:O:p:P:q:r:Rs:St:Tu:UvVwW:x:z:", l_opts, &option_index)) != EOF){
 #else
-	while ((c=getopt(argc,argv,"a:Ab:B:c:C:de:f:Fg:GhH:iIl:Lm:MnNo:O:p:P:q:r:Rs:St:Tu:UvVwW:x:z")) != EOF){
+	while ((c=getopt(argc,argv,"a:Ab:B:c:C:de:f:Fg:GhH:iIl:Lm:MnNo:O:p:P:q:r:Rs:St:Tu:UvVwW:x:z:")) != EOF){
 #endif
 		switch(c){
 			case 'a':
@@ -604,7 +604,11 @@ int main(int argc, char *argv[])
 				break;
 #endif
 			case 'z':
-				rand_rem=1;
+				rand_rem=str_to_int(optarg);
+				if (rand_rem < 0 || rand_rem > 100) {
+					printf("error: z option must between 0 and 100\n");
+					exit_code(2);
+				}
 				break;
 			default:
 				printf("error: unknown parameter %c\n", c);

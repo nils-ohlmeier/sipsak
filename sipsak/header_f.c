@@ -156,8 +156,9 @@ void cpy_to(char *reply, char *dest) {
 
 /* check for the existence of a Max-Forwards header field. if its 
    present it sets it to the given value, if not it will be inserted.*/
-void set_maxforw(char *mes){
+void set_maxforw(char *mes, int value){
 	char *max, *backup, *crlfi;
+	int maxforward;
 
 	if ((max=STRCASESTR(mes, MAX_FRW_STR))==NULL){
 		/* no max-forwards found so insert it after the first line*/
@@ -173,13 +174,19 @@ void set_maxforw(char *mes){
 			exit_code(255);
 		}
 		strncpy(backup, max, (size_t)(strlen(max)+1));
-		snprintf(max, MAX_FRW_STR_LEN+6, "%s%i\r\n", MAX_FRW_STR, maxforw);
+		if (value == -1) {
+			maxforward = 70; // RFC3261 default
+		}
+		else {
+			maxforward = value;
+		}
+		snprintf(max, MAX_FRW_STR_LEN+6, "%s%i\r\n", MAX_FRW_STR, maxforward);
 		max=strchr(max,'\n');
 		max++;
 		strncpy(max, backup, strlen(backup)+1);
 		free(backup);
 		if (verbose > 1)
-			printf("Max-Forwards %i inserted into header\n", maxforw);
+			printf("Max-Forwards %i inserted into header\n", maxforward);
 		if (verbose > 2)
 			printf("New message with inserted Max-Forwards:\n%s\n", mes);
 	}
@@ -194,13 +201,20 @@ void set_maxforw(char *mes){
 		}
 		strncpy(backup, crlfi, strlen(crlfi)+1);
 		crlfi=max + MAX_FRW_STR_LEN;
-		snprintf(crlfi, 6, "%i\r\n", maxforw);
+		if (value == -1) {
+			maxforward = str_to_int(crlfi);
+			maxforward++;
+		}
+		else {
+			maxforward = value;
+		}
+		snprintf(crlfi, 6, "%i\r\n", maxforward);
 		crlfi=strchr(max,'\n');
 		crlfi++;
 		strncpy(crlfi, backup, strlen(backup)+1);
 		free(backup);
 		if (verbose > 1)
-			printf("Max-Forwards set to %i\n", maxforw);
+			printf("Max-Forwards set to %i\n", maxforward);
 		if (verbose > 2)
 			printf("New message with changed Max-Forwards:\n%s\n", mes);
 	}
@@ -554,7 +568,7 @@ void new_transaction(char *message)
 }
 
 /* just print the first line of the message */
-void print_first_line(char *message)
+void print_message_line(char *message)
 {
 	char *crlf;
 

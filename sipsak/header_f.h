@@ -26,7 +26,7 @@ void cpy_vias(char *reply, char *dest);
 
 void cpy_to(char *reply, char *dest);
 
-void set_maxforw(char *mes);
+void set_maxforw(char *mes, int value);
 
 void uri_replace(char *mes, char *uri);
 
@@ -50,5 +50,5 @@ void new_branch(char *message);
 
 void new_transaction(char *message);
 
-void print_first_line(char *message);
+void print_message_line(char *message);
 #endif

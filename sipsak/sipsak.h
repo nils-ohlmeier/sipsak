@@ -176,10 +176,6 @@
 #define CON_EXP_STR "expires="
 #define CON_EXP_STR_LEN (sizeof(CON_EXP_STR) - 1)
 
-#define USRLOC_EXP_DEF 15
-#define FLOOD_METH "OPTIONS"
-#define USRLOC_REMOVE_PERCENT 0.1
-
 #define WWWAUTH_STR "WWW-Authenticate: "
 #define WWWAUTH_STR_LEN (sizeof(WWWAUTH_STR) - 1)
 
@@ -227,6 +223,9 @@
 
 #define SIP100_STR "SIP/2.0 100"
 #define SIP100_STR_LEN (sizeof(SIP100_STR) - 1)
+
+#define USRLOC_EXP_DEF 15
+#define FLOOD_METH "OPTIONS"
 
 #define MD5_HASHLEN 16
 #define HASHHEXLEN 2 * MD5_HASHLEN

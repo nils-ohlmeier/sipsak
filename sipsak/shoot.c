@@ -92,6 +92,9 @@ int dontsend, dontrecv, usock, csock, retryAfter, randretrys, retrans_s_c;
 int i, send_counter;
 double senddiff, big_delay;
 regex_t redexp, proexp, okexp, tmhexp, errexp, authexp, replyexp;
+enum usteps { REG_REP, INV_RECV, INV_OK_RECV, INV_ACK_RECV, MES_RECV, 
+					MES_OK_RECV, UNREG_REP};
+enum usteps usrlocstep;
 #ifdef RAW_SUPPORT
 int rawsock;
 #endif
@@ -441,13 +444,13 @@ void trace_reply()
 		else {
 			warning_extract(reply);
 			printf("(%.3f ms) ", deltaT(&sendtime, &recvtime));
-			print_first_line(reply);
+			print_message_line(reply);
 		}
 		namebeg++;
 		cseq_counter++;
-		maxforw++;
 		create_msg(request, REQ_OPT);
 		add_via(request);
+		set_maxforw(request, -1);
 		return;
 	}
 	else if (regexec(&proexp, reply, 0, 0, 0) == REG_NOERROR) {
@@ -460,7 +463,7 @@ void trace_reply()
 		else {
 			warning_extract(reply);
 			printf("(%.3f ms) ", deltaT(&sendtime, &recvtime));
-			print_first_line(reply);
+			print_message_line(reply);
 		}
 		retryAfter = SIP_T2;
 		dontsend=1;
@@ -475,11 +478,11 @@ void trace_reply()
 			printf("\t");
 		warning_extract(reply);
 		printf("(%.3f ms) ", deltaT(&sendtime, &recvtime));
-		print_first_line(reply);
+		print_message_line(reply);
 		if ((contact = STRCASESTR(reply, CONT_STR)) != NULL ||
 				(contact = STRCASESTR(reply, CONT_SHORT_STR)) != NULL) {
 			printf("\t");
-			print_first_line(contact);
+			print_message_line(contact);
 		}
 		else {
 			printf("\twithout Contact header\n");
@@ -488,6 +491,158 @@ void trace_reply()
 			on_success(reply);
 		else
 			exit_code(1);
+	}
+}
+
+void handle_default()
+{
+	/* in the normal send and reply case anything other 
+	   then 1xx will be treated as final response*/
+	if (regexec(&proexp, reply, 0, 0, 0) == REG_NOERROR) {
+		if (verbose > 1) {
+			printf("%s\n\n", reply);
+			printf("** reply received ");
+			if (send_counter == 1) {
+				printf("after %.3f ms **\n", deltaT(&sendtime, &recvtime));
+			}
+			else {
+				printf("%.3f ms after first send\n   and "
+						"%.3f ms after last send **\n", deltaT(&firstsendt, &recvtime), 
+						deltaT(&sendtime, &recvtime));
+			}
+			printf("   ");
+			print_message_line(reply);
+			printf("   provisional received; still"
+					" waiting for a final response\n");
+		}
+		retryAfter = SIP_T2;
+		dontsend = 1;
+		return;
+	}
+	else {
+		if (verbose > 1) {
+			printf("%s\n\n", reply);
+			printf("** reply received ");
+			if (send_counter == 1) {
+				printf("after %.3f ms **\n", deltaT(&sendtime, &recvtime));
+			}
+			else {
+				printf("%.3f ms after first send\n   and "
+						"%.3f ms after last send **\n", deltaT(&firstsendt, &recvtime), 
+						deltaT(&sendtime, &recvtime));
+			}
+			printf("   ");
+			print_message_line(reply);
+			printf("   final received\n");
+		}
+		else if (verbose>0) {
+			printf("%s\n", reply);
+		}
+		else if (timing) {
+			printf("%.3f ms\n", deltaT(&firstsendt, &recvtime));
+		}
+		if (regexec(&okexp, reply, 0, 0, 0) == REG_NOERROR) {
+			on_success(reply);
+		}
+		else {
+			exit_code(1);
+		}
+	}
+}
+
+void handle_randtrash()
+{
+	/* in randomzing trash we are expexting 4?? error codes
+	   everything else should not be normal */
+	if (regexec(&errexp, reply, 0, 0, 0) == REG_NOERROR) {
+		if (verbose > 2)
+			printf("received:\n%s\n", reply);
+		if (verbose > 1) {
+			printf("received expected 4xx ");
+			if (warning_ext == 1) {
+				printf ("from ");
+				warning_extract(reply);
+				printf("\n");
+			}
+			else {
+				printf("\n");
+			}
+		}
+	}
+	else {
+		printf("warning: did not received 4xx\n");
+		if (verbose > 1) 
+			printf("sended:\n%s\nreceived:\n%s\n", request, reply);
+	}
+	if (nameend == (i+1)) {
+		if (randretrys == 0) {
+			printf("random end reached. server survived :) respect!\n");
+			exit_code(0);
+		}
+		else {
+			printf("maximum sendings reached but did not "
+				"get a response on this request:\n%s\n", request);
+			exit_code(3);
+		}
+	}
+	else {
+		trash_random(request);
+	}
+}
+
+void before_sending()
+{
+	/* some initial output */
+	if ((usrloc == 1||invite == 1||message == 1) && (verbose > 1) && (dontsend == 0)) {
+		switch (usrlocstep) {
+			case REG_REP:
+				if (nameend>0)
+					printf("registering user %s%i... ", username, namebeg);
+				else
+					printf("registering user %s... ", username);
+				break;
+			case INV_RECV:
+				if (nameend>0)
+					printf("inviting user %s%i... ", username, namebeg);
+				else
+					printf("inviting user %s... ", username);
+				break;
+			case INV_OK_RECV:
+				printf("sending invite reply... ");
+				break;
+			case INV_ACK_RECV:
+				printf("sending invite ack... ");
+				break;
+			case MES_RECV:
+				if (nameend>0)
+					printf("sending message to %s%i... ", username, namebeg);
+				else
+					printf("sending message to %s... ", username);
+				break;
+			case MES_OK_RECV:
+				if (mes_body)
+					printf("sending message ... \n");
+				else
+					printf("sending message reply... ");
+				break;
+			case UNREG_REP:
+				if (nameend>0)
+					printf("remove binding for %s%i...", username, namebeg);
+				else
+					printf("remove binding for %s...", username);
+				break;
+		}
+	} /* if usrloc...*/
+	else if (flood == 1 && verbose > 0) {
+		printf("flooding message number %i\n", i+1);
+	}
+	else if (randtrash == 1 && verbose > 0) {
+		printf("message with %i randomized chars\n", i+1);
+		if (verbose > 2)
+			printf("request:\n%s\n", request);
+	}
+	else if (trace == 0 && usrloc == 0 && flood == 0 && randtrash == 0 && (verbose > 1)	&& dontsend == 0){
+		printf("** request **\n%s\n", request);
 	}
 }
 
@@ -513,15 +668,13 @@ void shoot(char *buff, int buff_size)
 	//fd_set	fd;
 	socklen_t slen;
 	//regex_t redexp, proexp, okexp, tmhexp, errexp, authexp, replyexp;
-	enum usteps { REG_REP, INV_RECV, INV_OK_RECV, INV_ACK_RECV, MES_RECV, 
-					MES_OK_RECV, UNREG_REP};
-	enum usteps usrlocstep = REG_REP;
 
 	/* the vars are filled by configure */
 	nretries = DEFAULT_RETRYS;
 	/* retryAfter = DEFAULT_TIMEOUT; */
 	retryAfter = SIP_T1;
 	cseq_counter = 1;
+	usrlocstep = REG_REP;
 
 	/* initalize some local vars */
 	dontsend=dontrecv=retrans_r_c=retrans_s_c = 0;
@@ -661,7 +814,6 @@ void shoot(char *buff, int buff_size)
 		else
 			nretries=255;
 		namebeg=1;
-		maxforw=0;
 		create_msg(buff, REQ_OPT);
 		add_via(buff);
 	}
@@ -695,7 +847,7 @@ void shoot(char *buff, int buff_size)
 		}
 		/* retryAfter = retryAfter / 10; */
 		if(maxforw!=-1)
-			set_maxforw(buff);
+			set_maxforw(buff, maxforw);
 		if(via_ins == 1)
 			add_via(buff);
 	}
@@ -708,64 +860,7 @@ void shoot(char *buff, int buff_size)
 		   mode */
 		for (i = 0; i <= nretries; i++)
 		{
-			if (trace == 1) {
-				set_maxforw(buff);
-			}
-			/* some initial output */
-			else if ((usrloc == 1||invite == 1||message == 1) && (verbose > 1) && (dontsend == 0)) {
-				switch (usrlocstep) {
-					case REG_REP:
-						if (nameend>0)
-							printf("registering user %s%i... ", username, 
-								namebeg);
-						else
-							printf("registering user %s... ", username);
-						break;
-					case INV_RECV:
-						if (nameend>0)
-							printf("inviting user %s%i... ", username, namebeg);
-						else
-							printf("inviting user %s... ", username);
-						break;
-					case INV_OK_RECV:
-						printf("sending invite reply... ");
-						break;
-					case INV_ACK_RECV:
-						printf("sending invite ack... ");
-						break;
-					case MES_RECV:
-						if (nameend>0)
-							printf("sending message to %s%i... ", username,
-								namebeg);
-						else
-							printf("sending message to %s... ", username);
-						break;
-					case MES_OK_RECV:
-						if (mes_body)
-							printf("sending message ... \n");
-						else
-							printf("sending message reply... ");
-						break;
-					case UNREG_REP:
-						if (nameend>0)
-							printf("remove binding for %s%i...", username, 
-								namebeg);
-						else
-							printf("remove binding for %s...", username);
-						break;
-				}
-			}
-			else if (flood == 1 && verbose > 0) {
-				printf("flooding message number %i\n", i+1);
-			}
-			else if (randtrash == 1 && verbose > 0) {
-				printf("message with %i randomized chars\n", i+1);
-				if (verbose > 2)
-					printf("request:\n%s\n", buff);
-			}
-			else if (trace == 0 && usrloc == 0 && flood == 0 && randtrash == 0 && (verbose > 1)	&& dontsend == 0){
-				printf("** request **\n%s\n", buff);
-			}
+			before_sending();
 
 			if (sleep_ms == -2) {
 				rand_tmp = rand();
@@ -878,9 +973,7 @@ void shoot(char *buff, int buff_size)
 									/* lets see if we deceid to remove a 
 									   binding (case 6)*/
 									rem_rand=rand();
-									if (rand_rem == 0||
-										((float)rem_rand/RAND_MAX) 
-											> USRLOC_REMOVE_PERCENT) {
+									if ( ((float)rem_rand/RAND_MAX)*100 > rand_rem) {
 										namebeg++;
 										create_msg(buff, REQ_REG);
 										cseq_counter++;
@@ -1009,9 +1102,7 @@ void shoot(char *buff, int buff_size)
 										/* lets see if we deceid to remove a 
 										   binding (case 6)*/
 										rem_rand=rand();
-										if (rand_rem == 0||
-											((float)rem_rand/RAND_MAX) 
-												> USRLOC_REMOVE_PERCENT) {
+										if (((float)rem_rand/RAND_MAX) * 100 > rand_rem) {
 											namebeg++;
 											create_msg(buff, REQ_REG);
 											cseq_counter+=2;
@@ -1121,9 +1212,7 @@ void shoot(char *buff, int buff_size)
 										/* lets see if we deceid to remove a 
 										   binding (case 6)*/
 										rem_rand=rand();
-										if (rand_rem>0 ||
-											((float)rem_rand/RAND_MAX) 
-												> USRLOC_REMOVE_PERCENT) {
+										if (((float)rem_rand/RAND_MAX) * 100 > rand_rem) {
 											namebeg++;
 											create_msg(buff, REQ_REG);
 											cseq_counter+=2;
@@ -1211,99 +1300,11 @@ void shoot(char *buff, int buff_size)
 						}
 					}
 					else if (randtrash == 1) {
-						/* in randomzing trash we are expexting 4?? error codes
-						   everything else should not be normal */
-						if (regexec(&errexp, reply, 0, 0, 0) == REG_NOERROR) {
-							if (verbose > 2)
-								printf("received:\n%s\n", reply);
-							if (verbose > 1) {
-								printf("received expected 4xx ");
-								if (warning_ext == 1) {
-									printf ("from ");
-									warning_extract(reply);
-									printf("\n");
-								}
-								else printf("\n");
-							}
-						}
-						else {
-							printf("warning: did not received 4xx\n");
-							if (verbose > 1) 
-								printf("sended:\n%s\nreceived:\n%s\n", buff, 
-									reply);
-						}
-						if (nameend==(i+1)) {
-							if (randretrys == 0) {
-								printf("random end reached. server survived "
-									":) respect!\n");
-								exit_code(0);
-							}
-							else {
-								printf("maximum sendings reached but did not "
-									"get a response on this request:\n%s\n", 
-									buff);
-								exit_code(3);
-							}
-						}
-						else trash_random(buff);
+						handle_randtrash();
 					}
 					else {
-						/* in the normal send and reply case anything other 
-						   then 1xx will be treated as final response*/
-						if (regexec(&proexp, reply, 0, 0, 0) == REG_NOERROR) {
-							if (verbose > 1) {
-								printf("%s\n\n", reply);
-								printf("** reply received ");
-								if (i==0) 
-									printf("after %.3f ms **\n", 
-										deltaT(&sendtime, &recvtime));
-								else 
-									printf("%.3f ms after first send\n   and "
-										"%.3f ms after last send **\n", 
-										deltaT(&firstsendt, &recvtime), 
-										deltaT(&sendtime, &recvtime));
-								crlf=strchr(reply, '\n');
-								if (!crlf) {
-									printf("failed to find newline\n");
-									exit_code(254);
-								}
-								printf("   %.*s\n   provisional received; still"
-									" waiting for a final response\n", crlf - reply, reply);
-							}
-							retryAfter = SIP_T2;
-							dontsend = 1;
-							continue;
-						} else {
-							if (verbose > 1) {
-								printf("%s\n\n", reply);
-								printf("** reply received ");
-								if (i==0) 
-									printf("after %.3f ms **\n", 
-										deltaT(&sendtime, &recvtime));
-								else 
-									printf("%.3f ms after first send\n   and "
-										"%.3f ms after last send **\n", 
-										deltaT(&firstsendt, &recvtime), 
-										deltaT(&sendtime, &recvtime));
-								crlf=strchr(reply, '\n');
-								if (!crlf) {
-									printf("failed to find newline\n");
-									exit_code(254);
-								}
-								printf("   %.*s\n   final received\n", crlf - reply, reply);
-							}
-							else if (verbose>0) printf("%s\n", reply);
-							else if (timing) printf("%.3f ms\n", 
-										deltaT(&firstsendt, &recvtime));
-							if (regexec(&okexp, reply, 0, 0, 0) == REG_NOERROR)
-							{
-								on_success(reply);
-							}
-							else
-								exit_code(1);
-						}
+						handle_default();
 					} /* redirect, auth, and modes */
-		
 				} /* ret > 0 */
 				else if (ret == -1) { // we did not got anything back, send again
 					continue;
@@ -1316,7 +1317,7 @@ void shoot(char *buff, int buff_size)
 				}
 			} /* !flood */
 			else {
-				if (i==0)
+				if (send_counter == 1)
 					memcpy(&firstsendt, &sendtime, sizeof(struct timeval));
 				if (namebeg==nretries) {
 					printf("flood end reached\n");
@@ -1331,7 +1332,8 @@ void shoot(char *buff, int buff_size)
 			}
 		} /* for nretries */
 
-	if (randtrash == 1) exit_code(0);
+	if (randtrash == 1)
+		exit_code(0);
 	printf("** give up retransmissioning....\n");
 	if (retrans_r_c>0 && (verbose > 1))
 		printf("%i retransmissions received during test\n", retrans_r_c);
@@ -1339,4 +1341,3 @@ void shoot(char *buff, int buff_size)
 		printf("sent %i retransmissions during test\n", retrans_s_c);
 	exit_code(3);
 }
-
