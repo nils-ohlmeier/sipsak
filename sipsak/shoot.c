@@ -447,6 +447,7 @@ void trace_reply()
 			print_message_line(reply);
 		}
 		namebeg++;
+		maxforw++;
 		cseq_counter++;
 		create_msg(request, REQ_OPT);
 		add_via(request);
