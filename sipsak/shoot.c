@@ -89,7 +89,7 @@
 struct timezone tz;
 struct timeval sendtime, recvtime, tv, firstsendt, starttime, delaytime;
 int dontsend, dontrecv, usock, csock, retryAfter, randretrys, retrans_s_c;
-int i, send_counter;
+int i, send_counter, retrans_r_c, rem_namebeg;
 double senddiff, big_delay;
 regex_t redexp, proexp, okexp, tmhexp, errexp, authexp, replyexp;
 enum usteps { REG_REP, INV_RECV, INV_OK_RECV, INV_ACK_RECV, MES_RECV, 
@@ -591,6 +591,400 @@ void handle_randtrash()
 	}
 }
 
+void handle_usrloc()
+{
+	char *crlf;
+
+	if (regexec(&proexp, reply, 0, 0, 0) == REG_NOERROR) {
+		if (verbose > 2) {
+			printf("\nignoring provisional response\n");
+		}
+		retryAfter = SIP_T2;
+		dontsend = 1;
+	}
+	else {
+		switch (usrlocstep) {
+			case REG_REP:
+				/* we have sent a register and look 
+				   at the response now */
+				if (regexec(&okexp, reply, 0, 0, 0) == REG_NOERROR) {
+					if (verbose > 1) {
+						printf ("\tOK\n");
+					}
+					if (verbose > 2) {
+						printf("\n%s\n", reply);
+					}
+				}
+				else {
+					printf("\nreceived:\n%s\nerror: didn't "
+									"received '200 OK' on register (see "
+									"above). aborting\n", reply);
+					exit_code(1);
+				}
+				if (invite == 0 && message == 0) {
+					if (namebeg==nameend) {
+						if (verbose>0)  {
+							printf("\nAll usrloc tests"
+										" completed successful.\nreceived"
+										" last message %.3f ms after first"
+										" request (test duration).\n", 
+										deltaT(&firstsendt, &recvtime));
+						}
+						if (big_delay>0 && verbose>0) {
+							printf("biggest delay between "
+										"request and response was %.3f"
+										" ms\n", big_delay);
+						}
+						if (retrans_r_c>0 && verbose>0) {
+							printf("%i retransmission(s) received from server.\n", 
+										retrans_r_c);
+						}
+						if (retrans_s_c>0 && verbose>0) {
+							printf("%i time(s) the timeout of "
+										"%i ms exceeded and request was"
+										" retransmitted.\n", 
+										retrans_s_c, retryAfter);
+							if (retrans_s_c > nagios_warn) {
+												exit_code(4);
+							}
+						}
+						if (timing) {
+							printf("%.3f ms\n",
+										deltaT(&firstsendt, &recvtime));
+						}
+						on_success(reply);
+					} /* namebeg == nameend */
+					/* lets see if we deceid to remove a 
+					   binding (case 6)*/
+					if ( ((float)rand()/RAND_MAX)*100 > rand_rem) {
+						namebeg++;
+						create_msg(request, REQ_REG);
+						cseq_counter++;
+					}
+					else {
+						/* to prevent only removing of low
+						   user numbers new random number*/
+						rem_namebeg = namebeg;
+						namebeg = ((float)rand()/RAND_MAX) * namebeg;
+						cseq_counter++;
+						trashchar=cseq_counter;
+						create_msg(request, REQ_REM);
+						usrlocstep=UNREG_REP;
+					}
+				} /* invite == 0 && message == 0 */
+				else if (invite == 1) {
+					create_msg(request, REQ_INV);
+					cseq_counter++;
+					usrlocstep=INV_RECV;
+				}
+				else if (message == 1) {
+					create_msg(request, REQ_MES);
+					cseq_counter++;
+					usrlocstep=MES_RECV;
+				}
+				break;
+			case INV_RECV:
+				/* see if we received our invite */
+				if (!STRNCASECMP(reply, messusern, strlen(messusern))) {
+					if (verbose > 1) {
+						printf("\t\treceived invite\n");
+					}
+					if (verbose > 2) {
+						printf("\n%s\n", reply);
+					}
+					cpy_vias(reply, confirm);
+					cpy_to(reply, confirm);
+					strcpy(request, confirm);
+					build_ack(request, confirm, ack);
+					strcpy(request, confirm);
+					usrlocstep=INV_OK_RECV;
+				}
+				else {
+					printf("\nreceived:\n%s\nerror: did not "
+								"received the INVITE that was sent "
+								"(see above). aborting\n", reply);
+					exit_code(1);
+				}
+				break;
+			case INV_OK_RECV:
+				/* did we received our ok ? */
+				if (STRNCASECMP(reply, INV_STR, INV_STR_LEN)==0) {
+					if (verbose>0) {
+						printf("ignoring INVITE retransmission\n");
+					}
+					retrans_r_c++;
+					dontsend=1;
+					return;
+				}
+				if (regexec(&okexp, reply, 0, 0, 0) == REG_NOERROR) {
+					if (verbose > 1) {
+						printf("\treply received\n");
+					}
+					if (verbose > 2) {
+						printf("\n%s\n", reply);
+					}
+					cpy_to(reply, ack);
+					strcpy(request, ack);
+					usrlocstep=INV_ACK_RECV;
+				}
+				else {
+					printf("\nreceived:\n%s\nerror: did not "
+								"received the '200 OK' that was sent "
+								"as the reply on the INVITE (see "
+								"above). aborting\n", reply);
+					exit_code(1);
+				}
+				break;
+			case INV_ACK_RECV:
+				/* did we received our ack */
+				if (nameend > 0) {
+					sprintf(messusern, "%s sip:%s%i", ACK_STR, username, namebeg);
+				}
+				else {
+					sprintf(messusern, "%s sip:sipsak_conf", ACK_STR);
+				}
+				if (STRNCASECMP(reply, messusern, strlen(messusern))==0) {
+					if (verbose > 1) {
+						printf("\t\tack received\n");
+					}
+					if (verbose > 2) {
+						printf("\n%s\n", reply);
+					}
+					if (verbose>0 && nameend>0) {
+						printf("usrloc for %s%i completed "
+									"successful\n", username, namebeg);
+					}
+					else if (verbose>0) {
+						printf("usrloc for %s completed successful\n", username);
+					}
+					if (namebeg==nameend) {
+						if (verbose>0) {
+							printf("\nAll usrloc tests completed "
+										"successful.\nreceived last message"
+										" %.3f ms after first request (test"
+										" duration).\n", deltaT(&firstsendt,
+										 &recvtime));
+						}
+						if (big_delay>0) {
+							printf("biggest delay between "
+										"request and response was %.3f"
+										" ms\n", big_delay);
+						}
+						if (retrans_r_c>0) {
+							printf("%i retransmission(s) received from server.\n", 
+										retrans_r_c);
+						}
+						if (retrans_s_c>0) {
+							printf("%i time(s) the timeout of "
+										"%i ms exceeded and request was"
+										" retransmitted.\n", 
+										retrans_s_c, retryAfter);
+							if (retrans_s_c > nagios_warn) {
+								exit_code(4);
+							}
+						}
+						on_success(reply);
+					} /* namebeg == nameend */
+					if (usrloc == 1) {
+						/* lets see if we deceid to remove a 
+						   binding (case 6)*/
+						if (((float)rand()/RAND_MAX) * 100 > rand_rem) {
+							namebeg++;
+							create_msg(request, REQ_REG);
+							cseq_counter+=2;
+							usrlocstep=REG_REP;
+						}
+						else {
+							/* to prevent only removing of low
+							   user numbers new random number*/
+							rem_namebeg = namebeg;
+							namebeg = ((float)rand()/RAND_MAX) * namebeg;
+							cseq_counter++;
+							trashchar=cseq_counter;
+							create_msg(request, REQ_REM);
+							usrlocstep=UNREG_REP;
+						}
+					} /* usrloc == 1 */
+					else {
+						namebeg++;
+						create_msg(request, REQ_INV);
+						cseq_counter+=3;
+						usrlocstep=INV_RECV;
+					}
+				} /* STRNCASECMP */
+				else {
+					printf("\nreceived:\n%s\nerror: did not "
+								"received the 'ACK' that was sent "
+								"as the reply on the '200 OK' (see "
+								"above). aborting\n", reply);
+					exit_code(1);
+				}
+				break;
+			case MES_RECV:
+				/* we sent the message and look if its 
+				   forwarded to us */
+				if (!STRNCASECMP(reply, messusern, strlen(messusern))) {
+					if (verbose > 1) {
+						crlf=STRCASESTR(reply, "\r\n\r\n");
+						crlf=crlf+4;
+						printf("  received message\n  '%s'\n", crlf);
+					}
+					if (verbose > 2) {
+						printf("\n%s\n", reply);
+					}
+					cpy_vias(reply, confirm);
+					cpy_to(reply, confirm);
+					strcpy(request, confirm);
+					usrlocstep=MES_OK_RECV;
+				}
+				else {
+					printf("\nreceived:\n%s\nerror: did not "
+								"received the 'MESSAGE' that was sent "
+								"(see above). aborting\n", reply);
+					exit_code(1);
+				}
+				break;
+			case MES_OK_RECV:
+				/* we sent our reply on the message and
+				   look if this is also forwarded to us */
+				if (STRNCASECMP(reply, MES_STR, MES_STR_LEN)==0) {
+					if (verbose>0) {
+						printf("ignoring MESSAGE retransmission\n");
+					}
+					retrans_r_c++;
+					dontsend=1;
+					return;
+				}
+				if (regexec(&okexp, reply, 0, 0, 0) == REG_NOERROR) {
+					if (verbose > 1) {
+						printf("  reply received\n\n");
+					}
+					else if (verbose>0 && nameend>0) {
+						printf("usrloc for %s%i completed "
+									"successful\n", username, namebeg);
+					}
+					else if (verbose>0) {
+						printf("usrloc for %s completed successful\n", username);
+					}
+					if (namebeg==nameend) {
+						if (verbose>0) {
+							printf("\nAll usrloc tests completed "
+										"successful.\nreceived last message"
+										" %.3f ms after first request (test"
+										" duration).\n", deltaT(&firstsendt,
+										 &recvtime));
+						}
+						if (big_delay>0) {
+							printf("biggest delay between "
+										"request and response was %.3f"
+										" ms\n", big_delay);
+						}
+						if (retrans_r_c>0) {
+							printf("%i retransmission(s) "
+										"received from server.\n", 
+											retrans_r_c);
+						}
+						if (retrans_s_c>0) {
+							printf("%i time(s) the timeout of "
+										"%i ms exceeded and request was"
+										" retransmitted.\n", 
+										retrans_s_c, retryAfter);
+							if (retrans_s_c > nagios_warn) {
+								exit_code(4);
+							}
+						}
+						on_success(reply);
+					} /* namebeg == nameend */
+					if (usrloc == 1) {
+						/* lets see if we deceid to remove a 
+						   binding (case 6)*/
+						if (((float)rand()/RAND_MAX) * 100 > rand_rem) {
+							namebeg++;
+							create_msg(request, REQ_REG);
+							cseq_counter+=2;
+							usrlocstep=REG_REP;
+						}
+						else {
+							/* to prevent only removing of low
+							   user numbers new random number*/
+							rem_namebeg = namebeg;
+							namebeg = ((float)rand()/RAND_MAX) * namebeg;
+							cseq_counter++;
+							trashchar=cseq_counter;
+							create_msg(request, REQ_REM);
+							usrlocstep=UNREG_REP;
+						}
+					} /* usrloc == 1 */
+					else {
+						namebeg++;
+						create_msg(request, REQ_MES);
+						cseq_counter+=3;
+						usrlocstep=MES_RECV;
+					}
+				} /* regexec */
+				else {
+					if (verbose>0) {
+						if (mes_body) {
+							printf("\nreceived:\n%s\nerror: did"
+										" not received 200 for the "
+										"MESSAGE (see above)\n",
+										reply);
+						}
+						else {
+							printf("\nreceived:\n%s\nerror: did"
+										" not received the '200 OK' "
+										"that was sent as the reply on"
+										" the MESSAGE (see above). "
+										"aborting\n", reply);
+						}
+					}
+					exit_code(1);
+				}
+				break;
+			case UNREG_REP:
+				if (STRNCASECMP(reply, MES_STR, MES_STR_LEN)==0) {
+					if (verbose>0) {
+						printf("ignoring MESSAGE retransmission\n");
+					}
+					retrans_r_c++;
+					dontsend=1;
+					return;
+				}
+				if (regexec(&okexp, reply, 0, 0, 0) == REG_NOERROR) {
+					if (verbose > 1) {
+						printf("   OK\n\n");
+					}
+					else if (verbose>0 && nameend>0) {
+						printf("Binding removal for %s%i "
+									"successful\n", username, namebeg);
+					}
+					else if (verbose>0) {
+						printf("Binding removal for %s successful\n", username);
+					}
+					namebeg = rem_namebeg;
+					namebeg++;
+					create_msg(request, REQ_REG);
+					cseq_counter++;
+					usrlocstep=REG_REP;
+					i--;
+				}
+				else {
+					printf("\nreceived:\n%s\nerror: did not "
+								"received the expected 200 on the "
+								"remove bindings request for %s%i (see"
+								" above). aborting\n", reply, username, 
+								namebeg);
+					exit_code(1);
+				}
+				break;
+			default:
+				printf("error: unknown step in usrloc\n");
+				exit_code(2);
+				break;
+		} /* switch */
+	} /* regexec proexp */
+}
+
 void before_sending()
 {
 	/* some initial output */
@@ -657,13 +1051,11 @@ void shoot(char *buff, int buff_size)
 	int nretries;
 	int ret;
 	int cseqtmp, rand_tmp;
-	int rem_rand, retrans_r_c;
 	//int randretrys = 0;
 	//int cseqcmp = 0;
-	int rem_namebeg = 0;
 	//double big_delay, tmp_delay;
 	//char *uscheme, *uuser, *uhost;
-	char *crlf = NULL;
+	//char *crlf = NULL;
 	char buff2[BUFSIZE];
 	char lport_str[LPORT_STR_LEN];
 	//fd_set	fd;
@@ -678,7 +1070,7 @@ void shoot(char *buff, int buff_size)
 	usrlocstep = REG_REP;
 
 	/* initalize some local vars */
-	dontsend=dontrecv=retrans_r_c=retrans_s_c = 0;
+	dontsend=dontrecv=retrans_r_c=retrans_s_c=rem_namebeg = 0;
 	big_delay= 0;
 	delaytime.tv_sec = 0;
 	delaytime.tv_usec = 0;
@@ -870,6 +1262,9 @@ void shoot(char *buff, int buff_size)
 				sleep_ms_s.tv_sec = rand_tmp / 1000;
 				sleep_ms_s.tv_nsec = (rand_tmp % 1000) * 1000;
 			}
+			if (sleep_ms != 0) {
+				nanosleep(&sleep_ms_s, &sleep_rem);
+			}
 
 			send_message(request, (struct sockaddr *)&addr);
 
@@ -921,386 +1316,7 @@ void shoot(char *buff, int buff_size)
 						trace_reply();
 					} /* if trace ... */
 					else if (usrloc == 1||invite == 1||message == 1) {
-						if (regexec(&proexp, reply, 0, 0, 0) == REG_NOERROR) {
-							if (verbose > 2)
-								printf("\nignoring provisional "
-									"response\n");
-							retryAfter = SIP_T2;
-							dontsend = 1;
-						}
-						else {
-						switch (usrlocstep) {
-							case REG_REP:
-								/* we have sent a register and look 
-								   at the response now */
-								if (regexec(&okexp, reply, 0, 0, 0) == REG_NOERROR) {
-									if (verbose > 1)
-										printf ("\tOK\n");
-									if (verbose > 2)
-										printf("\n%s\n", reply);
-								}
-								else {
-									printf("\nreceived:\n%s\nerror: didn't "
-										"received '200 OK' on register (see "
-										"above). aborting\n", reply);
-									exit_code(1);
-								}
-								if (invite == 0 && message == 0) {
-									if (namebeg==nameend) {
-										if (verbose>0) 
-											printf("\nAll usrloc tests"
-											" completed successful.\nreceived"
-											" last message %.3f ms after first"
-											" request (test duration).\n", 
-											deltaT(&firstsendt, &recvtime));
-										if (big_delay>0 && verbose>0)
-											printf("biggest delay between "
-												"request and response was %.3f"
-												" ms\n", big_delay);
-										if (retrans_r_c>0 && verbose>0)
-											printf("%i retransmission(s) "
-												"received from server.\n", 
-												retrans_r_c);
-										if (retrans_s_c>0 && verbose>0) {
-											printf("%i time(s) the timeout of "
-												"%i ms exceeded and request was"
-												" retransmitted.\n", 
-												retrans_s_c, retryAfter);
-											if (retrans_s_c > nagios_warn)
-												exit_code(4);
-										}
-										if (timing) printf("%.3f ms\n",
-															deltaT(&firstsendt, &recvtime));
-										on_success(reply);
-									}
-									/* lets see if we deceid to remove a 
-									   binding (case 6)*/
-									rem_rand=rand();
-									if ( ((float)rem_rand/RAND_MAX)*100 > rand_rem) {
-										namebeg++;
-										create_msg(buff, REQ_REG);
-										cseq_counter++;
-									}
-									else {
-										/* to prevent only removing of low
-										   user numbers new random number*/
-										rem_rand = rand();
-										rem_namebeg = namebeg;
-										namebeg = ((float)rem_rand/RAND_MAX)
-													* namebeg;
-										cseq_counter++;
-										trashchar=cseq_counter;
-										create_msg(buff, REQ_REM);
-										usrlocstep=UNREG_REP;
-									}
-								}
-								else if (invite == 1) {
-									create_msg(buff, REQ_INV);
-									cseq_counter++;
-									usrlocstep=INV_RECV;
-								}
-								else if (message == 1) {
-									create_msg(buff, REQ_MES);
-									cseq_counter++;
-									usrlocstep=MES_RECV;
-								}
-								if (sleep_ms != 0) {
-									nanosleep(&sleep_ms_s, &sleep_rem);
-								}
-								break;
-							case INV_RECV:
-								/* see if we received our invite */
-								if (!STRNCASECMP(reply, messusern, 
-									strlen(messusern))) {
-									if (verbose > 1)
-										printf("\t\treceived invite\n");
-									if (verbose > 2)
-										printf("\n%s\n", reply);
-									cpy_vias(reply, confirm);
-									cpy_to(reply, confirm);
-									strcpy(buff, confirm);
-									build_ack(request, confirm, ack);
-									strcpy(request, confirm);
-									usrlocstep=INV_OK_RECV;
-								}
-								else {
-									printf("\nreceived:\n%s\nerror: did not "
-										"received the INVITE that was sent "
-										"(see above). aborting\n", reply);
-									exit_code(1);
-								}
-								break;
-							case INV_OK_RECV:
-								/* did we received our ok ? */
-								if (STRNCASECMP(reply, INV_STR, INV_STR_LEN)==0) {
-									if (verbose>0)
-										printf("ignoring INVITE "
-											"retransmission\n");
-									retrans_r_c++;
-									dontsend=1;
-									continue;
-								}
-								if (regexec(&okexp, reply, 0, 0, 0) == REG_NOERROR) {
-									if (verbose > 1)
-										printf("\treply received\n");
-									if (verbose > 2)
-										printf("\n%s\n", reply);
-									cpy_to(reply, ack);
-									strcpy(buff, ack);
-									usrlocstep=INV_ACK_RECV;
-								}
-								else {
-									printf("\nreceived:\n%s\nerror: did not "
-										"received the '200 OK' that was sent "
-										"as the reply on the INVITE (see "
-										"above). aborting\n", reply);
-									exit_code(1);
-								}
-								break;
-							case INV_ACK_RECV:
-								/* did we received our ack */
-								if (nameend > 0)
-									sprintf(messusern, "%s sip:%s%i", ACK_STR, 
-										username, namebeg);
-								else
-									sprintf(messusern, "%s sip:sipsak_conf", ACK_STR);
-								if (STRNCASECMP(reply, messusern, 
-									strlen(messusern))==0) {
-									if (verbose > 1)
-										printf("\t\tack received\n");
-									if (verbose > 2)
-										printf("\n%s\n", reply);
-									if (verbose>0 && nameend>0)
-										printf("usrloc for %s%i completed "
-											"successful\n", username, namebeg);
-									else if (verbose>0)
-										printf("usrloc for %s completed "
-											"successful\n", username);
-									if (namebeg==nameend) {
-										if (verbose>0)
-											printf("\nAll usrloc tests completed "
-												"successful.\nreceived last message"
-												" %.3f ms after first request (test"
-												" duration).\n", deltaT(&firstsendt,
-												 &recvtime));
-										if (big_delay>0)
-											printf("biggest delay between "
-												"request and response was %.3f"
-												" ms\n", big_delay);
-										if (retrans_r_c>0)
-											printf("%i retransmission(s) "
-												"received from server.\n", 
-												retrans_r_c);
-										if (retrans_s_c>0) {
-											printf("%i time(s) the timeout of "
-												"%i ms exceeded and request was"
-												" retransmitted.\n", 
-												retrans_s_c, retryAfter);
-											if (retrans_s_c > nagios_warn)
-												exit_code(4);
-										}
-										on_success(reply);
-									}
-									if (usrloc == 1) {
-										/* lets see if we deceid to remove a 
-										   binding (case 6)*/
-										rem_rand=rand();
-										if (((float)rem_rand/RAND_MAX) * 100 > rand_rem) {
-											namebeg++;
-											create_msg(buff, REQ_REG);
-											cseq_counter+=2;
-											usrlocstep=REG_REP;
-										}
-										else {
-											/* to prevent only removing of low
-											   user numbers new random number*/
-											rem_rand = rand();
-											rem_namebeg = namebeg;
-											namebeg = ((float)rem_rand/RAND_MAX)
-														* namebeg;
-											cseq_counter++;
-											trashchar=cseq_counter;
-											create_msg(buff, REQ_REM);
-											usrlocstep=UNREG_REP;
-										}
-									}
-									else {
-										namebeg++;
-										create_msg(buff, REQ_INV);
-										cseq_counter+=3;
-										usrlocstep=INV_RECV;
-									}
-								}
-								else {
-									printf("\nreceived:\n%s\nerror: did not "
-										"received the 'ACK' that was sent "
-										"as the reply on the '200 OK' (see "
-										"above). aborting\n", reply);
-									exit_code(1);
-								}
-								if (sleep_ms != 0)
-									nanosleep(&sleep_ms_s, &sleep_rem);
-								break;
-							case MES_RECV:
-								/* we sent the message and look if its 
-								   forwarded to us */
-								if (!STRNCASECMP(reply, messusern, 
-									strlen(messusern))) {
-									if (verbose > 1) {
-										crlf=STRCASESTR(reply, "\r\n\r\n");
-										crlf=crlf+4;
-										printf("  received message\n  "
-											"'%s'\n", crlf);
-									}
-									if (verbose > 2)
-										printf("\n%s\n", reply);
-									cpy_vias(reply, confirm);
-									cpy_to(reply, confirm);
-									strcpy(buff, confirm);
-									usrlocstep=MES_OK_RECV;
-								}
-								else {
-									printf("\nreceived:\n%s\nerror: did not "
-										"received the 'MESSAGE' that was sent "
-										"(see above). aborting\n", reply);
-									exit_code(1);
-								}
-								break;
-							case MES_OK_RECV:
-								/* we sent our reply on the message and
-								   look if this is also forwarded to us */
-								if (STRNCASECMP(reply, MES_STR, MES_STR_LEN)==0) {
-									if (verbose>0)
-										printf("ignoring MESSAGE "
-											"retransmission\n");
-									retrans_r_c++;
-									dontsend=1;
-									continue;
-								}
-								if (regexec(&okexp, reply, 0, 0, 0) == REG_NOERROR) {
-									if (verbose > 1)
-										printf("  reply received\n\n");
-									else if (verbose>0 && nameend>0)
-										printf("usrloc for %s%i completed "
-											"successful\n", username, namebeg);
-									else if (verbose>0)
-										printf("usrloc for %s completed "
-											"successful\n", username);
-									if (namebeg==nameend) {
-										if (verbose>0)
-											printf("\nAll usrloc tests completed "
-												"successful.\nreceived last message"
-												" %.3f ms after first request (test"
-												" duration).\n", deltaT(&firstsendt,
-												 &recvtime));
-										if (big_delay>0)
-											printf("biggest delay between "
-												"request and response was %.3f"
-												" ms\n", big_delay);
-										if (retrans_r_c>0)
-											printf("%i retransmission(s) "
-												"received from server.\n", 
-												retrans_r_c);
-										if (retrans_s_c>0) {
-											printf("%i time(s) the timeout of "
-												"%i ms exceeded and request was"
-												" retransmitted.\n", 
-												retrans_s_c, retryAfter);
-											if (retrans_s_c > nagios_warn)
-												exit_code(4);
-										}
-										on_success(reply);
-									}
-									if (usrloc == 1) {
-										/* lets see if we deceid to remove a 
-										   binding (case 6)*/
-										rem_rand=rand();
-										if (((float)rem_rand/RAND_MAX) * 100 > rand_rem) {
-											namebeg++;
-											create_msg(buff, REQ_REG);
-											cseq_counter+=2;
-											usrlocstep=REG_REP;
-										}
-										else {
-											/* to prevent only removing of low
-											   user numbers new random number*/
-											rem_rand = rand();
-											rem_namebeg = namebeg;
-											namebeg = ((float)rem_rand/RAND_MAX)
-														* namebeg;
-											cseq_counter++;
-											trashchar=cseq_counter;
-											create_msg(buff, REQ_REM);
-											usrlocstep=UNREG_REP;
-										}
-									}
-									else {
-										namebeg++;
-										create_msg(buff, REQ_MES);
-										cseq_counter+=3;
-										usrlocstep=MES_RECV;
-									}
-								}
-								else {
-									if (verbose>0) {
-										if (mes_body)
-											printf("\nreceived:\n%s\nerror: did"
-												" not received 200 for the "
-												"MESSAGE (see above)\n",
-												reply);
-										else
-											printf("\nreceived:\n%s\nerror: did"
-												" not received the '200 OK' "
-												"that was sent as the reply on"
-												" the MESSAGE (see above). "
-												"aborting\n", reply);
-									}
-									exit_code(1);
-								}
-								if (sleep_ms != 0)
-									nanosleep(&sleep_ms_s, &sleep_rem);
-								break;
-							case UNREG_REP:
-								if (STRNCASECMP(reply, MES_STR, MES_STR_LEN)==0) {
-									if (verbose>0)
-										printf("ignoring MESSAGE "
-											"retransmission\n");
-									retrans_r_c++;
-									dontsend=1;
-									continue;
-								}
-								if (regexec(&okexp, reply, 0, 0, 0) == REG_NOERROR) {
-									if (verbose > 1) printf("   OK\n\n");
-									else if (verbose>0 && nameend>0)
-										printf("Binding removal for %s%i "
-											"successful\n", username, namebeg);
-									else if (verbose>0)
-										printf("Binding removal for %s "
-											"successful\n", username);
-									namebeg = rem_namebeg;
-									namebeg++;
-									create_msg(buff, REQ_REG);
-									cseq_counter++;
-									usrlocstep=REG_REP;
-									i--;
-								}
-								else {
-									printf("\nreceived:\n%s\nerror: did not "
-										"received the expected 200 on the "
-										"remove bindings request for %s%i (see"
-										" above). aborting\n", reply, username, 
-										namebeg);
-									exit_code(1);
-								}
-								if (sleep_ms != 0)
-									nanosleep(&sleep_ms_s, &sleep_rem);
-								break;
-							default:
-								printf("error: unknown step in usrloc\n");
-								exit_code(2);
-								break;
-						}
-						}
+						handle_usrloc();
 					}
 					else if (randtrash == 1) {
 						handle_randtrash();
