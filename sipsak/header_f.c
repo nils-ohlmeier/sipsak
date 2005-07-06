@@ -31,11 +31,7 @@ void add_via(char *mes)
 	char *via_line, *via, *via2, *backup; 
 
 	/* first build our own Via-header-line */
-	via_line = malloc(VIA_SIP_STR_LEN+strlen(fqdn)+15+24);
-	if (!via_line) {
-		printf("failed to allocate memory\n");
-		exit_code(255);
-	}
+	via_line = str_alloc(VIA_SIP_STR_LEN+strlen(fqdn)+15+24+1);
 	snprintf(via_line, VIA_SIP_STR_LEN+strlen(fqdn)+15+24, "%s%s:%i;branch=z9hG4bK.%08x;rport\r\n", VIA_SIP_STR, fqdn, lport, rand());
 	if (verbose > 2)
 		printf("our Via-Line: %s\n", via_line);
@@ -69,12 +65,8 @@ void add_via(char *mes)
 		exit_code(1);
 	}
 	/* finnaly make a backup, insert our via and append the backup */
-	backup=malloc((strlen(via)+1));
-	if (!backup) {
-		printf("failed to allocate memory\n");
-		exit_code(255);
-	}
-	strncpy(backup, via, strlen(via)+1);
+	backup=str_alloc((strlen(via)+1));
+	strncpy(backup, via, strlen(via));
 	strncpy(via, via_line, strlen(via_line));
 	strncpy(via+strlen(via_line), backup, strlen(backup)+1);
 	if (verbose > 1)
@@ -106,11 +98,7 @@ void cpy_vias(char *reply, char *dest){
 	/* make a backup, insert the vias after the first line and append 
 	   backup
 	*/
-	backup=malloc(strlen(middle_via)+1);
-	if (!backup) {
-		printf("failed to allocate memory\n");
-		exit_code(255);
-	}
+	backup=str_alloc(strlen(middle_via)+1);
 	strcpy(backup, middle_via);
 	strncpy(middle_via, first_via, (size_t)(last_via-first_via+1));
 	strcpy(middle_via+(last_via-first_via+1), backup);
@@ -125,7 +113,7 @@ void cpy_to(char *reply, char *dest) {
 	/* find the position where we want to insert the To */
 	if ((dst_to=STRCASESTR(dest, TO_STR))==NULL &&
 		(dst_to=STRCASESTR(dest, TO_SHORT_STR))==NULL) {
-		printf("error: could not find To in the destination\n");
+		printf("error: could not find To in the destination: %s\n", dest);
 		exit_code(2);
 	}
 	/* find the To we want to copy */
@@ -139,11 +127,7 @@ void cpy_to(char *reply, char *dest) {
 		/* both To found, so copy it */
 		tmp=strchr(dst_to, '\n');
 		tmp++;
-		backup=malloc(strlen(tmp)+1);
-		if (!backup) {
-			printf("failed to allocate memory\n");
-			exit_code(255);
-		}
+		backup=str_alloc(strlen(tmp)+1);
 		strcpy(backup, tmp);
 		tmp=strchr(src_to, '\n');
 		strncpy(dst_to, src_to, (size_t)(tmp-src_to+1));
@@ -168,12 +152,8 @@ void set_maxforw(char *mes, int value){
 			exit_code(254);
 		}
 		max++;
-		backup=malloc(strlen(max)+1);
-		if (!backup) {
-			printf("failed to allocate memory\n");
-			exit_code(255);
-		}
-		strncpy(backup, max, (size_t)(strlen(max)+1));
+		backup=str_alloc(strlen(max)+1);
+		strncpy(backup, max, (size_t)(strlen(max)));
 		if (value == -1) {
 			maxforward = 70; // RFC3261 default
 		}
@@ -194,12 +174,8 @@ void set_maxforw(char *mes, int value){
 		/* found max-forwards => overwrite the value with maxforw*/
 		crlfi=strchr(max,'\n');
 		crlfi++;
-		backup=malloc(strlen(crlfi)+1);
-		if (!backup) {
-			printf("failed to allocate memory\n");
-			exit_code(255);
-		}
-		strncpy(backup, crlfi, strlen(crlfi)+1);
+		backup=str_alloc(strlen(crlfi)+1);
+		strncpy(backup, crlfi, strlen(crlfi));
 		crlfi=max + MAX_FRW_STR_LEN;
 		if (value == -1) {
 			maxforward = str_to_int(crlfi);
@@ -231,12 +207,8 @@ void uri_replace(char *mes, char *uri)
 		exit_code(254);
 	}
 	foo++;
-	backup=malloc(strlen(foo)+1);
-	if (!backup) {
-		printf("failed to allocate memory\n");
-		exit_code(255);
-	}
-	strncpy(backup, foo, strlen(foo)+1);
+	backup=str_alloc(strlen(foo)+1);
+	strncpy(backup, foo, strlen(foo));
 	foo=STRCASESTR(mes, "sip");
 	strncpy(foo, uri, strlen(uri));
 	strncpy(foo+strlen(uri), SIP20_STR, SIP20_STR_LEN);
@@ -257,12 +229,8 @@ void set_cl(char* mes, int contentlen) {
 	}
 	cr = strchr(cl, '\n');
 	cr++;
-	backup=malloc(strlen(cr)+1);
-	if (!backup) {
-		printf("failed to allocate memory\n");
-		exit_code(255);
-	}
-	strncpy(backup, cr, strlen(cr)+1);
+	backup=str_alloc(strlen(cr)+1);
+	strncpy(backup, cr, strlen(cr));
 	if (*cl == 'C')
 		cr=cl + CON_LEN_STR_LEN;
 	else
@@ -290,12 +258,8 @@ void cpy_rr(char* src, char *dst, int route) {
 		exit_code(3);
 	}
 	cr++;
-	backup=malloc(strlen(cr)+1);
-	if (!backup) {
-		printf("failed to allocate memory\n");
-		exit_code(255);
-	}
-	strncpy(backup, cr, strlen(cr)+1);
+	backup=str_alloc(strlen(cr)+1);
+	strncpy(backup, cr, strlen(cr));
 	rr = strstr(src, RR_STR);
 	if (route == 0)
 		len = RR_STR_LEN;
@@ -374,12 +338,7 @@ void warning_extract(char *message)
 	if (mid)
 		end=mid;
 	srvsize=end - warning + 1;
-	server=malloc((size_t)srvsize);
-	if (!server) {
-		printf("failed to allocate memory\n");
-		exit_code(255);
-	}
-	memset(server, 0, (size_t)srvsize);
+	server=str_alloc((size_t)srvsize);
 	server=strncpy(server, warning, (size_t)(srvsize - 1));
 	printf("%s ", server);
 	free(server);
@@ -427,12 +386,8 @@ void increase_cseq(char *message)
 		cs_s+=6;
 		eol=strchr(cs_s, ' ');
 		eol++;
-		backup=malloc(strlen(eol)+1);
-		if (!backup) {
-			printf("failed to allocate memory\n");
-			exit_code(255);
-		}
-		strncpy(backup, eol, (size_t)(strlen(eol)+1));
+		backup=str_alloc(strlen(eol)+1);
+		strncpy(backup, eol, (size_t)(strlen(eol)));
 		snprintf(cs_s, 11, "%i ", cs);
 		cs_s+=strlen(cs_s);
 		strncpy(cs_s, backup, strlen(backup));
@@ -537,8 +492,8 @@ char* uri_from_contact(char *message)
 			c = *end;
 			*end = '\0';
 		}
-		tmp = malloc(strlen(contact)+1);
-		memcpy(tmp,contact,strlen(contact)+1);
+		tmp = str_alloc(strlen(contact)+1);
+		memcpy(tmp,contact,strlen(contact));
 	}
 	
 	*end = c;

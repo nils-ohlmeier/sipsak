@@ -662,10 +662,10 @@ void shoot(char *buff, int buff_size)
 	//int cseqcmp = 0;
 	int rem_namebeg = 0;
 	//double big_delay, tmp_delay;
-	char *lport_str;
 	//char *uscheme, *uuser, *uhost;
 	char *crlf = NULL;
 	char buff2[BUFSIZE];
+	char lport_str[LPORT_STR_LEN];
 	//fd_set	fd;
 	socklen_t slen;
 	//regex_t redexp, proexp, okexp, tmhexp, errexp, authexp, replyexp;
@@ -682,6 +682,9 @@ void shoot(char *buff, int buff_size)
 	big_delay= 0;
 	delaytime.tv_sec = 0;
 	delaytime.tv_usec = 0;
+	/* initialize local arrays */
+	memset(buff2, 0, BUFSIZE);
+	memset(lport_str, 0, LPORT_STR_LEN);
 
 	csock = usock = -1;
 
@@ -755,7 +758,6 @@ void shoot(char *buff, int buff_size)
 	if (replace_b == 1){
 		replace_string(buff, "$dsthost$", domainname);
 		replace_string(buff, "$srchost$", fqdn);
-		lport_str=malloc(6);
 		sprintf(lport_str, "%i", lport);
 		replace_string(buff, "$port$", lport_str);
 		free(lport_str);

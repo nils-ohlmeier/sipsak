@@ -26,6 +26,7 @@
 
 #include "auth.h"
 #include "exit_code.h"
+#include "helper.h"
 #include "md5.h"
 
 /* converts a hash into hex output
@@ -82,13 +83,8 @@ void insert_auth(char *message, char *authreq)
 		return;
 	}
 	insert++;
-	backup=malloc(strlen(insert)+1);
-	if (!backup) {
-		printf("failed to allocate memory\n");
-		exit_code(255);
-	}
-	memset(backup, 0, strlen(insert)+1);
-	strncpy(backup, insert, strlen(insert)+1);
+	backup=str_alloc(strlen(insert)+1);
+	strncpy(backup, insert, strlen(insert));
 
 	begin=STRCASESTR(authreq, WWWAUTH_STR);
 	if (begin==NULL) {
@@ -99,14 +95,8 @@ void insert_auth(char *message, char *authreq)
 		/* make a copy of the auth header to prevent that our searches
 		   hit content of other header fields */
 		end=strchr(begin, '\n');
-		auth=malloc((size_t)(end-begin+1));
-		if (!auth) {
-			printf("failed to allocate memory\n");
-			exit_code(255);
-		}
-		memset(auth, 0, (size_t)(end-begin+1));
+		auth=str_alloc((size_t)(end-begin+1));
 		strncpy(auth, begin, (size_t)(end-begin));
-		*(auth+(end-begin))='\0';
 		/* we support Digest and MD5 only */
 		if ((begin=STRCASESTR(auth, "Basic"))!=NULL) {
 			printf("%s\nerror: authentication method Basic is deprecated since"
@@ -131,12 +121,7 @@ void insert_auth(char *message, char *authreq)
 			usern = auth_username;
 		}
 		else {
-			usern=malloc(strlen(username)+10);
-			if (!usern) {
-				printf("failed to allocate memory\n");
-				exit_code(255);
-			}
-			memset(usern, 0, strlen(username)+10);
+			usern=str_alloc(strlen(username)+11);
 			if (nameend>0)
 				snprintf(usern, strlen(username)+10, "%s%i", username, namebeg);
 			else
@@ -144,26 +129,14 @@ void insert_auth(char *message, char *authreq)
 		}
 		/* extract the method from the original request */
 		end=strchr(message, ' ');
-		method=malloc((size_t)(end-message+1));
-		if (!method) {
-			printf("failed to allocate memory\n");
-			exit_code(255);
-		}
-		memset(method, 0, (size_t)(end-message+1));
+		method=str_alloc((size_t)(end-message+1));
 		strncpy(method, message, (size_t)(end-message));
-		*(method+(end-message))='\0';
 		/* extract the uri also */
 		begin=end++;
 		begin++;
 		end=strchr(end, ' ');
-		uri=malloc((size_t)(end-begin+1));
-		if (!uri) {
-			printf("failed to allocate memory\n");
-			exit_code(255);
-		}
-		memset(uri, 0, (size_t)(end-begin+1));
+		uri=str_alloc((size_t)(end-begin+1));
 		strncpy(uri, begin, (size_t)(end-begin));
-		*(uri+(end-begin))='\0';
 
 		/* lets start with some basic stuff... username, uri and algorithm */
 		if (proxy_auth == 1) {
@@ -193,14 +166,8 @@ void insert_auth(char *message, char *authreq)
 			insert++;
 			begin+=REALM_STR_LEN+1;
 			end--;
-			realm=malloc((size_t)(end-begin+1));
-			if (!realm) {
-				printf("failed to allocate memory\n");
-				exit_code(255);
-			}
-			memset(realm, 0, (size_t)(end-begin+1));
+			realm=str_alloc((size_t)(end-begin+1));
 			strncpy(realm, begin, (size_t)(end-begin));
-			*(realm+(end-begin))='\0';
 		}
 		else {
 			printf("%s\nerror: realm not found in 401 above\n", authreq);
@@ -241,14 +208,8 @@ void insert_auth(char *message, char *authreq)
 			insert++;
 			begin+=NONCE_STR_LEN+1;
 			end--;
-			nonce=malloc((size_t)(end-begin+1));
-			if (!nonce) {
-				printf("failed to allocate memory\n");
-				exit_code(255);
-			}
-			memset(nonce, 0, (size_t)(end-begin+1));
+			nonce=str_alloc((size_t)(end-begin+1));
 			strncpy(nonce, begin, (size_t)(end-begin));
-			*(nonce+(end-begin))='\0';
 		}
 		else {
 			printf("%s\nerror: nonce not found in 401 above\n", authreq);
@@ -266,12 +227,7 @@ void insert_auth(char *message, char *authreq)
 			snprintf(insert, 12+8, "cnonce=\"%x\", ", cnonce);
 			insert+=strlen(insert);
 			/* hopefully 100 is enough */
-			qop_tmp=malloc(100);
-			if (!qop_tmp) {
-				printf("failed to allocate memory\n");
-				exit_code(255);
-			}
-			memset(qop_tmp, 0, 100);
+			qop_tmp=str_alloc(100);
 			snprintf(qop_tmp, 8+8+8, "%08x:%x:auth:", nonce_count, cnonce);
 		}
 		/* if no password is given we try it with empty password */

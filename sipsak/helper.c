@@ -259,11 +259,7 @@ void replace_string(char *mess, char *search, char *replacement){
 	}
 	else {
 		while (insert){
-			backup=malloc(strlen(insert)+1);
-			if (!backup) {
-				printf("failed to allocate memory\n");
-				exit_code(255);
-			}
+			backup=str_alloc(strlen(insert)+1);
 			strcpy(backup, insert+strlen(search));
 			strcpy(insert, replacement);
 			strcpy(insert+strlen(replacement), backup);
@@ -280,11 +276,7 @@ void insert_cr(char *mes){
 	pos = mes;
 	lf = strchr(pos, '\n');
 	while ((lf != NULL) && (*(--lf) != '\r')) {
-		backup=malloc(strlen(lf)+2);
-		if (!backup) {
-			printf("failed to allocate memory\n");
-			exit_code(255);
-		}
+		backup=str_alloc(strlen(lf)+2);
 		strcpy(backup, lf+1);
 		//strncpy(lf, "\r", 1);
 		*(lf+1) = '\r';
@@ -301,12 +293,7 @@ void swap_buffers(char *fst, char *snd) {
 
 	if (fst == snd)
 		return;
-	tmp = malloc(strlen(fst)+1);
-	if (!tmp) {
-		printf("failed to allocate memory\n");
-		exit_code(255);
-	}
-	memset(tmp, 0, strlen(fst)+1);
+	tmp = str_alloc(strlen(fst)+1);
 	strcpy(tmp, fst);
 	strcpy(fst, snd);
 	strcpy(snd, tmp);
@@ -428,4 +415,22 @@ void set_target(struct sockaddr_in *adr, unsigned long target, int port, int soc
 			exit_code(2);
 		}
 	}
+}
+
+void *str_alloc(size_t size)
+{
+	char *ptr;
+#ifdef HAVE_CALLOC
+	ptr = calloc(1, size);
+#else
+	ptr = malloc(size);
+#endif
+	if (ptr == NULL) {
+		printf("error: memory allocation failed\n");
+		exit_code(255);
+	}
+#ifndef HAVE_CALLOC
+	memset(ptr, 0, size);
+#endif
+	return ptr;
 }

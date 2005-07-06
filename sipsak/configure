@@ -4956,7 +4956,8 @@ done
 
 
 
-for ac_func in getdomainname getopt_long inet_ntop strncasecmp strcasestr
+
+for ac_func in calloc getdomainname getopt_long inet_ntop strncasecmp strcasestr
 do
 as_ac_var=`echo "ac_cv_func_$ac_func" | $as_tr_sh`
 echo "$as_me:$LINENO: checking for $ac_func" >&5

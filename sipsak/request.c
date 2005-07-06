@@ -25,6 +25,7 @@
 
 #include "request.h"
 #include "exit_code.h"
+#include "helper.h"
 
 /* create a valid sip header for the different modes */
 void create_msg(char *buff, int action){
@@ -36,17 +37,7 @@ void create_msg(char *buff, int action){
 		usern_len=strlen(username)+11;
 	else
 		usern_len=1;
-	usern=malloc(usern_len);
-	if (!usern) {
-		printf("failed to allocate memory\n");
-		exit_code(255);
-	}
-	if (usern)
-		memset(usern, 0, usern_len);
-	else {
-		printf("error: create_msg(): out of mem\n");
-		exit_code(2);
-	}
+	usern=str_alloc(usern_len);
 	if (username) {
 		if (verbose > 2)
 			printf("username: %s\ndomainname: %s\n", username, domainname);

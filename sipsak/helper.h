@@ -53,4 +53,6 @@ int str_to_int(char *num);
 int read_stdin(char *buf, int size);
 
 void set_target(struct sockaddr_in *adr, unsigned long target, int port, int socket);
+
+void *str_alloc(size_t size);
 #endif

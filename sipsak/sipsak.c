@@ -298,9 +298,8 @@ int main(int argc, char *argv[])
 #endif
 		switch(c){
 			case 'a':
-				password=malloc(strlen(optarg) + 1);
+				password=str_alloc(strlen(optarg) + 1);
 				strncpy(password, optarg, strlen(optarg));
-				*(password+strlen(optarg)) = '\0';
 				break;
 			case 'A':
 				timing=1;
@@ -309,29 +308,20 @@ int main(int argc, char *argv[])
 				namebeg=str_to_int(optarg);
 				break;
 			case 'B':
-				mes_body=malloc(strlen(optarg) + 1);
+				mes_body=str_alloc(strlen(optarg) + 1);
 				strncpy(mes_body, optarg, strlen(optarg));
-				*(mes_body+strlen(optarg)) = '\0';
 				break;
 			case 'C':
 				if ((strlen(optarg) == 5 && STRNCASECMP(optarg, "empty", 5) == 0) || 
-            (strlen(optarg) == 4 && STRNCASECMP(optarg, "none", 4) == 0)) {
+					(strlen(optarg) == 4 && STRNCASECMP(optarg, "none", 4) == 0)) {
 					empty_contact = 1;
 				}
 				else if (strlen(optarg) == 1 && STRNCASECMP(optarg, "*", 1) == 0) {
-					contact_uri=malloc(strlen(optarg)+1);
-					memset(contact_uri, 0, strlen(optarg)+1);
+					contact_uri=str_alloc(strlen(optarg)+1);
 					strncpy(contact_uri, optarg, strlen(optarg));
-          *(contact_uri + strlen(optarg)) = '\0';
 				}
-				backup=malloc(strlen(optarg)+1);
-				if (!backup) {
-					printf("error: failed to allocate memory\n");
-					exit_code(2);
-				}
-				memset(backup, 0, strlen(optarg)+1);
+				backup=str_alloc(strlen(optarg)+1);
 				strncpy(backup, optarg, strlen(optarg));
-        *(backup + strlen(optarg)) = '\0';
 				parse_uri(backup, &scheme, &user, &host, &port);
 				if (scheme == NULL) {
 				    printf("error: REGISTER Contact uri doesn't not contain "
@@ -343,10 +333,8 @@ int main(int argc, char *argv[])
 					exit_code(2);
 				}
 				else {
-					contact_uri=malloc(strlen(optarg)+1);
-					memset(contact_uri, 0, strlen(optarg)+1);
+					contact_uri=str_alloc(strlen(optarg)+1);
 					strncpy(contact_uri, optarg, strlen(optarg));
-          *(contact_uri + strlen(optarg)) = '\0';
 				}
 				break;
 			case 'c':
@@ -436,9 +424,8 @@ int main(int argc, char *argv[])
 				}
 				break;
 			case 'O':
-				con_dis=malloc(strlen(optarg) + 1);
+				con_dis=str_alloc(strlen(optarg) + 1);
 				strncpy(con_dis, optarg, strlen(optarg));
-				*(con_dis+strlen(optarg)) = '\0';
 				break;
 			case 'p':
 				parse_uri(optarg, &scheme, &user, &host, &port);
@@ -527,9 +514,8 @@ int main(int argc, char *argv[])
 				usrloc=1;
 				break;
 			case 'u':
-				auth_username=malloc(strlen(optarg) + 1);
+				auth_username=str_alloc(strlen(optarg) + 1);
 				strncpy(auth_username, optarg, strlen(optarg));
-				*(auth_username+strlen(optarg)) = '\0';
 				break;
 			case 'v':
 				verbose++;

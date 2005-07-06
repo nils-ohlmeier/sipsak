@@ -32,6 +32,8 @@
 # endif
 #endif
 
+#define LPORT_STR_LEN 6
+
 extern regex_t redexp, proexp, okexp, tmhexp, errexp, authexp, replyexp;
 
 void shoot(char *buff, int buff_size);
