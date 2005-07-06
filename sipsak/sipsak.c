@@ -320,21 +320,23 @@ int main(int argc, char *argv[])
 					contact_uri=str_alloc(strlen(optarg)+1);
 					strncpy(contact_uri, optarg, strlen(optarg));
 				}
-				backup=str_alloc(strlen(optarg)+1);
-				strncpy(backup, optarg, strlen(optarg));
-				parse_uri(backup, &scheme, &user, &host, &port);
-				if (scheme == NULL) {
-				    printf("error: REGISTER Contact uri doesn't not contain "
-					   "sip:, sips:, *, or is not empty\n");
-				    exit_code(2);
-				}
-				else if (user == NULL) {
-					printf("error: missing username in Contact uri\n");
-					exit_code(2);
-				}
 				else {
-					contact_uri=str_alloc(strlen(optarg)+1);
-					strncpy(contact_uri, optarg, strlen(optarg));
+					backup=str_alloc(strlen(optarg)+1);
+					strncpy(backup, optarg, strlen(optarg));
+					parse_uri(backup, &scheme, &user, &host, &port);
+					if (scheme == NULL) {
+					    printf("error: REGISTER Contact uri doesn't not contain "
+						   "sip:, sips:, *, or is not empty\n");
+				    	exit_code(2);
+					}
+					else if (user == NULL) {
+						printf("error: missing username in Contact uri\n");
+						exit_code(2);
+					}
+					else {
+						contact_uri=str_alloc(strlen(optarg)+1);
+						strncpy(contact_uri, optarg, strlen(optarg));
+					}
 				}
 				break;
 			case 'c':
