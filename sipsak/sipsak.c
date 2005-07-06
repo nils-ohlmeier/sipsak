@@ -292,13 +292,13 @@ int main(int argc, char *argv[])
 
 	/* lots of command line switches to handle*/
 #ifdef HAVE_GETOPT_LONG
-	while ((c=getopt_long(argc, argv, "a:Ab:B:c:C:de:f:Fg:GhH:iIl:Lm:MnNo:O:p:P:q:r:Rs:St:Tu:UvVwW:x:z:", l_opts, &option_index)) != EOF){
+	while ((c=getopt_long(argc, argv, "a:Ab:B:c:C:de:f:Fg:GhH:iIl:Lm:MnNo:O:p:P:q:r:Rs:St:Tu:UvVwW:x:Xz:", l_opts, &option_index)) != EOF){
 #else
 	while ((c=getopt(argc,argv,"a:Ab:B:c:C:de:f:Fg:GhH:iIl:Lm:MnNo:O:p:P:q:r:Rs:St:Tu:UvVwW:x:z:")) != EOF){
 #endif
 		switch(c){
 			case 'a':
-				password=malloc(strlen(optarg));
+				password=malloc(strlen(optarg) + 1);
 				strncpy(password, optarg, strlen(optarg));
 				*(password+strlen(optarg)) = '\0';
 				break;
@@ -306,14 +306,10 @@ int main(int argc, char *argv[])
 				timing=1;
 				break;
 			case 'b':
-				if ((namebeg=str_to_int(optarg))==-1) {
-					printf("error: non-numerical appendix begin for the "
-						"username\n");
-					exit_code(2);
-				}
+				namebeg=str_to_int(optarg);
 				break;
 			case 'B':
-				mes_body=malloc(strlen(optarg));
+				mes_body=malloc(strlen(optarg) + 1);
 				strncpy(mes_body, optarg, strlen(optarg));
 				*(mes_body+strlen(optarg)) = '\0';
 				break;
@@ -325,7 +321,8 @@ int main(int argc, char *argv[])
 				else if (strlen(optarg) == 1 && STRNCASECMP(optarg, "*", 1) == 0) {
 					contact_uri=malloc(strlen(optarg)+1);
 					memset(contact_uri, 0, strlen(optarg)+1);
-					strcpy(contact_uri, optarg);
+					strncpy(contact_uri, optarg, strlen(optarg));
+          *(contact_uri + strlen(optarg)) = '\0';
 				}
 				backup=malloc(strlen(optarg)+1);
 				if (!backup) {
@@ -333,7 +330,8 @@ int main(int argc, char *argv[])
 					exit_code(2);
 				}
 				memset(backup, 0, strlen(optarg)+1);
-				strcpy(backup, optarg);
+				strncpy(backup, optarg, strlen(optarg));
+        *(backup + strlen(optarg)) = '\0';
 				parse_uri(backup, &scheme, &user, &host, &port);
 				if (scheme == NULL) {
 				    printf("error: REGISTER Contact uri doesn't not contain "
@@ -347,30 +345,24 @@ int main(int argc, char *argv[])
 				else {
 					contact_uri=malloc(strlen(optarg)+1);
 					memset(contact_uri, 0, strlen(optarg)+1);
-					strcpy(contact_uri, optarg);
+					strncpy(contact_uri, optarg, strlen(optarg));
+          *(contact_uri + strlen(optarg)) = '\0';
 				}
 				break;
 			case 'c':
-				if ((namebeg=str_to_int(optarg))==-1) {
-					printf("error: non-numerical CSeq maximum\n");
-					exit_code(2);
-				}
+				namebeg=str_to_int(optarg);
 				break;
 			case 'd':
 				redirects=0;
 				break;
 			case 'e':
-				if ((nameend=str_to_int(optarg))==-1) {
-					printf("error: non-numerical appendix end for the "
-						"username\n");
-					exit_code(2);
-				}
+				nameend=str_to_int(optarg);
 				break;
 			case 'F':
 				flood=1;
 				break;
 			case 'f':
-				if (strncmp(optarg, "-", 1)) {
+				if (strlen(optarg) != 1 && STRNCASECMP(optarg, "-", 1) != 0) {
 					/* file is opened in binary mode so that the cr-lf is 
 					   preserved */
 					pf = fopen(optarg, "rb");
@@ -387,11 +379,15 @@ int main(int argc, char *argv[])
 					}
 					fclose(pf);
 				}
-				else {
+				else if (strlen(optarg) == 1 && STRNCASECMP(optarg, "-", 1) == 0) {
 					if (read_stdin(&buff[0], sizeof(buff)) == 0) {
 						exit_code(0);
 					}
 				}
+        else {
+          printf("error: unable to handle input file name: %s\n", optarg);
+          exit_code(2);
+        }
 				file_b=1;
 				break;
 			case 'g':
@@ -414,20 +410,12 @@ int main(int argc, char *argv[])
 				break;
 			case 'l':
 				lport=str_to_int(optarg);
-				if (!lport) {
-					printf("error: non-numerical local port number");
-					exit_code(2);
-				}
 				break;
 			case 'L':
 				fix_crlf=0;
 				break;
 			case 'm':
 				maxforw=str_to_int(optarg);
-				if (maxforw==-1) {
-					printf("error: non-numerical number of max-forwards\n");
-					exit_code(2);
-				}
 				break;
 			case 'M':
 				message=1;
@@ -445,14 +433,10 @@ int main(int argc, char *argv[])
 				}
 				else {
 					sleep_ms = str_to_int(optarg);
-					if (!sleep_ms) {
-						printf("error: non-numerical sleep value\n");
-						exit_code(2);
-					}
 				}
 				break;
 			case 'O':
-				con_dis=malloc(strlen(optarg));
+				con_dis=malloc(strlen(optarg) + 1);
 				strncpy(con_dis, optarg, strlen(optarg));
 				*(con_dis+strlen(optarg)) = '\0';
 				break;
@@ -471,10 +455,6 @@ int main(int argc, char *argv[])
 				break;
 			case 'P':
 				processes=str_to_int(optarg);
-				if (!processes) {
-					printf("error: non-numerical number of processes\n");
-					exit_code(2);
-				}
 				break;
 			case 'q':
 				if (re) {
@@ -495,10 +475,6 @@ int main(int argc, char *argv[])
 				break;
 			case 'r':
 				rport=str_to_int(optarg);
-				if (!rport) {
-					printf("error: non-numerical remote port number\n");
-					exit_code(2);
-				}
 				break;
 			case 'R':
 				randtrash=1;
@@ -543,11 +519,6 @@ int main(int argc, char *argv[])
 				break;
 			case 't':
 				trashchar=str_to_int(optarg);
-				if (!trashchar) {
-					printf("error: non-numerical number of trashed "
-						"character\n");
-					exit_code(2);
-				}
 				break;
 			case 'T':
 				trace=1;
@@ -556,7 +527,7 @@ int main(int argc, char *argv[])
 				usrloc=1;
 				break;
 			case 'u':
-				auth_username=malloc(strlen(optarg));
+				auth_username=malloc(strlen(optarg) + 1);
 				strncpy(auth_username, optarg, strlen(optarg));
 				*(auth_username+strlen(optarg)) = '\0';
 				break;
