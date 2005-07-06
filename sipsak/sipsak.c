@@ -318,7 +318,8 @@ int main(int argc, char *argv[])
 				*(mes_body+strlen(optarg)) = '\0';
 				break;
 			case 'C':
-				if (!STRNCASECMP(optarg, "empty", 5) || !STRNCASECMP(optarg, "none", 4)) {
+				if ((strlen(optarg) == 5 && !STRNCASECMP(optarg, "empty", 5)) || 
+            (strlen(optarg) == 4 && !STRNCASECMP(optarg, "none", 4))) {
 					empty_contact = 1;
 				}
 				else if ((strlen(optarg)==1) && (!strncmp(optarg, "*", 1))) {
@@ -439,7 +440,7 @@ int main(int argc, char *argv[])
 				break;
 			case 'o':
 				sleep_ms = 0;
-				if (STRNCASECMP(optarg, "rand", 4)==0) {
+				if (strlen(optarg) == 4 && STRNCASECMP(optarg, "rand", 4)==0) {
 					sleep_ms = -2;
 				}
 				else {
@@ -508,11 +509,11 @@ int main(int argc, char *argv[])
 					printf("error: missing scheme in sip uri\n");
 					exit_code(2);
 				}
-				if (!STRNCASECMP(optarg,"sips",4)){
+				if (strlen(optarg) == 4 && !STRNCASECMP(optarg,"sips",4)){
 					printf("error: sips is not supported yet\n");
 					exit_code(2);
 				}
-				else if (STRNCASECMP(optarg,"sip",3) != 0){
+				else if (strlen(optarg) != 3 || STRNCASECMP(optarg,"sip",3) != 0){
 					printf("error: scheme of sip uri has to be sip\n");
 					exit_code(2);
 				}
