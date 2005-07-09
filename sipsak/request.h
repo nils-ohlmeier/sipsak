@@ -1,5 +1,5 @@
 /*
- * $Id: request.h,v 1.3 2005/04/10 20:57:28 calrissian Exp $
+ * $Id$
  *
  * Copyright (C) 2002-2004 Fhg Fokus
  * Copyright (C) 2004-2005 Nils Ohlmeier
@@ -20,6 +20,6 @@
 #ifndef SIPSAK_REQUEST_H
 #define SIPSAK_REQUEST_H
 
-void create_msg(char *buff, int action);
+void create_msg(int action, char *buff, char *repl_buff, char *username, int cseq);
 
 #endif

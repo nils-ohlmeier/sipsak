@@ -90,6 +90,7 @@ struct timezone tz;
 struct timeval sendtime, recvtime, tv, firstsendt, starttime, delaytime;
 int dontsend, dontrecv, usock, csock, retryAfter, randretrys, retrans_s_c;
 int i, send_counter, retrans_r_c, rem_namebeg;
+char *usern;
 double senddiff, big_delay;
 regex_t redexp, proexp, okexp, tmhexp, errexp, authexp, replyexp;
 enum usteps { REG_REP, INV_RECV, INV_OK_RECV, INV_ACK_RECV, MES_RECV, 
@@ -118,7 +119,7 @@ void send_message(char* mes, struct sockaddr *dest) {
 		}
 #ifdef HAVE_INET_NTOP
 		if (verbose > 2)
-			printf("send to: %s:%i\n", target_dot, rport);
+			printf("\nsend to: %s:%i\n", target_dot, rport);
 #endif
 		send_counter++;
 	}
@@ -446,12 +447,12 @@ void trace_reply()
 			printf("(%.3f ms) ", deltaT(&sendtime, &recvtime));
 			print_message_line(reply);
 		}
-		namebeg++;
+		//namebeg++;
 		maxforw++;
 		cseq_counter++;
-		create_msg(request, REQ_OPT);
+		create_msg(REQ_OPT, request, NULL, usern, cseq_counter);
 		add_via(request);
-		set_maxforw(request, -1);
+		set_maxforw(request, maxforw);
 		return;
 	}
 	else if (regexec(&proexp, reply, 0, 0, 0) == REG_NOERROR) {
@@ -658,8 +659,8 @@ void handle_usrloc()
 					   binding (case 6)*/
 					if ( ((float)rand()/RAND_MAX)*100 > rand_rem) {
 						namebeg++;
-						create_msg(request, REQ_REG);
 						cseq_counter++;
+						create_msg(REQ_REG, request, NULL, usern, cseq_counter);
 					}
 					else {
 						/* to prevent only removing of low
@@ -668,17 +669,17 @@ void handle_usrloc()
 						namebeg = ((float)rand()/RAND_MAX) * namebeg;
 						cseq_counter++;
 						trashchar=cseq_counter;
-						create_msg(request, REQ_REM);
+						create_msg(REQ_REM, request, NULL, usern, cseq_counter);
 						usrlocstep=UNREG_REP;
 					}
 				} /* invite == 0 && message == 0 */
 				else if (invite == 1) {
-					create_msg(request, REQ_INV);
+					create_msg(REQ_INV, request, reply, usern, cseq_counter);
 					cseq_counter++;
 					usrlocstep=INV_RECV;
 				}
 				else if (message == 1) {
-					create_msg(request, REQ_MES);
+					create_msg(REQ_MES, request, reply, usern, cseq_counter);
 					cseq_counter++;
 					usrlocstep=MES_RECV;
 				}
@@ -790,7 +791,7 @@ void handle_usrloc()
 						   binding (case 6)*/
 						if (((float)rand()/RAND_MAX) * 100 > rand_rem) {
 							namebeg++;
-							create_msg(request, REQ_REG);
+							create_msg(REQ_REG, request, NULL, usern, cseq_counter);
 							cseq_counter+=2;
 							usrlocstep=REG_REP;
 						}
@@ -801,13 +802,13 @@ void handle_usrloc()
 							namebeg = ((float)rand()/RAND_MAX) * namebeg;
 							cseq_counter++;
 							trashchar=cseq_counter;
-							create_msg(request, REQ_REM);
+							create_msg(REQ_REM, request, NULL, usern, cseq_counter);
 							usrlocstep=UNREG_REP;
 						}
 					} /* usrloc == 1 */
 					else {
 						namebeg++;
-						create_msg(request, REQ_INV);
+						create_msg(REQ_INV, request, reply, usern, cseq_counter);
 						cseq_counter+=3;
 						usrlocstep=INV_RECV;
 					}
@@ -900,7 +901,7 @@ void handle_usrloc()
 						   binding (case 6)*/
 						if (((float)rand()/RAND_MAX) * 100 > rand_rem) {
 							namebeg++;
-							create_msg(request, REQ_REG);
+							create_msg(REQ_REG, request, NULL, usern, cseq_counter);
 							cseq_counter+=2;
 							usrlocstep=REG_REP;
 						}
@@ -911,13 +912,13 @@ void handle_usrloc()
 							namebeg = ((float)rand()/RAND_MAX) * namebeg;
 							cseq_counter++;
 							trashchar=cseq_counter;
-							create_msg(request, REQ_REM);
+							create_msg(REQ_REM, request, NULL, usern, cseq_counter);
 							usrlocstep=UNREG_REP;
 						}
 					} /* usrloc == 1 */
 					else {
 						namebeg++;
-						create_msg(request, REQ_MES);
+						create_msg(REQ_MES, request, NULL, usern, cseq_counter);
 						cseq_counter+=3;
 						usrlocstep=MES_RECV;
 					}
@@ -963,7 +964,7 @@ void handle_usrloc()
 					}
 					namebeg = rem_namebeg;
 					namebeg++;
-					create_msg(request, REQ_REG);
+					create_msg(REQ_REG, request, NULL, usern, cseq_counter);
 					cseq_counter++;
 					usrlocstep=REG_REP;
 					i--;
@@ -1074,6 +1075,7 @@ void shoot(char *buff, int buff_size)
 	big_delay= 0;
 	delaytime.tv_sec = 0;
 	delaytime.tv_usec = 0;
+	usern = NULL;
 	/* initialize local arrays */
 	memset(buff2, 0, BUFSIZE);
 	memset(lport_str, 0, LPORT_STR_LEN);
@@ -1175,6 +1177,22 @@ void shoot(char *buff, int buff_size)
 	regcomp(&tmhexp, "^SIP/[0-9]\\.[0-9] 483 ", 
 		REG_EXTENDED|REG_NOSUB|REG_ICASE); 
 
+	if (username) {
+		if (nameend > 0) {
+			usern = str_alloc(strlen(username) + 12);
+			sprintf(usern, "%s%i@", username, namebeg);
+		}
+		else {
+			if (*(username + strlen(username) - 1) != '@') {
+				usern = str_alloc(strlen(username) + 2);
+				sprintf(usern, "%s@", username);
+			}
+			else {
+				usern = username;
+			}
+		}
+	}
+
 	if (usrloc == 1||invite == 1||message == 1){
 		/* calculate the number of required steps and create initial mes */
 		if (usrloc == 1) {
@@ -1184,17 +1202,17 @@ void shoot(char *buff, int buff_size)
 				nretries=3*(nameend-namebeg)+3;
 			else
 				nretries=2*(nameend-namebeg)+2;
-			create_msg(buff, REQ_REG);
+			create_msg(REQ_REG, buff, NULL, usern, cseq_counter);
 			usrlocstep=REG_REP;
 		}
 		else if (invite == 1) {
 			nretries=3*(nameend-namebeg)+3;
-			create_msg(buff, REQ_INV);
+			create_msg(REQ_INV, buff, reply, usern, cseq_counter);
 			usrlocstep=INV_RECV;
 		}
 		else {
 			nretries=2*(nameend-namebeg)+2;
-			create_msg(buff, REQ_MES);
+			create_msg(REQ_MES, buff, reply, usern, cseq_counter);
 			if (mes_body)
 				usrlocstep=MES_OK_RECV;
 			else
@@ -1209,7 +1227,7 @@ void shoot(char *buff, int buff_size)
 		else
 			nretries=255;
 		namebeg=1;
-		create_msg(buff, REQ_OPT);
+		create_msg(REQ_OPT, buff, NULL, usern, cseq_counter);
 		add_via(buff);
 	}
 	else if (flood == 1){
@@ -1217,12 +1235,12 @@ void shoot(char *buff, int buff_size)
 		if (namebeg==-1) namebeg=INT_MAX;
 		nretries=namebeg;
 		namebeg=1;
-		create_msg(buff, REQ_FLOOD);
+		create_msg(REQ_FLOOD, buff, NULL, usern, cseq_counter);
 	}
 	else if (randtrash == 1){
 		randretrys=0;
 		namebeg=1;
-		create_msg(buff, REQ_RAND);
+		create_msg(REQ_RAND, buff, NULL, usern, cseq_counter);
 		nameend=(int)strlen(buff);
 		if (trashchar == 1){
 			if (trashchar < nameend)
@@ -1238,7 +1256,7 @@ void shoot(char *buff, int buff_size)
 		/* for non of the modes we also need some inits */
 		if (file_b == 0) {
 			namebeg=1;
-			create_msg(buff, REQ_OPT);
+			create_msg(REQ_OPT, buff, NULL, usern, cseq_counter);
 		}
 		/* retryAfter = retryAfter / 10; */
 		if(maxforw!=-1)
@@ -1251,112 +1269,117 @@ void shoot(char *buff, int buff_size)
 
 	set_target(&addr, address, rport, csock);
 
-		/* here we go for the number of nretries which strongly depends on the 
-		   mode */
-		for (i = 0; i <= nretries; i++)
-		{
-			before_sending();
+	/* here we go for the number of nretries which strongly depends on the 
+	   mode */
+	for (i = 0; i <= nretries; i++)
+	{
+		before_sending();
 
-			if (sleep_ms == -2) {
-				rand_tmp = rand();
-				sleep_ms_s.tv_sec = rand_tmp / 1000;
-				sleep_ms_s.tv_nsec = (rand_tmp % 1000) * 1000;
-			}
-			if (sleep_ms != 0) {
-				nanosleep(&sleep_ms_s, &sleep_rem);
-			}
+		if (sleep_ms == -2) {
+			rand_tmp = rand();
+			sleep_ms_s.tv_sec = rand_tmp / 1000;
+			sleep_ms_s.tv_nsec = (rand_tmp % 1000) * 1000;
+		}
+		if (sleep_ms != 0) {
+			nanosleep(&sleep_ms_s, &sleep_rem);
+		}
 
-			send_message(request, (struct sockaddr *)&addr);
+		send_message(request, (struct sockaddr *)&addr);
 
-			/* in flood we are only interested in sending so skip the rest */
-			if (flood == 0) {
-				ret = recv_message(&buff2[0], sizeof(buff2));
-				if(ret > 0)
-				{
-					reply = &buff2[0];
-					/* send ACK for non-provisional reply on INVITE */
-					if ((strncmp(request, "INVITE", 6)==0) && 
-							(regexec(&replyexp, reply, 0, 0, 0) == REG_NOERROR) && 
-							(regexec(&proexp, reply, 0, 0, 0) == REG_NOMATCH)) { 
-						build_ack(request, reply, ack);
-						/* lets fire the ACK to the server */
-						send_message(ack, (struct sockaddr *)&addr);
+		/* in flood we are only interested in sending so skip the rest */
+		if (flood == 0) {
+			ret = recv_message(&buff2[0], sizeof(buff2));
+			if(ret > 0)
+			{
+				reply = &buff2[0];
+				/* send ACK for non-provisional reply on INVITE */
+				if ((strncmp(request, "INVITE", 6)==0) && 
+						(regexec(&replyexp, reply, 0, 0, 0) == REG_NOERROR) && 
+						(regexec(&proexp, reply, 0, 0, 0) == REG_NOMATCH)) { 
+					build_ack(request, reply, ack);
+					/* lets fire the ACK to the server */
+					send_message(ack, (struct sockaddr *)&addr);
+				}
+				/* check for old CSeq => ignore retransmission */
+				//if (usrloc == 0 && invite == 0 && message == 0)
+				//	cseqcmp = namebeg;
+				cseqtmp = cseq(reply);
+				if ((0 < cseqtmp) && (cseqtmp < cseq_counter)) {
+					if (verbose>0) {
+						printf("ignoring retransmission\n");
 					}
-					/* check for old CSeq => ignore retransmission */
-					//if (usrloc == 0 && invite == 0 && message == 0)
-					//	cseqcmp = namebeg;
-					cseqtmp = cseq(reply);
-					if ((0 < cseqtmp) && (cseqtmp < cseq_counter)) {
-						if (verbose>0)
-							printf("ignoring retransmission\n");
-						retrans_r_c++;
-						dontsend = 1;
-						continue;
-					}
-					else if (regexec(&authexp, reply, 0, 0, 0) == REG_NOERROR) {
-						if (!username) {
-							printf("%s\nerror: received 401 but cannot "
-								"authentication without a username\n", reply);
-							exit_code(2);
-						}
-						/* prevents a strange error */
-						regcomp(&authexp, "^SIP/[0-9]\\.[0-9] 40[17] ", 
-							REG_EXTENDED|REG_NOSUB|REG_ICASE);
-						insert_auth(request, reply);
-						if (verbose > 2)
-							printf("\nreceived:\n%s\n", reply);
-						new_transaction(buff);
-						continue;
-					} /* if auth...*/
-					/* lets see if received a redirect */
-					if (redirects == 1 && regexec(&redexp, reply, 0, 0, 0) == REG_NOERROR) {
-						handle_3xx(&addr);
-					} /* if redircts... */
-					else if (trace == 1) {
-						trace_reply();
-					} /* if trace ... */
-					else if (usrloc == 1||invite == 1||message == 1) {
-						handle_usrloc();
-					}
-					else if (randtrash == 1) {
-						handle_randtrash();
-					}
-					else {
-						handle_default();
-					} /* redirect, auth, and modes */
-				} /* ret > 0 */
-				else if (ret == -1) { // we did not got anything back, send again
+					retrans_r_c++;
+					dontsend = 1;
 					continue;
+					}
+				else if (regexec(&authexp, reply, 0, 0, 0) == REG_NOERROR) {
+					if (!username) {
+						printf("%s\nerror: received 401 but cannot "
+							"authentication without a username\n", reply);
+						exit_code(2);
+					}
+					/* prevents a strange error */
+					regcomp(&authexp, "^SIP/[0-9]\\.[0-9] 40[17] ", REG_EXTENDED|REG_NOSUB|REG_ICASE);
+					insert_auth(request, reply);
+					if (verbose > 2)
+						printf("\nreceived:\n%s\n", reply);
+					new_transaction(buff);
+					continue;
+				} /* if auth...*/
+				/* lets see if received a redirect */
+				if (redirects == 1 && regexec(&redexp, reply, 0, 0, 0) == REG_NOERROR) {
+					handle_3xx(&addr);
+				} /* if redircts... */
+				else if (trace == 1) {
+					trace_reply();
+				} /* if trace ... */
+				else if (usrloc == 1||invite == 1||message == 1) {
+					handle_usrloc();
+				}
+				else if (randtrash == 1) {
+					handle_randtrash();
 				}
 				else {
-					if (usrloc == 1)
-						printf("failed\n");
-					perror("socket error");
-					exit_code(3);
-				}
-			} /* !flood */
-			else {
-				if (send_counter == 1)
-					memcpy(&firstsendt, &sendtime, sizeof(struct timeval));
-				if (namebeg==nretries) {
-					printf("flood end reached\n");
-					printf("it took %.3f ms seconds to send %i request.\n", 
-							deltaT(&firstsendt, &sendtime), namebeg);
-					printf("so we sended %f requests per second.\n", 
-							(namebeg/deltaT(&firstsendt, &sendtime))*1000);
-					exit_code(0);
-				}
-				namebeg++;
-				create_msg(buff, REQ_FLOOD);
+					handle_default();
+				} /* redirect, auth, and modes */
+			} /* ret > 0 */
+			else if (ret == -1) { // we did not got anything back, send again
+				continue;
 			}
-		} /* for nretries */
+			else {
+				if (usrloc == 1) {
+					printf("failed\n");
+				}
+				perror("socket error");
+				exit_code(3);
+			}
+		} /* !flood */
+		else {
+			if (send_counter == 1) {
+					memcpy(&firstsendt, &sendtime, sizeof(struct timeval));
+			}
+			if (namebeg==nretries) {
+				printf("flood end reached\n");
+				printf("it took %.3f ms seconds to send %i request.\n", 
+						deltaT(&firstsendt, &sendtime), namebeg);
+				printf("we sent %f requests per second.\n", 
+						(namebeg/deltaT(&firstsendt, &sendtime))*1000);
+				exit_code(0);
+			}
+			namebeg++;
+			create_msg(REQ_FLOOD, buff, NULL, usern, cseq_counter);
+		}
+	} /* for nretries */
 
-	if (randtrash == 1)
+	if (randtrash == 1) {
 		exit_code(0);
+	}
 	printf("** give up retransmissioning....\n");
-	if (retrans_r_c>0 && (verbose > 1))
+	if (retrans_r_c>0 && (verbose > 1)) {
 		printf("%i retransmissions received during test\n", retrans_r_c);
-	if (retrans_s_c>0 && (verbose > 1))
+	}
+	if (retrans_s_c>0 && (verbose > 1)) {
 		printf("sent %i retransmissions during test\n", retrans_s_c);
+	}
 	exit_code(3);
 }
