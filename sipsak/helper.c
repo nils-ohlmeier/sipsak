@@ -300,6 +300,15 @@ void swap_buffers(char *fst, char *snd) {
 	free(tmp);
 }
 
+void swap_ptr(char **fst, char **snd)
+{
+	char *tmp;
+
+	tmp = *fst;
+	*fst = *snd;
+	*snd = tmp;
+}
+
 /* trashes one character in buff randomly */
 void trash_random(char *message)
 {

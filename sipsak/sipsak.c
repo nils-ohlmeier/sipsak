@@ -277,14 +277,14 @@ int main(int argc, char *argv[])
 	numeric=via_ins=redirects=fix_crlf=processes = 1;
 	username=password=replace_str=hostname=contact_uri=mes_body = NULL;
 	con_dis=auth_username = NULL;
-	scheme = user = host = backup = request = reply = NULL;
+	scheme = user = host = backup = req = rep = rec = NULL;
 	re = NULL;
 	address = 0;
 	rport = port = 0;
 	expires_t = USRLOC_EXP_DEF;
 	memset(buff, 0, BUFSIZE);
-	memset(confirm, 0, BUFSIZE);
-	memset(ack, 0, BUFSIZE);
+	//memset(confirm, 0, BUFSIZE);
+	//memset(ack, 0, BUFSIZE);
 	memset(fqdn, 0, FQDN_SIZE);
 	memset(messusern, 0, FQDN_SIZE);
 

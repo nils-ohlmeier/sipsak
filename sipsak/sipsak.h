@@ -241,9 +241,9 @@ int empty_contact, nagios_warn, fix_crlf, timing, outbound_proxy;
 char *username, *domainname, *password, *replace_str, *hostname, *contact_uri;
 char *mes_body, *con_dis, *auth_username;
 char fqdn[FQDN_SIZE], messusern[FQDN_SIZE];
-char confirm[BUFSIZE], ack[BUFSIZE];
+//char confirm[BUFSIZE], ack[BUFSIZE];
 char target_dot[INET_ADDRSTRLEN], source_dot[INET_ADDRSTRLEN];
-char *request, *reply;
+char *req, *rep, *rec;
 regex_t* re;
 
 #endif

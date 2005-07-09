@@ -290,7 +290,7 @@ void cpy_rr(char* src, char *dst, int route) {
 
 /* build an ACK from the given invite and reply.
  * NOTE: space has to be allocated allready for the ACK */
-void build_ack(char *invite, char *reply, char *ack) {
+void build_ack(char *invite, char *reply) {
 	char *tmp;
 	int len;
 
@@ -300,18 +300,16 @@ void build_ack(char *invite, char *reply, char *ack) {
 	else {
 		len = strlen(invite);
 	}
-	memcpy(ack, invite, len);
-	*(ack+len) = '\0';
-	replace_string(ack, "INVITE", "ACK");
-	cpy_to(reply, ack);
-	if (tmp)
-		set_cl(ack, 0);
+	*(invite + len) = '\0';
+	replace_string(invite, "INVITE", "ACK");
+	set_cl(invite, 0);
+	cpy_to(reply, invite);
 	if (regexec(&okexp, reply, 0, 0, 0)==0) {
-		cpy_rr(reply, ack, 1);
+		cpy_rr(reply, invite, 1);
 		/* 200 ACK must be in new transaction */
-		new_branch(ack);
+		new_branch(invite);
 		if((tmp = uri_from_contact(reply))!= NULL) {
-			uri_replace(ack, tmp);
+			uri_replace(invite, tmp);
 			free(tmp);
 		}
 	}

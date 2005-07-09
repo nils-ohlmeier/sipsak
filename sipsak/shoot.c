@@ -89,7 +89,7 @@
 struct timezone tz;
 struct timeval sendtime, recvtime, tv, firstsendt, starttime, delaytime;
 int dontsend, dontrecv, usock, csock, retryAfter, randretrys, retrans_s_c;
-int i, send_counter, retrans_r_c, rem_namebeg;
+int i, send_counter, retrans_r_c;
 char *usern;
 double senddiff, big_delay;
 regex_t redexp, proexp, okexp, tmhexp, errexp, authexp, replyexp;
@@ -177,7 +177,7 @@ int check_for_message(char *recv, int size) {
 				printf("\n");
 				perror("send failure");
 				if (randtrash == 1) 
-					printf ("last message before send failure:\n%s\n", request);
+					printf ("last message before send failure:\n%s\n", req);
 				exit_code(3);
 			}
 		}
@@ -193,12 +193,12 @@ int check_for_message(char *recv, int size) {
 		else if (verbose>0) 
 			printf("** timeout after %i ms**\n", retryAfter);
 		if (randtrash == 1) {
-			printf("did not get a response on this request:\n%s\n", request);
+			printf("did not get a response on this request:\n%s\n", req);
 			if (i+1 < nameend) {
 				if (randretrys == 2) {
 					printf("sended the following message three "
 							"times without getting a response:\n%s\n"
-							"give up further retransmissions...\n", request);
+							"give up further retransmissions...\n", req);
 					exit_code(3);
 				}
 				else {
@@ -376,6 +376,16 @@ inline static void on_success(char *rep)
 	}
 }
 
+static inline void create_usern(char *target, char *username, int number)
+{
+	if (number >= 0) {
+		sprintf(target, "%s%i@", username, number);
+	}
+	else {
+		sprintf(target, "%s@", username);
+	}
+}
+
 void handle_3xx(struct sockaddr_in *tadr)
 {
 	char *uscheme, *uuser, *uhost, *contact;
@@ -383,7 +393,7 @@ void handle_3xx(struct sockaddr_in *tadr)
 	printf("** received redirect ");
 	if (warning_ext == 1) {
 		printf("from ");
-		warning_extract(reply);
+		warning_extract(rec);
 		printf("\n");
 	}
 	else
@@ -391,17 +401,17 @@ void handle_3xx(struct sockaddr_in *tadr)
 	/* we'll try to handle 301 and 302 here, other 3xx are to complex */
 	regcomp(&redexp, "^SIP/[0-9]\\.[0-9] 30[125] ", 
 			REG_EXTENDED|REG_NOSUB|REG_ICASE);
-	if (regexec(&redexp, reply, 0, 0, 0) == REG_NOERROR) {
+	if (regexec(&redexp, rec, 0, 0, 0) == REG_NOERROR) {
 		/* try to find the contact in the redirect */
-		contact = uri_from_contact(reply);
+		contact = uri_from_contact(rec);
 		if (contact==NULL) {
 			printf("error: cannot find Contact in this "
-				"redirect:\n%s\n", reply);
+				"redirect:\n%s\n", rec);
 			exit_code(3);
 		}
 		/* correct our request */
-		uri_replace(request, contact);
-		new_transaction(request);
+		uri_replace(req, contact);
+		new_transaction(req);
 		/* extract the needed information*/
 		rport = 0;
 		address = 0;
@@ -413,7 +423,7 @@ void handle_3xx(struct sockaddr_in *tadr)
 		if (!address){
 			printf("error: cannot determine host "
 					"address from Contact of redirect:"
-					"\n%s\n", reply);
+					"\n%s\n", rec);
 			exit_code(2);
 		}
 		if (!rport) {
@@ -426,7 +436,7 @@ void handle_3xx(struct sockaddr_in *tadr)
 	}
 	else {
 		printf("error: cannot handle this redirect:"
-				"\n%s\n", reply);
+				"\n%s\n", rec);
 		exit_code(2);
 	}
 }
@@ -435,37 +445,37 @@ void trace_reply()
 {
 	char *contact;
 
-	if (regexec(&tmhexp, reply, 0, 0, 0) == REG_NOERROR) {
+	if (regexec(&tmhexp, rec, 0, 0, 0) == REG_NOERROR) {
 		/* we received 483 to many hops */
 		printf("%i: ", i);
 		if (verbose > 2) {
 			printf("(%.3f ms)\n%s\n", 
-				deltaT(&sendtime, &recvtime), reply);
+				deltaT(&sendtime, &recvtime), rec);
 		}
 		else {
-			warning_extract(reply);
+			warning_extract(rec);
 			printf("(%.3f ms) ", deltaT(&sendtime, &recvtime));
-			print_message_line(reply);
+			print_message_line(rec);
 		}
 		//namebeg++;
 		maxforw++;
 		cseq_counter++;
-		create_msg(REQ_OPT, request, NULL, usern, cseq_counter);
-		add_via(request);
-		set_maxforw(request, maxforw);
+		create_msg(REQ_OPT, req, NULL, usern, cseq_counter);
+		add_via(req);
+		set_maxforw(req, maxforw);
 		return;
 	}
-	else if (regexec(&proexp, reply, 0, 0, 0) == REG_NOERROR) {
+	else if (regexec(&proexp, rec, 0, 0, 0) == REG_NOERROR) {
 		/* we received a provisional response */
 		printf("%i: ", i);
 		if (verbose > 2) {
 			printf("(%.3f ms)\n%s\n", 
-				deltaT(&sendtime, &recvtime), reply);
+				deltaT(&sendtime, &recvtime), rec);
 		}
 		else {
-			warning_extract(reply);
+			warning_extract(rec);
 			printf("(%.3f ms) ", deltaT(&sendtime, &recvtime));
-			print_message_line(reply);
+			print_message_line(rec);
 		}
 		retryAfter = SIP_T2;
 		dontsend=1;
@@ -478,19 +488,19 @@ void trace_reply()
 			printf("%i: ", i);
 		else
 			printf("\t");
-		warning_extract(reply);
+		warning_extract(rec);
 		printf("(%.3f ms) ", deltaT(&sendtime, &recvtime));
-		print_message_line(reply);
-		if ((contact = STRCASESTR(reply, CONT_STR)) != NULL ||
-				(contact = STRCASESTR(reply, CONT_SHORT_STR)) != NULL) {
+		print_message_line(rec);
+		if ((contact = STRCASESTR(rec, CONT_STR)) != NULL ||
+				(contact = STRCASESTR(rec, CONT_SHORT_STR)) != NULL) {
 			printf("\t");
 			print_message_line(contact);
 		}
 		else {
 			printf("\twithout Contact header\n");
 		}
-		if (regexec(&okexp, reply, 0, 0, 0) == REG_NOERROR)
-			on_success(reply);
+		if (regexec(&okexp, rec, 0, 0, 0) == REG_NOERROR)
+			on_success(rec);
 		else
 			exit_code(1);
 	}
@@ -500,9 +510,9 @@ void handle_default()
 {
 	/* in the normal send and reply case anything other 
 	   then 1xx will be treated as final response*/
-	if (regexec(&proexp, reply, 0, 0, 0) == REG_NOERROR) {
+	if (regexec(&proexp, rec, 0, 0, 0) == REG_NOERROR) {
 		if (verbose > 1) {
-			printf("%s\n\n", reply);
+			printf("%s\n\n", rec);
 			printf("** reply received ");
 			if (send_counter == 1) {
 				printf("after %.3f ms **\n", deltaT(&sendtime, &recvtime));
@@ -513,7 +523,7 @@ void handle_default()
 						deltaT(&sendtime, &recvtime));
 			}
 			printf("   ");
-			print_message_line(reply);
+			print_message_line(rec);
 			printf("   provisional received; still"
 					" waiting for a final response\n");
 		}
@@ -523,7 +533,7 @@ void handle_default()
 	}
 	else {
 		if (verbose > 1) {
-			printf("%s\n\n", reply);
+			printf("%s\n\n", rec);
 			printf("** reply received ");
 			if (send_counter == 1) {
 				printf("after %.3f ms **\n", deltaT(&sendtime, &recvtime));
@@ -534,17 +544,17 @@ void handle_default()
 						deltaT(&sendtime, &recvtime));
 			}
 			printf("   ");
-			print_message_line(reply);
+			print_message_line(rec);
 			printf("   final received\n");
 		}
 		else if (verbose>0) {
-			printf("%s\n", reply);
+			printf("%s\n", rec);
 		}
 		else if (timing) {
 			printf("%.3f ms\n", deltaT(&firstsendt, &recvtime));
 		}
-		if (regexec(&okexp, reply, 0, 0, 0) == REG_NOERROR) {
-			on_success(reply);
+		if (regexec(&okexp, rec, 0, 0, 0) == REG_NOERROR) {
+			on_success(rec);
 		}
 		else {
 			exit_code(1);
@@ -556,14 +566,14 @@ void handle_randtrash()
 {
 	/* in randomzing trash we are expexting 4?? error codes
 	   everything else should not be normal */
-	if (regexec(&errexp, reply, 0, 0, 0) == REG_NOERROR) {
+	if (regexec(&errexp, rec, 0, 0, 0) == REG_NOERROR) {
 		if (verbose > 2)
-			printf("received:\n%s\n", reply);
+			printf("received:\n%s\n", rec);
 		if (verbose > 1) {
 			printf("received expected 4xx ");
 			if (warning_ext == 1) {
 				printf ("from ");
-				warning_extract(reply);
+				warning_extract(rec);
 				printf("\n");
 			}
 			else {
@@ -574,7 +584,7 @@ void handle_randtrash()
 	else {
 		printf("warning: did not received 4xx\n");
 		if (verbose > 1) 
-			printf("sended:\n%s\nreceived:\n%s\n", request, reply);
+			printf("sended:\n%s\nreceived:\n%s\n", req, rec);
 	}
 	if (nameend == (i+1)) {
 		if (randretrys == 0) {
@@ -583,12 +593,12 @@ void handle_randtrash()
 		}
 		else {
 			printf("maximum sendings reached but did not "
-				"get a response on this request:\n%s\n", request);
+				"get a response on this request:\n%s\n", req);
 			exit_code(3);
 		}
 	}
 	else {
-		trash_random(request);
+		trash_random(req);
 	}
 }
 
@@ -596,7 +606,7 @@ void handle_usrloc()
 {
 	char *crlf;
 
-	if (regexec(&proexp, reply, 0, 0, 0) == REG_NOERROR) {
+	if (regexec(&proexp, rec, 0, 0, 0) == REG_NOERROR) {
 		if (verbose > 2) {
 			printf("\nignoring provisional response\n");
 		}
@@ -608,18 +618,18 @@ void handle_usrloc()
 			case REG_REP:
 				/* we have sent a register and look 
 				   at the response now */
-				if (regexec(&okexp, reply, 0, 0, 0) == REG_NOERROR) {
+				if (regexec(&okexp, rec, 0, 0, 0) == REG_NOERROR) {
 					if (verbose > 1) {
 						printf ("\tOK\n");
 					}
 					if (verbose > 2) {
-						printf("\n%s\n", reply);
+						printf("\n%s\n", rec);
 					}
 				}
 				else {
 					printf("\nreceived:\n%s\nerror: didn't "
 									"received '200 OK' on register (see "
-									"above). aborting\n", reply);
+									"above). aborting\n", rec);
 					exit_code(1);
 				}
 				if (invite == 0 && message == 0) {
@@ -653,63 +663,60 @@ void handle_usrloc()
 							printf("%.3f ms\n",
 										deltaT(&firstsendt, &recvtime));
 						}
-						on_success(reply);
+						on_success(rec);
 					} /* namebeg == nameend */
 					/* lets see if we deceid to remove a 
 					   binding (case 6)*/
 					if ( ((float)rand()/RAND_MAX)*100 > rand_rem) {
 						namebeg++;
 						cseq_counter++;
-						create_msg(REQ_REG, request, NULL, usern, cseq_counter);
+						create_usern(usern, username, namebeg);
+						create_msg(REQ_REG, req, NULL, usern, cseq_counter);
 					}
 					else {
 						/* to prevent only removing of low
 						   user numbers new random number*/
-						rem_namebeg = namebeg;
-						namebeg = ((float)rand()/RAND_MAX) * namebeg;
 						cseq_counter++;
-						trashchar=cseq_counter;
-						create_msg(REQ_REM, request, NULL, usern, cseq_counter);
+						create_usern(usern, username, ((float)rand()/RAND_MAX) * namebeg);
+						create_msg(REQ_REM, req, NULL, usern, cseq_counter);
 						usrlocstep=UNREG_REP;
 					}
 				} /* invite == 0 && message == 0 */
 				else if (invite == 1) {
-					create_msg(REQ_INV, request, reply, usern, cseq_counter);
 					cseq_counter++;
+					create_msg(REQ_INV, req, rep, usern, cseq_counter);
 					usrlocstep=INV_RECV;
 				}
 				else if (message == 1) {
-					create_msg(REQ_MES, request, reply, usern, cseq_counter);
 					cseq_counter++;
+					create_msg(REQ_MES, req, rep, usern, cseq_counter);
 					usrlocstep=MES_RECV;
 				}
 				break;
 			case INV_RECV:
 				/* see if we received our invite */
-				if (!STRNCASECMP(reply, messusern, strlen(messusern))) {
+				if (!STRNCASECMP(rec, messusern, strlen(messusern))) {
 					if (verbose > 1) {
 						printf("\t\treceived invite\n");
 					}
 					if (verbose > 2) {
-						printf("\n%s\n", reply);
+						printf("\n%s\n", rec);
 					}
-					cpy_vias(reply, confirm);
-					cpy_to(reply, confirm);
-					strcpy(request, confirm);
-					build_ack(request, confirm, ack);
-					strcpy(request, confirm);
+					cpy_vias(rec, rep);
+					cpy_rr(rec, rep, 0);
+					swap_ptr(&req, &rep);
 					usrlocstep=INV_OK_RECV;
 				}
 				else {
 					printf("\nreceived:\n%s\nerror: did not "
 								"received the INVITE that was sent "
-								"(see above). aborting\n", reply);
+								"(see above). aborting\n", rec);
 					exit_code(1);
 				}
 				break;
 			case INV_OK_RECV:
 				/* did we received our ok ? */
-				if (STRNCASECMP(reply, INV_STR, INV_STR_LEN)==0) {
+				if (STRNCASECMP(rec, INV_STR, INV_STR_LEN)==0) {
 					if (verbose>0) {
 						printf("ignoring INVITE retransmission\n");
 					}
@@ -717,22 +724,24 @@ void handle_usrloc()
 					dontsend=1;
 					return;
 				}
-				if (regexec(&okexp, reply, 0, 0, 0) == REG_NOERROR) {
+				if (regexec(&okexp, rec, 0, 0, 0) == REG_NOERROR) {
 					if (verbose > 1) {
 						printf("\treply received\n");
 					}
 					if (verbose > 2) {
-						printf("\n%s\n", reply);
+						printf("\n%s\n", rec);
 					}
-					cpy_to(reply, ack);
-					strcpy(request, ack);
+					//cpy_to(reply, ack);
+					//strcpy(request, ack);
+					/* ACK was send already earlier generically */
 					usrlocstep=INV_ACK_RECV;
+					dontsend=1;
 				}
 				else {
 					printf("\nreceived:\n%s\nerror: did not "
 								"received the '200 OK' that was sent "
 								"as the reply on the INVITE (see "
-								"above). aborting\n", reply);
+								"above). aborting\n", rec);
 					exit_code(1);
 				}
 				break;
@@ -744,12 +753,12 @@ void handle_usrloc()
 				else {
 					sprintf(messusern, "%s sip:sipsak_conf", ACK_STR);
 				}
-				if (STRNCASECMP(reply, messusern, strlen(messusern))==0) {
+				if (STRNCASECMP(rec, messusern, strlen(messusern))==0) {
 					if (verbose > 1) {
 						printf("\t\tack received\n");
 					}
 					if (verbose > 2) {
-						printf("\n%s\n", reply);
+						printf("\n%s\n", rec);
 					}
 					if (verbose>0 && nameend>0) {
 						printf("usrloc for %s%i completed "
@@ -784,32 +793,32 @@ void handle_usrloc()
 								exit_code(4);
 							}
 						}
-						on_success(reply);
+						on_success(rec);
 					} /* namebeg == nameend */
 					if (usrloc == 1) {
 						/* lets see if we deceid to remove a 
 						   binding (case 6)*/
 						if (((float)rand()/RAND_MAX) * 100 > rand_rem) {
 							namebeg++;
-							create_msg(REQ_REG, request, NULL, usern, cseq_counter);
-							cseq_counter+=2;
+							cseq_counter++;
+							create_usern(usern, username, namebeg);
+							create_msg(REQ_REG, req, NULL, usern, cseq_counter);
 							usrlocstep=REG_REP;
 						}
 						else {
 							/* to prevent only removing of low
 							   user numbers new random number*/
-							rem_namebeg = namebeg;
-							namebeg = ((float)rand()/RAND_MAX) * namebeg;
 							cseq_counter++;
-							trashchar=cseq_counter;
-							create_msg(REQ_REM, request, NULL, usern, cseq_counter);
+							create_usern(usern, username, ((float)rand()/RAND_MAX) * namebeg);
+							create_msg(REQ_REM, req, NULL, usern, cseq_counter);
 							usrlocstep=UNREG_REP;
 						}
 					} /* usrloc == 1 */
 					else {
 						namebeg++;
-						create_msg(REQ_INV, request, reply, usern, cseq_counter);
-						cseq_counter+=3;
+						cseq_counter++;
+						create_usern(usern, username, namebeg);
+						create_msg(REQ_INV, req, rep, usern, cseq_counter);
 						usrlocstep=INV_RECV;
 					}
 				} /* STRNCASECMP */
@@ -817,38 +826,38 @@ void handle_usrloc()
 					printf("\nreceived:\n%s\nerror: did not "
 								"received the 'ACK' that was sent "
 								"as the reply on the '200 OK' (see "
-								"above). aborting\n", reply);
+								"above). aborting\n", rec);
 					exit_code(1);
 				}
 				break;
 			case MES_RECV:
 				/* we sent the message and look if its 
 				   forwarded to us */
-				if (!STRNCASECMP(reply, messusern, strlen(messusern))) {
+				if (!STRNCASECMP(rec, messusern, strlen(messusern))) {
 					if (verbose > 1) {
-						crlf=STRCASESTR(reply, "\r\n\r\n");
+						crlf=STRCASESTR(rec, "\r\n\r\n");
 						crlf=crlf+4;
 						printf("  received message\n  '%s'\n", crlf);
 					}
 					if (verbose > 2) {
-						printf("\n%s\n", reply);
+						printf("\n%s\n", rec);
 					}
-					cpy_vias(reply, confirm);
-					cpy_to(reply, confirm);
-					strcpy(request, confirm);
+					cpy_vias(rec, rep);
+					cpy_to(rec, rep);
+					swap_ptr(&req, &rep);
 					usrlocstep=MES_OK_RECV;
 				}
 				else {
 					printf("\nreceived:\n%s\nerror: did not "
 								"received the 'MESSAGE' that was sent "
-								"(see above). aborting\n", reply);
+								"(see above). aborting\n", rec);
 					exit_code(1);
 				}
 				break;
 			case MES_OK_RECV:
 				/* we sent our reply on the message and
 				   look if this is also forwarded to us */
-				if (STRNCASECMP(reply, MES_STR, MES_STR_LEN)==0) {
+				if (STRNCASECMP(rec, MES_STR, MES_STR_LEN)==0) {
 					if (verbose>0) {
 						printf("ignoring MESSAGE retransmission\n");
 					}
@@ -856,7 +865,7 @@ void handle_usrloc()
 					dontsend=1;
 					return;
 				}
-				if (regexec(&okexp, reply, 0, 0, 0) == REG_NOERROR) {
+				if (regexec(&okexp, rec, 0, 0, 0) == REG_NOERROR) {
 					if (verbose > 1) {
 						printf("  reply received\n\n");
 					}
@@ -894,32 +903,32 @@ void handle_usrloc()
 								exit_code(4);
 							}
 						}
-						on_success(reply);
+						on_success(rec);
 					} /* namebeg == nameend */
 					if (usrloc == 1) {
 						/* lets see if we deceid to remove a 
 						   binding (case 6)*/
 						if (((float)rand()/RAND_MAX) * 100 > rand_rem) {
 							namebeg++;
-							create_msg(REQ_REG, request, NULL, usern, cseq_counter);
-							cseq_counter+=2;
+							cseq_counter++;
+							create_usern(usern, username, namebeg);
+							create_msg(REQ_REG, req, NULL, usern, cseq_counter);
 							usrlocstep=REG_REP;
 						}
 						else {
 							/* to prevent only removing of low
 							   user numbers new random number*/
-							rem_namebeg = namebeg;
-							namebeg = ((float)rand()/RAND_MAX) * namebeg;
 							cseq_counter++;
-							trashchar=cseq_counter;
-							create_msg(REQ_REM, request, NULL, usern, cseq_counter);
+							create_usern(usern, username, ((float)rand()/RAND_MAX) * namebeg);
+							create_msg(REQ_REM, req, NULL, usern, cseq_counter);
 							usrlocstep=UNREG_REP;
 						}
 					} /* usrloc == 1 */
 					else {
 						namebeg++;
-						create_msg(REQ_MES, request, NULL, usern, cseq_counter);
-						cseq_counter+=3;
+						cseq_counter++;
+						create_usern(usern, username, namebeg);
+						create_msg(REQ_MES, req, NULL, usern, cseq_counter);
 						usrlocstep=MES_RECV;
 					}
 				} /* regexec */
@@ -929,21 +938,21 @@ void handle_usrloc()
 							printf("\nreceived:\n%s\nerror: did"
 										" not received 200 for the "
 										"MESSAGE (see above)\n",
-										reply);
+										rec);
 						}
 						else {
 							printf("\nreceived:\n%s\nerror: did"
 										" not received the '200 OK' "
 										"that was sent as the reply on"
 										" the MESSAGE (see above). "
-										"aborting\n", reply);
+										"aborting\n", rec);
 						}
 					}
 					exit_code(1);
 				}
 				break;
 			case UNREG_REP:
-				if (STRNCASECMP(reply, MES_STR, MES_STR_LEN)==0) {
+				if (STRNCASECMP(rec, MES_STR, MES_STR_LEN)==0) {
 					if (verbose>0) {
 						printf("ignoring MESSAGE retransmission\n");
 					}
@@ -951,7 +960,7 @@ void handle_usrloc()
 					dontsend=1;
 					return;
 				}
-				if (regexec(&okexp, reply, 0, 0, 0) == REG_NOERROR) {
+				if (regexec(&okexp, rec, 0, 0, 0) == REG_NOERROR) {
 					if (verbose > 1) {
 						printf("   OK\n\n");
 					}
@@ -962,10 +971,10 @@ void handle_usrloc()
 					else if (verbose>0) {
 						printf("Binding removal for %s successful\n", username);
 					}
-					namebeg = rem_namebeg;
 					namebeg++;
-					create_msg(REQ_REG, request, NULL, usern, cseq_counter);
 					cseq_counter++;
+					create_usern(usern, username, namebeg);
+					create_msg(REQ_REG, req, NULL, usern, cseq_counter);
 					usrlocstep=REG_REP;
 					i--;
 				}
@@ -973,7 +982,7 @@ void handle_usrloc()
 					printf("\nreceived:\n%s\nerror: did not "
 								"received the expected 200 on the "
 								"remove bindings request for %s%i (see"
-								" above). aborting\n", reply, username, 
+								" above). aborting\n", rec, username, 
 								namebeg);
 					exit_code(1);
 				}
@@ -1035,15 +1044,15 @@ void before_sending()
 	else if (randtrash == 1 && verbose > 0) {
 		printf("message with %i randomized chars\n", i+1);
 		if (verbose > 2)
-			printf("request:\n%s\n", request);
+			printf("request:\n%s\n", req);
 	}
 	else if (trace == 0 && usrloc == 0 && flood == 0 && randtrash == 0 && (verbose > 1)	&& dontsend == 0){
-		printf("** request **\n%s\n", request);
+		printf("** request **\n%s\n", req);
 	}
 }
 
 /* this is the main function with the loops and modes */
-void shoot(char *buff, int buff_size)
+void shoot(char *buf, int buff_size)
 {
 	struct sockaddr_in	addr;
 	//struct timeval	tv, sendtime, recvtime, firstsendt, delaytime, starttime;
@@ -1057,7 +1066,7 @@ void shoot(char *buff, int buff_size)
 	//double big_delay, tmp_delay;
 	//char *uscheme, *uuser, *uhost;
 	//char *crlf = NULL;
-	char buff2[BUFSIZE];
+	char buf2[BUFSIZE], buf3[BUFSIZE];
 	char lport_str[LPORT_STR_LEN];
 	//fd_set	fd;
 	socklen_t slen;
@@ -1071,13 +1080,14 @@ void shoot(char *buff, int buff_size)
 	usrlocstep = REG_REP;
 
 	/* initalize some local vars */
-	dontsend=dontrecv=retrans_r_c=retrans_s_c=rem_namebeg = 0;
+	dontsend=dontrecv=retrans_r_c=retrans_s_c= 0;
 	big_delay= 0;
 	delaytime.tv_sec = 0;
 	delaytime.tv_usec = 0;
 	usern = NULL;
 	/* initialize local arrays */
-	memset(buff2, 0, BUFSIZE);
+	memset(buf2, 0, BUFSIZE);
+	memset(buf3, 0, BUFSIZE);
 	memset(lport_str, 0, LPORT_STR_LEN);
 
 	csock = usock = -1;
@@ -1086,6 +1096,10 @@ void shoot(char *buff, int buff_size)
 	addr.sin_family=AF_INET;
 	addr.sin_addr.s_addr = htonl( INADDR_ANY );
 	addr.sin_port = htons((short)lport);
+
+	req = buf;
+	rep = buf2;
+	rec = buf3;
 
 	/* create the un-connected socket */
 	if (!symmetric) {
@@ -1150,16 +1164,16 @@ void shoot(char *buff, int buff_size)
 	}
 
 	if (replace_b == 1){
-		replace_string(buff, "$dsthost$", domainname);
-		replace_string(buff, "$srchost$", fqdn);
+		replace_string(req, "$dsthost$", domainname);
+		replace_string(req, "$srchost$", fqdn);
 		sprintf(lport_str, "%i", lport);
-		replace_string(buff, "$port$", lport_str);
+		replace_string(req, "$port$", lport_str);
 		free(lport_str);
 		if (username)
-			replace_string(buff, "$user$", username);
+			replace_string(req, "$user$", username);
 	}
 	if (replace_str)
-		replace_string(buff, "$replace$", replace_str);
+		replace_string(req, "$replace$", replace_str);
 
 	/* set all regular expression to simplfy the result code indetification */
 	regcomp(&replyexp, "^SIP/[0-9]\\.[0-9] [1-6][0-9][0-9]", 
@@ -1180,12 +1194,12 @@ void shoot(char *buff, int buff_size)
 	if (username) {
 		if (nameend > 0) {
 			usern = str_alloc(strlen(username) + 12);
-			sprintf(usern, "%s%i@", username, namebeg);
+			create_usern(usern, username, namebeg);
 		}
 		else {
 			if (*(username + strlen(username) - 1) != '@') {
 				usern = str_alloc(strlen(username) + 2);
-				sprintf(usern, "%s@", username);
+				create_usern(usern, username, -1);
 			}
 			else {
 				usern = username;
@@ -1202,17 +1216,17 @@ void shoot(char *buff, int buff_size)
 				nretries=3*(nameend-namebeg)+3;
 			else
 				nretries=2*(nameend-namebeg)+2;
-			create_msg(REQ_REG, buff, NULL, usern, cseq_counter);
+			create_msg(REQ_REG, req, NULL, usern, cseq_counter);
 			usrlocstep=REG_REP;
 		}
 		else if (invite == 1) {
 			nretries=3*(nameend-namebeg)+3;
-			create_msg(REQ_INV, buff, reply, usern, cseq_counter);
+			create_msg(REQ_INV, req, rep, usern, cseq_counter);
 			usrlocstep=INV_RECV;
 		}
 		else {
 			nretries=2*(nameend-namebeg)+2;
-			create_msg(REQ_MES, buff, reply, usern, cseq_counter);
+			create_msg(REQ_MES, req, rep, usern, cseq_counter);
 			if (mes_body)
 				usrlocstep=MES_OK_RECV;
 			else
@@ -1227,21 +1241,21 @@ void shoot(char *buff, int buff_size)
 		else
 			nretries=255;
 		namebeg=1;
-		create_msg(REQ_OPT, buff, NULL, usern, cseq_counter);
-		add_via(buff);
+		create_msg(REQ_OPT, req, NULL, usern, cseq_counter);
+		add_via(req);
 	}
 	else if (flood == 1){
 		/* this should be the max of an (32 bit) int without the sign */
 		if (namebeg==-1) namebeg=INT_MAX;
 		nretries=namebeg;
 		namebeg=1;
-		create_msg(REQ_FLOOD, buff, NULL, usern, cseq_counter);
+		create_msg(REQ_FLOOD, req, NULL, usern, cseq_counter);
 	}
 	else if (randtrash == 1){
 		randretrys=0;
 		namebeg=1;
-		create_msg(REQ_RAND, buff, NULL, usern, cseq_counter);
-		nameend=(int)strlen(buff);
+		create_msg(REQ_RAND, req, NULL, usern, cseq_counter);
+		nameend=(int)strlen(req);
 		if (trashchar == 1){
 			if (trashchar < nameend)
 				nameend=trashchar;
@@ -1250,22 +1264,20 @@ void shoot(char *buff, int buff_size)
 					"request length\n");
 		}
 		nretries=nameend-1;
-		trash_random(buff);
+		trash_random(req);
 	}
 	else {
-		/* for non of the modes we also need some inits */
+		/* for none of the modes we also need some inits */
 		if (file_b == 0) {
 			namebeg=1;
-			create_msg(REQ_OPT, buff, NULL, usern, cseq_counter);
+			create_msg(REQ_OPT, req, NULL, usern, cseq_counter);
 		}
 		/* retryAfter = retryAfter / 10; */
 		if(maxforw!=-1)
-			set_maxforw(buff, maxforw);
+			set_maxforw(req, maxforw);
 		if(via_ins == 1)
-			add_via(buff);
+			add_via(req);
 	}
-
-	request = buff;
 
 	set_target(&addr, address, rport, csock);
 
@@ -1284,26 +1296,29 @@ void shoot(char *buff, int buff_size)
 			nanosleep(&sleep_ms_s, &sleep_rem);
 		}
 
-		send_message(request, (struct sockaddr *)&addr);
+		send_message(req, (struct sockaddr *)&addr);
 
 		/* in flood we are only interested in sending so skip the rest */
 		if (flood == 0) {
-			ret = recv_message(&buff2[0], sizeof(buff2));
+			ret = recv_message(rec, BUFSIZE);
 			if(ret > 0)
 			{
-				reply = &buff2[0];
+				//reply = &buff2[0];
 				/* send ACK for non-provisional reply on INVITE */
-				if ((strncmp(request, "INVITE", 6)==0) && 
-						(regexec(&replyexp, reply, 0, 0, 0) == REG_NOERROR) && 
-						(regexec(&proexp, reply, 0, 0, 0) == REG_NOMATCH)) { 
-					build_ack(request, reply, ack);
+				if ((STRNCASECMP(req, "INVITE", 6)==0) && 
+						(regexec(&replyexp, rec, 0, 0, 0) == REG_NOERROR) && 
+						(regexec(&proexp, rec, 0, 0, 0) == REG_NOMATCH)) { 
+					if (usrlocstep == INV_OK_RECV) {
+						swap_ptr(&rep, &req);
+					}
+					build_ack(req, rec);
 					/* lets fire the ACK to the server */
-					send_message(ack, (struct sockaddr *)&addr);
+					send_message(req, (struct sockaddr *)&addr);
 				}
 				/* check for old CSeq => ignore retransmission */
 				//if (usrloc == 0 && invite == 0 && message == 0)
 				//	cseqcmp = namebeg;
-				cseqtmp = cseq(reply);
+				cseqtmp = cseq(rec);
 				if ((0 < cseqtmp) && (cseqtmp < cseq_counter)) {
 					if (verbose>0) {
 						printf("ignoring retransmission\n");
@@ -1312,22 +1327,22 @@ void shoot(char *buff, int buff_size)
 					dontsend = 1;
 					continue;
 					}
-				else if (regexec(&authexp, reply, 0, 0, 0) == REG_NOERROR) {
+				else if (regexec(&authexp, rec, 0, 0, 0) == REG_NOERROR) {
 					if (!username) {
 						printf("%s\nerror: received 401 but cannot "
-							"authentication without a username\n", reply);
+							"authentication without a username\n", rec);
 						exit_code(2);
 					}
 					/* prevents a strange error */
 					regcomp(&authexp, "^SIP/[0-9]\\.[0-9] 40[17] ", REG_EXTENDED|REG_NOSUB|REG_ICASE);
-					insert_auth(request, reply);
+					insert_auth(req, rec);
 					if (verbose > 2)
-						printf("\nreceived:\n%s\n", reply);
-					new_transaction(buff);
+						printf("\nreceived:\n%s\n", rec);
+					new_transaction(req);
 					continue;
 				} /* if auth...*/
 				/* lets see if received a redirect */
-				if (redirects == 1 && regexec(&redexp, reply, 0, 0, 0) == REG_NOERROR) {
+				if (redirects == 1 && regexec(&redexp, rec, 0, 0, 0) == REG_NOERROR) {
 					handle_3xx(&addr);
 				} /* if redircts... */
 				else if (trace == 1) {
@@ -1367,7 +1382,7 @@ void shoot(char *buff, int buff_size)
 				exit_code(0);
 			}
 			namebeg++;
-			create_msg(REQ_FLOOD, buff, NULL, usern, cseq_counter);
+			create_msg(REQ_FLOOD, req, NULL, usern, cseq_counter);
 		}
 	} /* for nretries */
 

@@ -42,6 +42,8 @@ void insert_cr(char *mes);
 
 void swap_buffers(char *fst, char *snd);
 
+void swap_ptr(char **fst, char **snd);
+
 void trash_random(char *message);
 
 double deltaT(struct timeval *t1p, struct timeval *t2p);
