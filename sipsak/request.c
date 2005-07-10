@@ -45,7 +45,6 @@ void create_msg(int action, char *req_buff, char *repl_buff, char *username, int
 	d=(unsigned int)rand();
 	switch (action){
 		case REQ_REG:
-			/* not elegant but easier :) */
 			sprintf(req_buff, 
 				"%s sip:%s%s"
 				"%s%s:%i;branch=z9hG4bK.%08x;rport\r\n"
@@ -67,11 +66,15 @@ void create_msg(int action, char *req_buff, char *repl_buff, char *username, int
 				UA_STR, SIPSAK_VERSION);
 			req_buff += strlen(req_buff);
 			if (contact_uri!=NULL) {
-				sprintf(req_buff, "%s%s\r\n\r\n",
+				sprintf(req_buff, "%s%i\r\n"
+					"%s%s\r\n\r\n",
+					EXP_STR, expires_t,
 					CONT_STR, contact_uri);
 			}
 			else if (empty_contact == 0) {
-				sprintf(req_buff, "%ssip:%s@%s:%i\r\n\r\n",
+				sprintf(req_buff, "%s%i\r\n"
+					"%ssip:%s%s:%i\r\n\r\n",
+					EXP_STR, expires_t,
 					CONT_STR, username, fqdn, lport);
 			}
 			else{
@@ -189,9 +192,9 @@ void create_msg(int action, char *req_buff, char *repl_buff, char *username, int
 					mes_body);
 			}
 			else {
-				sprintf(req_buff,
-					"%s%s.", 
-					SIPSAK_MES_STR, username);
+				sprintf(req_buff, "%s%s", SIPSAK_MES_STR, username);
+				req_buff += strlen(req_buff) - 1;
+				*(req_buff) = '.';
 			}
 			sprintf(repl_buff,
 				"%s"
@@ -286,9 +289,6 @@ void create_msg(int action, char *req_buff, char *repl_buff, char *username, int
 			printf("error: unknown request type to create\n");
 			exit_code(2);
 			break;
-	}
-	if (verbose > 2) {
-		printf("request:\n%s", req_buff);
 	}
 }
 

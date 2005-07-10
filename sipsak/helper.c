@@ -285,6 +285,11 @@ void insert_cr(char *mes){
 		pos = lf+3;
 		lf = strchr(pos, '\n');
 	}
+	lf = STRCASESTR(mes, "\r\n\r\n");
+	if (lf == NULL) {
+		lf = mes + strlen(mes);
+		sprintf(lf, "\r\n");
+	}
 }
 
 /* sipmly swappes the content of the two buffers */

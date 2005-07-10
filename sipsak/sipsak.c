@@ -81,7 +81,7 @@ void print_version() {
 		" usrloc : sipsak -I|M [-b NUMBER] [-e NUMBER] -s SIPURI\n"
 		" usrloc : sipsak -U [-C SIPURI] [-x NUMBER] -s SIPURI\n"
 		" message: sipsak -M [-B STRING] [-O STRING] -s SIPURI\n"
-		" flood  : sipsak -F [-c NUMBER] -s SIPURI\n"
+		" flood  : sipsak -F [-e NUMBER] -s SIPURI\n"
 		" random : sipsak -R [-t NUMBER] -s SIPURI\n\n"
 		" additional parameter in every mode:\n"
 		);
@@ -114,8 +114,6 @@ void print_long_help() {
 	printf("  --expires=NUMBER           the expires header field value (default: 15)\n"
 		"  --remove-bindings=NUMBER   activates randomly removing of user bindings\n"
 		"  --flood-mode               activates the flood mode\n"
-		"  --cseq-max=NUMBER          the maximum CSeq number for flood mode "
-			"(default: 2^31)\n"
 		"  --random-mode              activates the random modues (dangerous)\n"
 		"  --trash-chars=NUMBER       the maximum number of trashed character in random mode\n"
 		"                               (default: request length)\n"
@@ -176,7 +174,6 @@ void print_help() {
 		"  -F                activates the flood mode\n"
 		);
 	printf(
-		"  -c NUMBER         the maximum CSeq number for flood mode (default: 2^31)\n"
 		"  -R                activates the random modues (dangerous)\n"
 		"  -t NUMBER         the maximum number of trashed character in random mode\n"
 		"                      (default: request length)\n"
@@ -240,7 +237,6 @@ int main(int argc, char *argv[])
 		{"expires", 1, 0, 'x'},
 		{"remove-bindings", 1, 0, 'z'},
 		{"flood-mode", 0, 0, 'F'},
-		{"cseq-max", 1, 0, 'c'},
 		{"random-mode", 0, 0, 'R'},
 		{"trash-chars", 1, 0, 't'},
 		{"local-port", 1, 0, 'l'},
@@ -286,15 +282,15 @@ int main(int argc, char *argv[])
 	//memset(confirm, 0, BUFSIZE);
 	//memset(ack, 0, BUFSIZE);
 	memset(fqdn, 0, FQDN_SIZE);
-	memset(messusern, 0, FQDN_SIZE);
+	//memset(messusern, 0, FQDN_SIZE);
 
 	if (argc==1) print_help();
 
 	/* lots of command line switches to handle*/
 #ifdef HAVE_GETOPT_LONG
-	while ((c=getopt_long(argc, argv, "a:Ab:B:c:C:de:f:Fg:GhH:iIl:Lm:MnNo:O:p:P:q:r:Rs:St:Tu:UvVwW:x:Xz:", l_opts, &option_index)) != EOF){
+	while ((c=getopt_long(argc, argv, "a:Ab:B:C:de:f:Fg:GhH:iIl:Lm:MnNo:O:p:P:q:r:Rs:St:Tu:UvVwW:x:Xz:", l_opts, &option_index)) != EOF){
 #else
-	while ((c=getopt(argc,argv,"a:Ab:B:c:C:de:f:Fg:GhH:iIl:Lm:MnNo:O:p:P:q:r:Rs:St:Tu:UvVwW:x:z:")) != EOF){
+	while ((c=getopt(argc,argv,"a:Ab:B:C:de:f:Fg:GhH:iIl:Lm:MnNo:O:p:P:q:r:Rs:St:Tu:UvVwW:x:z:")) != EOF){
 #endif
 		switch(c){
 			case 'a':
@@ -338,9 +334,6 @@ int main(int argc, char *argv[])
 						strncpy(contact_uri, optarg, strlen(optarg));
 					}
 				}
-				break;
-			case 'c':
-				namebeg=str_to_int(optarg);
 				break;
 			case 'd':
 				redirects=0;

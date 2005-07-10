@@ -28,41 +28,31 @@
 /* add a Via Header Field in the message. */
 void add_via(char *mes)
 {
-	char *via_line, *via, *via2, *backup; 
+	char *via_line, *via, *backup;
+			 //*via2, ; 
 
-	/* first build our own Via-header-line */
+	if ((via=STRCASESTR(mes, VIA_STR)) == NULL &&
+			(via=STRCASESTR(mes, VIA_SHORT_STR)) == NULL) {
+		/* We didn't found a Via so we insert our via
+		   direct after the first line. */
+		via=strchr(mes,'\n');
+		if(via == NULL) {
+			printf("error: failed to find a position to insert Via\n");
+			exit_code(1);
+		}
+		via++;
+	}
+	/* build our own Via-header-line */
 	via_line = str_alloc(VIA_SIP_STR_LEN+strlen(fqdn)+15+24+1);
-	snprintf(via_line, VIA_SIP_STR_LEN+strlen(fqdn)+15+24, "%s%s:%i;branch=z9hG4bK.%08x;rport\r\n", VIA_SIP_STR, fqdn, lport, rand());
+	snprintf(via_line, VIA_SIP_STR_LEN+strlen(fqdn)+15+24, 
+					"%s%s:%i;branch=z9hG4bK.%08x;rport\r\n", 
+					VIA_SIP_STR, fqdn, lport, rand());
 	if (verbose > 2)
 		printf("our Via-Line: %s\n", via_line);
 
 	if (strlen(mes)+strlen(via_line)>= BUFSIZE){
 		printf("can't add our Via Header Line because file is too big\n");
 		exit_code(2);
-	}
-	via=STRCASESTR(mes, VIA_STR);
-	via2=STRCASESTR(mes, VIA_SHORT_STR);
-	if (via==NULL && via2==NULL ){
-		/* We doesn't find a Via so we insert our via
-		   direct after the first line. */
-		via=strchr(mes,'\n');
-		if(via == NULL) {
-			printf("failed to find new line to insert Via\n");
-			return;
-		}
-	}
-	else if (via!=NULL && via2!=NULL && via2<via){
-		/* the short via is above the long version */
-		via = via2;
-	}
-	else if (via==NULL && via2!=NULL){
-		/* their is only a short via */
-		via = via2;
-	}
-	via++;
-	if (!via) {
-		printf("failed to find Via header\n");
-		exit_code(1);
 	}
 	/* finnaly make a backup, insert our via and append the backup */
 	backup=str_alloc((strlen(via)+1));
@@ -104,7 +94,7 @@ void cpy_vias(char *reply, char *dest){
 	strcpy(middle_via+(last_via-first_via+1), backup);
 	free(backup);
 	if (verbose > 2)
-		printf("message reply with vias included:\n%s\n", reply);
+		printf("message reply with vias included:\n%s\n", dest);
 }
 
 void cpy_to(char *reply, char *dest) {
@@ -240,16 +230,16 @@ void set_cl(char* mes, int contentlen) {
 	cr++;
 	strncpy(cr, backup, strlen(backup)+1);
 	free(backup);
-	if (verbose > 1)
-		printf("Content-Length set to %i\n", contentlen);
-	if (verbose > 2)
-		printf("New message with changed Content-Length:\n%s\n", mes);
+	if (verbose > 2) {
+		printf("Content-Length set to %i\n"
+				"New message with changed Content-Length:\n%s\n", contentlen, mes);
+	}
 }
 
 /* copies the Record-Route header from src to dst.
  * if route is set Record-Route will be replaced by Route */
 void cpy_rr(char* src, char *dst, int route) {
-	char *rr, *cr, *cr2, *backup;
+	char *rr, *cr, *cr2, *lr, *backup;
 	int len;
 
 	cr = strchr(dst, '\n');
@@ -258,34 +248,42 @@ void cpy_rr(char* src, char *dst, int route) {
 		exit_code(3);
 	}
 	cr++;
-	backup=str_alloc(strlen(cr)+1);
-	strncpy(backup, cr, strlen(cr));
-	rr = strstr(src, RR_STR);
-	if (route == 0)
-		len = RR_STR_LEN;
-	else
-		len = ROUTE_STR_LEN;
-	while (rr != NULL) {
-		if (route == 0) {
-			strncpy(cr, RR_STR, RR_STR_LEN);
-		}
-		else {
-			strncpy(cr, ROUTE_STR, ROUTE_STR_LEN);
-		}
-		cr += len;
+	rr = STRCASESTR(src, RR_STR);
+	if (rr != NULL) {
 		cr2 = strchr(rr, '\n');
-		if (cr2 == NULL) {
-			printf("error: failed to find end of line\n");
-			exit_code(3);
+		lr = STRCASESTR(rr, ";lr");
+		if ((lr == NULL) || (lr > cr2)) {
+			printf("error: strict routing is not support yet\n");
+			exit_code(252);
 		}
-		strncpy(cr, rr + RR_STR_LEN, (cr2 - (rr + len) + 1));
-		cr+=(cr2 - (rr + RR_STR_LEN) + 1);
-		rr = strstr(++rr, RR_STR);
+		backup=str_alloc(strlen(cr)+1);
+		strncpy(backup, cr, strlen(cr));
+		if (route == 0)
+			len = RR_STR_LEN;
+		else
+			len = ROUTE_STR_LEN;
+		while (rr != NULL) {
+			if (route == 0) {
+				strncpy(cr, RR_STR, RR_STR_LEN);
+			}
+			else {
+				strncpy(cr, ROUTE_STR, ROUTE_STR_LEN);
+			}
+			cr += len;
+			cr2 = strchr(rr, '\n');
+			if (cr2 == NULL) {
+				printf("error: failed to find end of line\n");
+				exit_code(3);
+			}
+			strncpy(cr, rr + RR_STR_LEN, (cr2 - (rr + len) + 1));
+			cr+=(cr2 - (rr + RR_STR_LEN) + 1);
+			rr = STRCASESTR(++rr, RR_STR);
+		}
+		strncpy(cr, backup, strlen(backup)+1);
+		free(backup);
+		if (verbose > 2)
+			printf("New message with inserted Route:\n%s\n", dst);
 	}
-	strncpy(cr, backup, strlen(backup)+1);
-	free(backup);
-	if (verbose > 2)
-		printf("New message with inserted Route:\n%s\n", dst);
 }
 
 /* build an ACK from the given invite and reply.

@@ -167,7 +167,7 @@
 #define ROUTE_STR "Route: "
 #define ROUTE_STR_LEN (sizeof(ROUTE_STR) - 1)
 
-#define SIPSAK_MES_STR "usrloc test message from SIPsak for user "
+#define SIPSAK_MES_STR "test message from SIPsak for user "
 #define SIPSAK_MES_STR_LEN (sizeof(SIPSAK_MES_STR) - 1)
 
 #define EXP_STR "Expires: "
@@ -240,7 +240,8 @@ int file_b, uri_b, trace, via_ins, usrloc, redirects, rand_rem, replace_b;
 int empty_contact, nagios_warn, fix_crlf, timing, outbound_proxy;
 char *username, *domainname, *password, *replace_str, *hostname, *contact_uri;
 char *mes_body, *con_dis, *auth_username;
-char fqdn[FQDN_SIZE], messusern[FQDN_SIZE];
+char fqdn[FQDN_SIZE];
+	 //messusern[FQDN_SIZE];
 //char confirm[BUFSIZE], ack[BUFSIZE];
 char target_dot[INET_ADDRSTRLEN], source_dot[INET_ADDRSTRLEN];
 char *req, *rep, *rec;

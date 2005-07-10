@@ -104,6 +104,9 @@ void send_message(char* mes, struct sockaddr *dest) {
 	int ret;
 
 	if (dontsend == 0) {
+		if (verbose > 2) {
+			printf("\nrequest:\n%s", mes);
+		}
 		/* lets fire the request to the server and store when we did */
 		if (csock == -1) {
 			ret = sendto(usock, mes, strlen(mes), 0, dest, sizeof(struct sockaddr));
@@ -351,12 +354,12 @@ int recv_message(char *buf, int size) {
 		}
 #ifdef HAVE_INET_NTOP
 		if ((verbose > 2) && (getpeername(sock, (struct sockaddr *)&peer_adr, &psize) == 0) && (inet_ntop(peer_adr.sin_family, &peer_adr.sin_addr, &source_dot[0], INET_ADDRSTRLEN) != NULL)) {
-			printf(" from: %s:%i\n", source_dot, ntohs(peer_adr.sin_port));
+			printf("received from: %s:%i\n", source_dot, ntohs(peer_adr.sin_port));
 		}
-		else if (verbose > 1 && trace == 0)
+		else if (verbose > 1 && trace == 0 && usrloc == 0)
 			printf(":\n");
 #else
-		if (trace == 0)
+		if (trace == 0 && usrloc == 0)
 			printf(":\n");
 #endif
 	}
@@ -603,6 +606,7 @@ void handle_randtrash()
 void handle_usrloc()
 {
 	char *crlf;
+	char ruri[11+12+20]; //FIXME: username length 20 should be dynamic
 
 	if (regexec(&proexp, rec, 0, 0, 0) == REG_NOERROR) {
 		if (verbose > 2) {
@@ -693,7 +697,8 @@ void handle_usrloc()
 				break;
 			case INV_RECV:
 				/* see if we received our invite */
-				if (!STRNCASECMP(rec, messusern, strlen(messusern))) {
+				sprintf(ruri, "%s sip:%s", INV_STR, usern);
+				if (!STRNCASECMP(rec, ruri, strlen(ruri))) {
 					if (verbose > 1) {
 						printf("\t\treceived invite\n");
 					}
@@ -724,7 +729,7 @@ void handle_usrloc()
 				}
 				if (regexec(&okexp, rec, 0, 0, 0) == REG_NOERROR) {
 					if (verbose > 1) {
-						printf("\treply received\n");
+						printf("\t200 OK received\n");
 					}
 					if (verbose > 2) {
 						printf("\n%s\n", rec);
@@ -745,15 +750,18 @@ void handle_usrloc()
 				break;
 			case INV_ACK_RECV:
 				/* did we received our ack */
-				if (nameend > 0) {
-					sprintf(messusern, "%s sip:%s%i", ACK_STR, username, namebeg);
+				if (STRNCASECMP(rec, SIP200_STR, SIP200_STR_LEN)==0) {
+					if (verbose>0) {
+						printf("ignoring 200 OK retransmission\n");
+					}
+					retrans_r_c++;
+					dontsend=1;
+					return;
 				}
-				else {
-					sprintf(messusern, "%s sip:sipsak_conf", ACK_STR);
-				}
-				if (STRNCASECMP(rec, messusern, strlen(messusern))==0) {
+				sprintf(ruri, "%s sip:sipsak_conf@", ACK_STR);
+				if (STRNCASECMP(rec, ruri, strlen(ruri))==0) {
 					if (verbose > 1) {
-						printf("\t\tack received\n");
+						printf("\tACK received\n");
 					}
 					if (verbose > 2) {
 						printf("\n%s\n", rec);
@@ -831,7 +839,8 @@ void handle_usrloc()
 			case MES_RECV:
 				/* we sent the message and look if its 
 				   forwarded to us */
-				if (!STRNCASECMP(rec, messusern, strlen(messusern))) {
+				sprintf(ruri, "%s sip:%s", MES_STR, usern);
+				if (!STRNCASECMP(rec, ruri, strlen(ruri))) {
 					if (verbose > 1) {
 						crlf=STRCASESTR(rec, "\r\n\r\n");
 						crlf=crlf+4;
@@ -841,7 +850,7 @@ void handle_usrloc()
 						printf("\n%s\n", rec);
 					}
 					cpy_vias(rec, rep);
-					cpy_to(rec, rep);
+					//cpy_to(rec, rep);
 					swap_ptr(&req, &rep);
 					usrlocstep=MES_OK_RECV;
 				}
@@ -1037,7 +1046,7 @@ void before_sending()
 		}
 	} /* if usrloc...*/
 	else if (flood == 1 && verbose > 0) {
-		printf("flooding message number %i\n", cseq_counter);
+		printf("flooding message number %i\n", namebeg);
 	}
 	else if (randtrash == 1 && verbose > 0) {
 		printf("message with %i randomized chars\n", cseq_counter);
@@ -1244,9 +1253,8 @@ void shoot(char *buf, int buff_size)
 		set_maxforw(req, namebeg);
 	}
 	else if (flood == 1){
-		/* this should be the max of an (32 bit) int without the sign */
-		if (namebeg==-1) nameend=INT_MAX;
-		nameend=namebeg;
+		if (nameend<=0) nameend=INT_MAX;
+		//nameend=namebeg;
 		namebeg=1;
 		create_msg(REQ_FLOOD, req, NULL, usern, cseq_counter);
 	}
@@ -1304,13 +1312,13 @@ void shoot(char *buf, int buff_size)
 			if(ret > 0)
 			{
 				//reply = &buff2[0];
+				if (usrlocstep == INV_ACK_RECV) {
+					swap_ptr(&rep, &req);
+				}
 				/* send ACK for non-provisional reply on INVITE */
 				if ((STRNCASECMP(req, "INVITE", 6)==0) && 
 						(regexec(&replyexp, rec, 0, 0, 0) == REG_NOERROR) && 
 						(regexec(&proexp, rec, 0, 0, 0) == REG_NOMATCH)) { 
-					if (usrlocstep == INV_OK_RECV) {
-						swap_ptr(&rep, &req);
-					}
 					build_ack(req, rec);
 					/* lets fire the ACK to the server */
 					send_message(req, (struct sockaddr *)&addr);
@@ -1378,10 +1386,11 @@ void shoot(char *buf, int buff_size)
 				printf("it took %.3f ms seconds to send %i request.\n", 
 						deltaT(&firstsendt, &sendtime), namebeg);
 				printf("we sent %f requests per second.\n", 
-						(namebeg/deltaT(&firstsendt, &sendtime))*1000);
+						(namebeg/(deltaT(&firstsendt, &sendtime))*1000));
 				exit_code(0);
 			}
 			namebeg++;
+			cseq_counter++;
 			create_msg(REQ_FLOOD, req, NULL, usern, cseq_counter);
 		}
 	} /* while 1 */
