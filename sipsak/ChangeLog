@@ -1,3 +1,19 @@
+* version 0.9.0
+  - added new option -S to allow symmetrical signaling in non-root mode
+  - the option -z now takes an percent argument for the likeliness of binding
+    removale
+  - Via contains now branch with magic cookie
+  - INVITE replies will be answered with ACKs automatically
+  - basic support for Record-Route and loose routing (strict routing is not
+    supported yet)
+  - if an outbound proxy was given it will even be used after being redirected
+  - request source and destiantion will be printed by -vvv
+  - the read in file will be checked for conatining an empty line as body
+    separator
+  - fixed wrong checking for getopt header in configure
+  - usage of global functions for memory allocation and integer convertion
+  - seperated the code into several small functions to make it easier
+    understandable and better mantainable for the future
 * version 0.8.13
   - nonce count contains the required leading zeros now
   - content length is printed as integer and not as hex value
