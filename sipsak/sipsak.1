@@ -106,12 +106,14 @@ With the given
 an authentication will be tryed on received '401 Unauthorized'. Authorization
 will be tryed on time. If this option is omitted an authorization with an
 empty password ("") will be tryed.
+
 .IP "-A, --timing"
 prints only the timing values of the test run if verbosity is zero because no 
 .BR -v 
 was given. If one or more 
 .BR -v 
 were given this option will be ignored.
+
 .IP "-b, --apendix-begin NUMBER"
 The starting number which is appended to the user name in the usrloc mode.
 This 
@@ -119,6 +121,12 @@ This
 is increased until it reaches the value given by the
 .BR -e
 parameter. If omitted the starting number will be one.
+
+.IP "-B, --message-body STRING"
+The given 
+.I STRING
+will be used as the body for outgoing MESSAGE requests.
+
 .IP "-C, --contact SIPURI"
 This is the content of the Contact header in the usrloc mode. This allows
 to insert forwards like for mail. For example you can insert the uri of
@@ -132,16 +140,19 @@ or
 .B none
 will result in no contact header in the REGISTER request and thus the server
 should answer with the current bindings for the account at the registrar.
+
 .IP "-d, --ignore-redirects"
 If this option is set all redirects will be ignored. By default without this 
 option received redirects will be respected. This option is automaticly 
 activated in the randtrash mode and in the flood mode.
+
 .IP "-e, --appendix-end NUMBER"
 The ending number which is appended to the user name in the usrloc mode.
 This number is increased until it reaches this ending
 .I number.
 In the flood mode this is the maximum number of messages which will be send. 
 If omitted the default value is 2^31 (2147483647) in the flood mode.
+
 .IP "-f, --filename FILE"
 The content of 
 .I FILE
@@ -159,16 +170,22 @@ can be replaced with some local or given values (see
 and
 .BR -G
 for details).
+
 .IP "-F, --flood-mode"
 This options activates the flood mode. In this mode OPTIONS requests with
 increasing CSeq numbers are sent to the server. Replies are ignored --
 source port 9 (discard) of localhost is advertised in topmost Via.
+
 .IP "-h, --help"
-Prints out a simple usage help message.
+Prints out a simple usage help message. If the long option
+.BR --help
+is available it will print out a help message with the available long options.
+
 .IP "-g, --replace-string STRING"
 Activates the replacement of $replace$ within the request (usualy read 
 in from a file) with the
 .I STRING.
+
 .IP "-G, --replace"
 Activates the automatic replacement of the following variables in the
 request (usualy read in from a file):
@@ -186,14 +203,17 @@ will be replaced by the local listening port of
 will be replaced by the username which is given by the
 .B -s
 parameter.
+
 .IP "-H, --hostname HOSTNAME"
 Overwrites the automatic detection of the hostname with the given parameter.
 .B Warning: 
 use this with caution (preferable only if the automatic detection fails).
+
 .IP "-i, --no-via"
 Deactivates the insertion of the Via line of the localhost. 
 .B Warning: 
 this probably disables the receiving of the responses from the server.
+
 .IP "-I, --invite-mode"
 Activates the Invites cycles within the usrloc mode. It should be combined
 with
@@ -217,6 +237,7 @@ and the same fixed local port can be successful.
 .B Warning: sipsak 
 is no real UA and invitations to real UAs can result in unexpected 
 behaivior.
+
 .IP "-l, --local-port PORT"
 The receiving UDP socket will use the local network 
 .I port.
@@ -225,17 +246,21 @@ Useful if a file is given by
 which contains a correct Via line. Check the 
 .BR -S
 option for details how sipsak sends and receives messages.
+
 .IP "-L, --no-crlf"
 De-activates the insertion of carriage returns (\\r) before all line feeds
 (\\n) (which is not allready proceeded by carraige return) if the input
 is comming from a file (
 .BR -f
-).
+). Without this option also an empty line will be appended to the request
+if required.
+
 .IP "-m, --max-forwards NUMBER"
 This sets the value of the Max-Forward header field. If omitted no Max-Forward
 field will be inserted. If omitted in the traceroute mode 
 .BR number
 will be 255.
+
 .IP "-M, --message-mode"
 This activates the Messages cycles within the usrloc mode (known from 
 .B sipsak
@@ -250,13 +275,16 @@ option.
 using without 
 .BR -U
 can cause unexpected behaivor.
+
 .IP "-n, --numeric"
 Instead of the full qualified domain name in the Via line the IP of the
-local host will be used.
+local host will be used. This option is now on by default.
+
 .IP "-N, --nagios-code"
 Use Nagios comliant return codes instead of the normal sipsak ones. This means
 .B sipsak 
 will return 0 if everything was ok and 2 in case of any error (local or remote).
+
 .IP "-o, --sleep NUMBER"
 .B sipsak 
 will sleep for 
@@ -264,11 +292,19 @@ will sleep for
 ms before it starts the next cycle in the usrloc mode. This will slow down
 the whole test process to be more realistic. Each cycle will be still completed
 as fast as possible, but the whole test will be slowed down.
+
+.IP "-O, --disposition STRING"
+The given
+.BR STRING
+will be used as the content for the Content-Disposition header. Without this
+option there will be no Content-Disposition header in the request.
+
 .IP "-p, --outbound-proxy HOSTNAME[:PORT]"
 the address of the hostname is the target where the request will be sent to 
 (outgoing proxy). Use this if the destination host is different then the host
 part of the request uri. The hostname is resolved via DNS SRV if supported
 (see description for SRV resolving) and no port is given.
+
 .IP "-P, --processes NUMBER"
 Start
 .BR NUMBER
@@ -276,11 +312,13 @@ of processes in parallel to do the send and reply checking. Makes only sence
 if a higher number for 
 .BR -e
 is given in the usrloc, message or invite mode.
+
 .IP "-q, --search REGEXP"
 match replies against 
 .BR REGEXP
 and return false if no match
 occured. Useful for example to detect server name in Server header field.
+
 .IP "-r, --remote-port PORT"
 Instead of the default sip port 5060 the 
 .BR PORT
@@ -288,6 +326,7 @@ will be used. Alternatively the remote port can be given within the sip uri of
 the 
 .BR -s
 parameter.
+
 .IP "-R, --random-mode"
 This activates the randtrash mode. In this mode OPTIONS requests will be send
 to server with increasing numbers of randomly crashed characters within this
@@ -296,6 +335,7 @@ randomly chosen. Any other response than Bad request (4xx) will stop this
 mode. Also three unresponded sends will stop this mode. With the 
 .BR -t
 parameter the maximum of trashed characters can be given.
+
 .IP "-s, --sip-uri SIPURI"
 This mandatory option sets the destination of the request. It depends on the
 mode if only the server name or also an user name is mandatory. Example for a
@@ -305,6 +345,7 @@ full
 .I sip:test@foo.bar:123
 See the note in the description part about SRV lookups for details how the 
 hostname of this URI is converted into an IP and port.
+
 .IP "-S, --symmetric"
 With this option
 .B sipsak
@@ -327,11 +368,13 @@ as root and with raw socket support (check the output from the
 option) then this option is not required because in this case
 .B sipsak
 already uses only one port for sending and receiving messages.
+
 .IP "-t, --trash-chars NUMBER"
 This parameter specifies the maximum of trashed characters in the randtrash 
 mode. If omitted 
 .BR NUMBER
 will be set to the length of the request.
+
 .IP "-T, --traceroute-mode"
 This activates the traceroute mode. This mode works like the well known
 .BR traceroute(8) 
@@ -346,11 +389,13 @@ if no other value is given by the
 .BR -m
 parameter. Any other response than 483 or 1xx are treated as a final response
 and will terminate this mode.
+
 .IP "-u, --auth-username STRING"
 Use the given
 .BR STRING
 as username value for the authentication (different account and 
 authentication username).
+
 .IP "-U, --usrloc-mode"
 This activates the usrloc mode. Without the 
 .BR -I
@@ -374,27 +419,34 @@ and the
 .BR -e
 parameter are omitted, only one runs with the given username, but without 
 append number to the usernames is done.
+
 .IP "-v, --verbose"
 This parameter increases the output verbosity. No
 .BR -v
 means nearly no output except in traceroute and error messages. The maximum
 of three v's prints out the content of all packets received and sent.
+
 .IP "-V, --version"
 Prints out the name and version number of 
 .B sipsak
 and the options which were compiled into the binary.
+
 .IP "-w, --extract-ip"
 Activates the extraction of the IP or hostname from the Warning header field.
+
 .IP "-W, --nagios-warn NUMBER"
 Return Nagios warn exit code (1) if the number of retransmissions before
 success was above the given number.
+
 .IP "-x, --expires NUMBER"
 Sets the value of the Expires header to the given number.
+
 .IP "-z, --remove-bindings"
 Activates the randomly removing of old bindings in the usrloc mode. How many 
 per cent of the bindings will be removed, is determined by the 
 USRLOC_REMOVE_PERCENT define within the code (set it before compilation).
 Multiple removing of bindings is possible, and cannot be prevented.
+
 .SH RETURN VALUES
 The return value 0 means that a 200 was received. 1 means something else 
 then 1xx or 2xx was received.
