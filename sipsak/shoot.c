@@ -89,7 +89,7 @@
 struct timezone tz;
 struct timeval sendtime, recvtime, tv, firstsendt, starttime, delaytime;
 int dontsend, dontrecv, usock, csock, retryAfter, randretrys, retrans_s_c;
-int i, send_counter, retrans_r_c;
+int send_counter, retrans_r_c;
 char *usern;
 double senddiff, big_delay;
 regex_t redexp, proexp, okexp, tmhexp, errexp, authexp, replyexp;
@@ -183,18 +183,18 @@ int check_for_message(char *recv, int size) {
 		}
 		/* printout that we did not received anything */
 		if (trace == 1) {
-			printf("%i: timeout after %i ms\n", i, retryAfter);
-			i--;
+			printf("%i: timeout after %i ms\n", maxforw, retryAfter);
+			//i--;
 		}
 		else if (usrloc == 1||invite == 1||message == 1) {
 			printf("timeout after %i ms\n", retryAfter);
-			i--;
+			//i--;
 		}
 		else if (verbose>0) 
 			printf("** timeout after %i ms**\n", retryAfter);
 		if (randtrash == 1) {
 			printf("did not get a response on this request:\n%s\n", req);
-			if (i+1 < nameend) {
+			if (cseq_counter < nameend) {
 				if (randretrys == 2) {
 					printf("sended the following message three "
 							"times without getting a response:\n%s\n"
@@ -447,7 +447,7 @@ void trace_reply()
 
 	if (regexec(&tmhexp, rec, 0, 0, 0) == REG_NOERROR) {
 		/* we received 483 to many hops */
-		printf("%i: ", i);
+		printf("%i: ", maxforw);
 		if (verbose > 2) {
 			printf("(%.3f ms)\n%s\n", 
 				deltaT(&sendtime, &recvtime), rec);
@@ -467,7 +467,7 @@ void trace_reply()
 	}
 	else if (regexec(&proexp, rec, 0, 0, 0) == REG_NOERROR) {
 		/* we received a provisional response */
-		printf("%i: ", i);
+		printf("%i: ", maxforw);
 		if (verbose > 2) {
 			printf("(%.3f ms)\n%s\n", 
 				deltaT(&sendtime, &recvtime), rec);
@@ -484,8 +484,8 @@ void trace_reply()
 	else {
 		/* anything else then 483 or provisional will
 		   be treated as final */
-		if (maxforw==i)
-			printf("%i: ", i);
+		if (maxforw==cseq_counter)
+			printf("%i: ", maxforw);
 		else
 			printf("\t");
 		warning_extract(rec);
@@ -586,7 +586,7 @@ void handle_randtrash()
 		if (verbose > 1) 
 			printf("sended:\n%s\nreceived:\n%s\n", req, rec);
 	}
-	if (nameend == (i+1)) {
+	if (cseq_counter == nameend) {
 		if (randretrys == 0) {
 			printf("random end reached. server survived :) respect!\n");
 			exit_code(0);
@@ -976,7 +976,7 @@ void handle_usrloc()
 					create_usern(usern, username, namebeg);
 					create_msg(REQ_REG, req, NULL, usern, cseq_counter);
 					usrlocstep=REG_REP;
-					i--;
+					//i--;
 				}
 				else {
 					printf("\nreceived:\n%s\nerror: did not "
@@ -1039,10 +1039,10 @@ void before_sending()
 		}
 	} /* if usrloc...*/
 	else if (flood == 1 && verbose > 0) {
-		printf("flooding message number %i\n", i+1);
+		printf("flooding message number %i\n", cseq_counter);
 	}
 	else if (randtrash == 1 && verbose > 0) {
-		printf("message with %i randomized chars\n", i+1);
+		printf("message with %i randomized chars\n", cseq_counter);
 		if (verbose > 2)
 			printf("request:\n%s\n", req);
 	}
@@ -1058,7 +1058,7 @@ void shoot(char *buf, int buff_size)
 	//struct timeval	tv, sendtime, recvtime, firstsendt, delaytime, starttime;
 	//struct timezone tz;
 	struct timespec sleep_ms_s, sleep_rem;
-	int nretries;
+//	int nretries;
 	int ret;
 	int cseqtmp, rand_tmp;
 	//int randretrys = 0;
@@ -1073,7 +1073,7 @@ void shoot(char *buf, int buff_size)
 	//regex_t redexp, proexp, okexp, tmhexp, errexp, authexp, replyexp;
 
 	/* the vars are filled by configure */
-	nretries = DEFAULT_RETRYS;
+	//nretries = DEFAULT_RETRYS;
 	/* retryAfter = DEFAULT_TIMEOUT; */
 	retryAfter = SIP_T1;
 	cseq_counter = 1;
@@ -1210,22 +1210,22 @@ void shoot(char *buf, int buff_size)
 	if (usrloc == 1||invite == 1||message == 1){
 		/* calculate the number of required steps and create initial mes */
 		if (usrloc == 1) {
-			if (invite == 1)
+/*			if (invite == 1)
 				nretries=4*(nameend-namebeg)+4;
 			else if (message == 1)
 				nretries=3*(nameend-namebeg)+3;
 			else
-				nretries=2*(nameend-namebeg)+2;
+				nretries=2*(nameend-namebeg)+2; */
 			create_msg(REQ_REG, req, NULL, usern, cseq_counter);
 			usrlocstep=REG_REP;
 		}
 		else if (invite == 1) {
-			nretries=3*(nameend-namebeg)+3;
+//			nretries=3*(nameend-namebeg)+3;
 			create_msg(REQ_INV, req, rep, usern, cseq_counter);
 			usrlocstep=INV_RECV;
 		}
 		else {
-			nretries=2*(nameend-namebeg)+2;
+//			nretries=2*(nameend-namebeg)+2;
 			create_msg(REQ_MES, req, rep, usern, cseq_counter);
 			if (mes_body)
 				usrlocstep=MES_OK_RECV;
@@ -1236,18 +1236,18 @@ void shoot(char *buf, int buff_size)
 	}
 	else if (trace == 1){
 		/* for trace we need some spezial initis */
-		if (maxforw!=-1)
+/*		if (maxforw!=-1)
 			nretries=maxforw;
 		else
-			nretries=255;
+			nretries=255;*/
 		namebeg=1;
 		create_msg(REQ_OPT, req, NULL, usern, cseq_counter);
 		add_via(req);
 	}
 	else if (flood == 1){
 		/* this should be the max of an (32 bit) int without the sign */
-		if (namebeg==-1) namebeg=INT_MAX;
-		nretries=namebeg;
+		if (namebeg==-1) nameend=INT_MAX;
+		nameend=namebeg;
 		namebeg=1;
 		create_msg(REQ_FLOOD, req, NULL, usern, cseq_counter);
 	}
@@ -1263,7 +1263,7 @@ void shoot(char *buf, int buff_size)
 				printf("warning: number of trashed chars to big. setting to "
 					"request length\n");
 		}
-		nretries=nameend-1;
+//		nretries=nameend-1;
 		trash_random(req);
 	}
 	else {
@@ -1283,8 +1283,9 @@ void shoot(char *buf, int buff_size)
 
 	/* here we go for the number of nretries which strongly depends on the 
 	   mode */
-	for (i = 0; i <= nretries; i++)
-	{
+//	for (i = 0; i <= nretries; i++)
+//	{
+	while(1) {
 		before_sending();
 
 		if (sleep_ms == -2) {
@@ -1373,7 +1374,7 @@ void shoot(char *buf, int buff_size)
 			if (send_counter == 1) {
 					memcpy(&firstsendt, &sendtime, sizeof(struct timeval));
 			}
-			if (namebeg==nretries) {
+			if (namebeg==nameend) {
 				printf("flood end reached\n");
 				printf("it took %.3f ms seconds to send %i request.\n", 
 						deltaT(&firstsendt, &sendtime), namebeg);
@@ -1384,7 +1385,7 @@ void shoot(char *buf, int buff_size)
 			namebeg++;
 			create_msg(REQ_FLOOD, req, NULL, usern, cseq_counter);
 		}
-	} /* for nretries */
+	} /* while 1 */
 
 	if (randtrash == 1) {
 		exit_code(0);
