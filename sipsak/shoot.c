@@ -183,7 +183,7 @@ int check_for_message(char *recv, int size) {
 		}
 		/* printout that we did not received anything */
 		if (trace == 1) {
-			printf("%i: timeout after %i ms\n", maxforw, retryAfter);
+			printf("%i: timeout after %i ms\n", namebeg, retryAfter);
 			//i--;
 		}
 		else if (usrloc == 1||invite == 1||message == 1) {
@@ -353,10 +353,11 @@ int recv_message(char *buf, int size) {
 		if ((verbose > 2) && (getpeername(sock, (struct sockaddr *)&peer_adr, &psize) == 0) && (inet_ntop(peer_adr.sin_family, &peer_adr.sin_addr, &source_dot[0], INET_ADDRSTRLEN) != NULL)) {
 			printf(" from: %s:%i\n", source_dot, ntohs(peer_adr.sin_port));
 		}
-		else if (verbose > 1)
+		else if (verbose > 1 && trace == 0)
 			printf(":\n");
 #else
-		printf(":\n");
+		if (trace == 0)
+			printf(":\n");
 #endif
 	}
 	return ret;
@@ -447,7 +448,7 @@ void trace_reply()
 
 	if (regexec(&tmhexp, rec, 0, 0, 0) == REG_NOERROR) {
 		/* we received 483 to many hops */
-		printf("%i: ", maxforw);
+		printf("%i: ", namebeg);
 		if (verbose > 2) {
 			printf("(%.3f ms)\n%s\n", 
 				deltaT(&sendtime, &recvtime), rec);
@@ -457,17 +458,17 @@ void trace_reply()
 			printf("(%.3f ms) ", deltaT(&sendtime, &recvtime));
 			print_message_line(rec);
 		}
-		//namebeg++;
-		maxforw++;
+		namebeg++;
+		//maxforw++;
 		cseq_counter++;
 		create_msg(REQ_OPT, req, NULL, usern, cseq_counter);
 		add_via(req);
-		set_maxforw(req, maxforw);
+		set_maxforw(req, namebeg);
 		return;
 	}
 	else if (regexec(&proexp, rec, 0, 0, 0) == REG_NOERROR) {
 		/* we received a provisional response */
-		printf("%i: ", maxforw);
+		printf("%i: ", namebeg);
 		if (verbose > 2) {
 			printf("(%.3f ms)\n%s\n", 
 				deltaT(&sendtime, &recvtime), rec);
@@ -484,10 +485,7 @@ void trace_reply()
 	else {
 		/* anything else then 483 or provisional will
 		   be treated as final */
-		if (maxforw==cseq_counter)
-			printf("%i: ", maxforw);
-		else
-			printf("\t");
+		printf("%i: ", namebeg);
 		warning_extract(rec);
 		printf("(%.3f ms) ", deltaT(&sendtime, &recvtime));
 		print_message_line(rec);
@@ -1240,9 +1238,10 @@ void shoot(char *buf, int buff_size)
 			nretries=maxforw;
 		else
 			nretries=255;*/
-		namebeg=1;
+		namebeg=0;
 		create_msg(REQ_OPT, req, NULL, usern, cseq_counter);
 		add_via(req);
+		set_maxforw(req, namebeg);
 	}
 	else if (flood == 1){
 		/* this should be the max of an (32 bit) int without the sign */

@@ -69,7 +69,7 @@ void add_via(char *mes)
 	strncpy(backup, via, strlen(via));
 	strncpy(via, via_line, strlen(via_line));
 	strncpy(via+strlen(via_line), backup, strlen(backup)+1);
-	if (verbose > 1)
+	if (verbose > 2)
 		printf("New message with Via-Line:\n%s\n", mes);
 	free(via_line);
 	free(backup);
