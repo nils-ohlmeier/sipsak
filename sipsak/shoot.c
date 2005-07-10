@@ -187,11 +187,9 @@ int check_for_message(char *recv, int size) {
 		/* printout that we did not received anything */
 		if (trace == 1) {
 			printf("%i: timeout after %i ms\n", namebeg, retryAfter);
-			//i--;
 		}
 		else if (usrloc == 1||invite == 1||message == 1) {
 			printf("timeout after %i ms\n", retryAfter);
-			//i--;
 		}
 		else if (verbose>0) 
 			printf("** timeout after %i ms**\n", retryAfter);
@@ -380,6 +378,8 @@ inline static void on_success(char *rep)
 	}
 }
 
+/* just print the given username and number into the first buffer and
+ * append an @ char */
 static inline void create_usern(char *target, char *username, int number)
 {
 	if (number >= 0) {
@@ -390,6 +390,7 @@ static inline void create_usern(char *target, char *username, int number)
 	}
 }
 
+/* tries to take care of a redirection */
 void handle_3xx(struct sockaddr_in *tadr)
 {
 	char *uscheme, *uuser, *uhost, *contact;
@@ -436,7 +437,6 @@ void handle_3xx(struct sockaddr_in *tadr)
 		free(contact);
 		if (!outbound_proxy)
 			set_target(tadr, address, rport, csock);
-		//i=nretries; ???
 	}
 	else {
 		printf("error: cannot handle this redirect:"
@@ -445,6 +445,7 @@ void handle_3xx(struct sockaddr_in *tadr)
 	}
 }
 
+/* takes care of replies in the trace route mode */
 void trace_reply()
 {
 	char *contact;
@@ -462,7 +463,6 @@ void trace_reply()
 			print_message_line(rec);
 		}
 		namebeg++;
-		//maxforw++;
 		cseq_counter++;
 		create_msg(REQ_OPT, req, NULL, usern, cseq_counter);
 		add_via(req);
@@ -507,6 +507,7 @@ void trace_reply()
 	}
 }
 
+/* takes care of replies in the default mode */
 void handle_default()
 {
 	/* in the normal send and reply case anything other 
@@ -563,6 +564,7 @@ void handle_default()
 	}
 }
 
+/* takes care of replies in the readntrash mode */
 void handle_randtrash()
 {
 	/* in randomzing trash we are expexting 4?? error codes
@@ -603,6 +605,7 @@ void handle_randtrash()
 	}
 }
 
+/* takes care of replies in the usrloc mode */
 void handle_usrloc()
 {
 	char *crlf;
@@ -734,8 +737,6 @@ void handle_usrloc()
 					if (verbose > 2) {
 						printf("\n%s\n", rec);
 					}
-					//cpy_to(reply, ack);
-					//strcpy(request, ack);
 					/* ACK was send already earlier generically */
 					usrlocstep=INV_ACK_RECV;
 					dontsend=1;
@@ -850,7 +851,6 @@ void handle_usrloc()
 						printf("\n%s\n", rec);
 					}
 					cpy_vias(rec, rep);
-					//cpy_to(rec, rep);
 					swap_ptr(&req, &rep);
 					usrlocstep=MES_OK_RECV;
 				}
@@ -983,7 +983,6 @@ void handle_usrloc()
 					create_usern(usern, username, namebeg);
 					create_msg(REQ_REG, req, NULL, usern, cseq_counter);
 					usrlocstep=REG_REP;
-					//i--;
 				}
 				else {
 					printf("\nreceived:\n%s\nerror: did not "
@@ -1062,31 +1061,17 @@ void before_sending()
 void shoot(char *buf, int buff_size)
 {
 	struct sockaddr_in	addr;
-	//struct timeval	tv, sendtime, recvtime, firstsendt, delaytime, starttime;
-	//struct timezone tz;
 	struct timespec sleep_ms_s, sleep_rem;
-//	int nretries;
-	int ret;
-	int cseqtmp, rand_tmp;
-	//int randretrys = 0;
-	//int cseqcmp = 0;
-	//double big_delay, tmp_delay;
-	//char *uscheme, *uuser, *uhost;
-	//char *crlf = NULL;
-	char buf2[BUFSIZE], buf3[BUFSIZE];
-	char lport_str[LPORT_STR_LEN];
-	//fd_set	fd;
+	int ret, cseqtmp, rand_tmp;
+	char buf2[BUFSIZE], buf3[BUFSIZE], lport_str[LPORT_STR_LEN];
 	socklen_t slen;
-	//regex_t redexp, proexp, okexp, tmhexp, errexp, authexp, replyexp;
 
-	/* the vars are filled by configure */
-	//nretries = DEFAULT_RETRYS;
 	/* retryAfter = DEFAULT_TIMEOUT; */
 	retryAfter = SIP_T1;
 	cseq_counter = 1;
 	usrlocstep = REG_REP;
 
-	/* initalize some local vars */
+	/* initalize local vars */
 	dontsend=dontrecv=retrans_r_c=retrans_s_c= 0;
 	big_delay= 0;
 	delaytime.tv_sec = 0;
@@ -1217,36 +1202,23 @@ void shoot(char *buf, int buff_size)
 	if (usrloc == 1||invite == 1||message == 1){
 		/* calculate the number of required steps and create initial mes */
 		if (usrloc == 1) {
-/*			if (invite == 1)
-				nretries=4*(nameend-namebeg)+4;
-			else if (message == 1)
-				nretries=3*(nameend-namebeg)+3;
-			else
-				nretries=2*(nameend-namebeg)+2; */
 			create_msg(REQ_REG, req, NULL, usern, cseq_counter);
 			usrlocstep=REG_REP;
 		}
 		else if (invite == 1) {
-//			nretries=3*(nameend-namebeg)+3;
 			create_msg(REQ_INV, req, rep, usern, cseq_counter);
 			usrlocstep=INV_RECV;
 		}
 		else {
-//			nretries=2*(nameend-namebeg)+2;
 			create_msg(REQ_MES, req, rep, usern, cseq_counter);
 			if (mes_body)
 				usrlocstep=MES_OK_RECV;
 			else
 				usrlocstep=MES_RECV;
 		}
-		//cseqcmp=1;
 	}
 	else if (trace == 1){
 		/* for trace we need some spezial initis */
-/*		if (maxforw!=-1)
-			nretries=maxforw;
-		else
-			nretries=255;*/
 		namebeg=0;
 		create_msg(REQ_OPT, req, NULL, usern, cseq_counter);
 		add_via(req);
@@ -1254,7 +1226,6 @@ void shoot(char *buf, int buff_size)
 	}
 	else if (flood == 1){
 		if (nameend<=0) nameend=INT_MAX;
-		//nameend=namebeg;
 		namebeg=1;
 		create_msg(REQ_FLOOD, req, NULL, usern, cseq_counter);
 	}
@@ -1270,7 +1241,6 @@ void shoot(char *buf, int buff_size)
 				printf("warning: number of trashed chars to big. setting to "
 					"request length\n");
 		}
-//		nretries=nameend-1;
 		trash_random(req);
 	}
 	else {
@@ -1288,10 +1258,7 @@ void shoot(char *buf, int buff_size)
 
 	set_target(&addr, address, rport, csock);
 
-	/* here we go for the number of nretries which strongly depends on the 
-	   mode */
-//	for (i = 0; i <= nretries; i++)
-//	{
+	/* here we go until someone decides to exit */
 	while(1) {
 		before_sending();
 
@@ -1311,7 +1278,6 @@ void shoot(char *buf, int buff_size)
 			ret = recv_message(rec, BUFSIZE);
 			if(ret > 0)
 			{
-				//reply = &buff2[0];
 				if (usrlocstep == INV_ACK_RECV) {
 					swap_ptr(&rep, &req);
 				}
@@ -1324,8 +1290,6 @@ void shoot(char *buf, int buff_size)
 					send_message(req, (struct sockaddr *)&addr);
 				}
 				/* check for old CSeq => ignore retransmission */
-				//if (usrloc == 0 && invite == 0 && message == 0)
-				//	cseqcmp = namebeg;
 				cseqtmp = cseq(rec);
 				if ((0 < cseqtmp) && (cseqtmp < cseq_counter)) {
 					if (verbose>0) {
@@ -1395,6 +1359,7 @@ void shoot(char *buf, int buff_size)
 		}
 	} /* while 1 */
 
+	/* this should never happen any more... */
 	if (randtrash == 1) {
 		exit_code(0);
 	}

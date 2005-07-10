@@ -279,10 +279,7 @@ int main(int argc, char *argv[])
 	rport = port = 0;
 	expires_t = USRLOC_EXP_DEF;
 	memset(buff, 0, BUFSIZE);
-	//memset(confirm, 0, BUFSIZE);
-	//memset(ack, 0, BUFSIZE);
 	memset(fqdn, 0, FQDN_SIZE);
-	//memset(messusern, 0, FQDN_SIZE);
 
 	if (argc==1) print_help();
 

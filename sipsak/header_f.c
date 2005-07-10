@@ -29,7 +29,6 @@
 void add_via(char *mes)
 {
 	char *via_line, *via, *backup;
-			 //*via2, ; 
 
 	if ((via=STRCASESTR(mes, VIA_STR)) == NULL &&
 			(via=STRCASESTR(mes, VIA_SHORT_STR)) == NULL) {

@@ -278,7 +278,6 @@ void insert_cr(char *mes){
 	while ((lf != NULL) && (*(--lf) != '\r')) {
 		backup=str_alloc(strlen(lf)+2);
 		strcpy(backup, lf+1);
-		//strncpy(lf, "\r", 1);
 		*(lf+1) = '\r';
 		strcpy(lf+2, backup);
 		free(backup);
@@ -335,11 +334,11 @@ void trash_random(char *message)
    the difference between to timeval structs */
 double deltaT(struct timeval *t1p, struct timeval *t2p)
 {
-        register double dt;
+	register double dt;
 
-        dt = (double)(t2p->tv_sec - t1p->tv_sec) * 1000.0 +
-             (double)(t2p->tv_usec - t1p->tv_usec) / 1000.0;
-        return (dt);
+	dt = (double)(t2p->tv_sec - t1p->tv_sec) * 1000.0 +
+			(double)(t2p->tv_usec - t1p->tv_usec) / 1000.0;
+	return (dt);
 }
 
 /* returns one if the string contains only numbers otherwise zero */
@@ -353,6 +352,8 @@ int is_number(char *number)
 	return digit;
 }
 
+/* tries to convert the given string into an integer. it strips
+ * white-spaces and exits if an error happens */
 int str_to_int(char *num)
 {
 	int ret;
@@ -392,6 +393,8 @@ int str_to_int(char *num)
 	return ret;
 }
 
+/* reads into the given buffer from standard input until the EOF
+ * character or the given size of the buffer is exceeded */
 int read_stdin(char *buf, int size)
 {
 	int i, j;
@@ -412,6 +415,8 @@ int read_stdin(char *buf, int size)
 	return i;
 }
 
+/* clears the given sockaddr, fills it with the given data and if a
+ * socket is given connects the socket to the new target */
 void set_target(struct sockaddr_in *adr, unsigned long target, int port, int socket)
 {
 	memset(adr, 0, sizeof(struct sockaddr_in));
@@ -431,6 +436,8 @@ void set_target(struct sockaddr_in *adr, unsigned long target, int port, int soc
 	}
 }
 
+/* tries to allocate the given size of memory and sets it all to zero.
+ * if the allocation fails it exits */
 void *str_alloc(size_t size)
 {
 	char *ptr;
