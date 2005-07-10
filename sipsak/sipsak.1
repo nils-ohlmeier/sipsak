@@ -1,15 +1,13 @@
 .\" Process this file with
 .\" groff -man -Tascii sipsak.1
 .\"
-.TH SIPSAK 1 "JULY 2002 - JUNE 2005" Linux "User Manuals"
+.TH SIPSAK 1 "JULY 2002 - JULY 2005" Linux "User Manuals"
 .SH NAME
 sipsak \- a utility for various tests on sip servers and user agents
 .SH SYNOPSIS
-.B sipsak [-dFGhiILnNMRTUVvwz] [-a
+.B sipsak [-dFGhiILnNMRSTUVvwz] [-a
 .I PASSWORD
 .B ] [-b
-.I NUMBER 
-.B ] [-c 
 .I NUMBER 
 .B ] [-C
 .I SIPURI
@@ -121,9 +119,6 @@ This
 is increased until it reaches the value given by the
 .BR -e
 parameter. If omitted the starting number will be one.
-.IP "-c, --cseq-max NUMBER"
-This is the maximum CSeq number in the flood mode. If omitted the maximum
-will be 2^31 (2147483647).
 .IP "-C, --contact SIPURI"
 This is the content of the Contact header in the usrloc mode. This allows
 to insert forwards like for mail. For example you can insert the uri of
@@ -145,6 +140,8 @@ activated in the randtrash mode and in the flood mode.
 The ending number which is appended to the user name in the usrloc mode.
 This number is increased until it reaches this ending
 .I number.
+In the flood mode this is the maximum number of messages which will be send. 
+If omitted the default value is 2^31 (2147483647) in the flood mode.
 .IP "-f, --filename FILE"
 The content of 
 .I FILE
@@ -225,7 +222,9 @@ The receiving UDP socket will use the local network
 .I port.
 Useful if a file is given by 
 .BR -f
-which contains a correct Via line.
+which contains a correct Via line. Check the 
+.BR -S
+option for details how sipsak sends and receives messages.
 .IP "-L, --no-crlf"
 De-activates the insertion of carriage returns (\\r) before all line feeds
 (\\n) (which is not allready proceeded by carraige return) if the input
@@ -306,6 +305,28 @@ full
 .I sip:test@foo.bar:123
 See the note in the description part about SRV lookups for details how the 
 hostname of this URI is converted into an IP and port.
+.IP "-S, --symmetric"
+With this option
+.B sipsak
+will use only one port for sending and receiving messages. With this option
+the local port for sending will be the value from the
+.BR -l
+option. In the default mode
+.B sipsak
+sends from a random port and listens on the given port from the
+.BR -l
+option.
+.B Note:
+With this option
+.B sipsak
+will not be able to receive replies from servers with asymmetric signaling
+(and broken rport implementation) like the Cisco proxy. If you run
+.B sipsak
+as root and with raw socket support (check the output from the
+.BR -V
+option) then this option is not required because in this case
+.B sipsak
+already uses only one port for sending and receiving messages.
 .IP "-t, --trash-chars NUMBER"
 This parameter specifies the maximum of trashed characters in the randtrash 
 mode. If omitted 
