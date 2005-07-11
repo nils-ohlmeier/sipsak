@@ -121,8 +121,9 @@ void send_message(char* mes, struct sockaddr *dest) {
 			exit_code(2);
 		}
 #ifdef HAVE_INET_NTOP
-		if (verbose > 2)
+		if (verbose > 2) {
 			printf("\nsend to: %s:%i\n", target_dot, rport);
+    }
 #endif
 		send_counter++;
 	}
@@ -516,8 +517,8 @@ void handle_default()
 		if (verbose > 1) {
 			printf("%s\n\n", rec);
 			printf("** reply received ");
-			if (send_counter == 1) {
-				printf("after %.3f ms **\n", deltaT(&sendtime, &recvtime));
+			if ((send_counter == 1) || (STRNCASECMP(req, ACK_STR, ACK_STR_LEN) == 0)) {
+				printf("after %.3f ms **\n", deltaT(&firstsendt, &recvtime));
 			}
 			else {
 				printf("%.3f ms after first send\n   and "
@@ -537,8 +538,8 @@ void handle_default()
 		if (verbose > 1) {
 			printf("%s\n\n", rec);
 			printf("** reply received ");
-			if (send_counter == 1) {
-				printf("after %.3f ms **\n", deltaT(&sendtime, &recvtime));
+			if ((send_counter == 1) || (STRNCASECMP(req, ACK_STR, ACK_STR_LEN) == 0)){
+				printf("after %.3f ms **\n", deltaT(&firstsendt, &recvtime));
 			}
 			else {
 				printf("%.3f ms after first send\n   and "
@@ -1073,7 +1074,7 @@ void shoot(char *buf, int buff_size)
 
 	/* initalize local vars */
 	dontsend=dontrecv=retrans_r_c=retrans_s_c= 0;
-	big_delay= 0;
+	big_delay=send_counter= 0;
 	delaytime.tv_sec = 0;
 	delaytime.tv_usec = 0;
 	usern = NULL;
@@ -1083,6 +1084,13 @@ void shoot(char *buf, int buff_size)
 	memset(lport_str, 0, LPORT_STR_LEN);
 
 	csock = usock = -1;
+
+  memset(&sendtime, 0, sizeof(sendtime));
+  memset(&recvtime, 0, sizeof(recvtime));
+  memset(&tv, 0, sizeof(tv));
+  memset(&firstsendt, 0, sizeof(firstsendt));
+  memset(&starttime, 0, sizeof(starttime));
+  memset(&delaytime, 0, sizeof(delaytime));
 
 	memset(&addr, 0, sizeof(addr));
 	addr.sin_family=AF_INET;

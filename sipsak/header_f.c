@@ -39,8 +39,8 @@ void add_via(char *mes)
 			printf("error: failed to find a position to insert Via\n");
 			exit_code(1);
 		}
-		via++;
 	}
+	via++;
 	/* build our own Via-header-line */
 	via_line = str_alloc(VIA_SIP_STR_LEN+strlen(fqdn)+15+24+1);
 	snprintf(via_line, VIA_SIP_STR_LEN+strlen(fqdn)+15+24, 
@@ -216,6 +216,9 @@ void set_cl(char* mes, int contentlen) {
 		printf("missing Content-Length in message\n");
 		return;
 	}
+  if (*cl == '\n') {
+    cl++;
+  }
 	cr = strchr(cl, '\n');
 	cr++;
 	backup=str_alloc(strlen(cr)+1);
