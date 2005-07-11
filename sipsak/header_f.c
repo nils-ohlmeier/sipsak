@@ -39,8 +39,10 @@ void add_via(char *mes)
 			printf("error: failed to find a position to insert Via\n");
 			exit_code(1);
 		}
+		via++;
 	}
-	via++;
+	if (*via == '\n')
+		via++;
 	/* build our own Via-header-line */
 	via_line = str_alloc(VIA_SIP_STR_LEN+strlen(fqdn)+15+24+1);
 	snprintf(via_line, VIA_SIP_STR_LEN+strlen(fqdn)+15+24, 
@@ -105,6 +107,8 @@ void cpy_to(char *reply, char *dest) {
 		printf("error: could not find To in the destination: %s\n", dest);
 		exit_code(2);
 	}
+	if (*dst_to == '\n')
+		dst_to++;
 	/* find the To we want to copy */
 	if ((src_to=STRCASESTR(reply, TO_STR))==NULL && 
 		(src_to=STRCASESTR(reply, TO_SHORT_STR))==NULL) {
@@ -113,6 +117,8 @@ void cpy_to(char *reply, char *dest) {
 				"trying with original To\n");
 	}
 	else {
+		if (*src_to == '\n')
+			src_to++;
 		/* both To found, so copy it */
 		tmp=strchr(dst_to, '\n');
 		tmp++;
@@ -216,9 +222,9 @@ void set_cl(char* mes, int contentlen) {
 		printf("missing Content-Length in message\n");
 		return;
 	}
-  if (*cl == '\n') {
-    cl++;
-  }
+	if (*cl == '\n') {
+		cl++;
+	}
 	cr = strchr(cl, '\n');
 	cr++;
 	backup=str_alloc(strlen(cr)+1);
@@ -461,6 +467,8 @@ char* uri_from_contact(char *message)
 			printf("'Contact' not found in the message\n");
 		return NULL;
 	}
+	if (*contact == '\n')
+		contact++;
 
 	if((end=strchr(contact,'\r'))!=NULL) {
 		c = '\r';
