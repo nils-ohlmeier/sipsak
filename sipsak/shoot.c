@@ -495,7 +495,7 @@ void trace_reply()
 		print_message_line(rec);
 		if ((contact = STRCASESTR(rec, CONT_STR)) != NULL ||
 				(contact = STRCASESTR(rec, CONT_SHORT_STR)) != NULL) {
-			if (*contact == '\n';) {
+			if (*contact == '\n') {
 				contact++;
 			}
 			printf("\t");
