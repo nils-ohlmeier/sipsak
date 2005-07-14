@@ -58,6 +58,10 @@
 # include <string.h>
 #endif
 
+#ifndef REG_NOERROR
+# define REG_NOERROR 0
+#endif
+
 #ifdef HAVE_SYS_PARAM_H
 # ifdef MAXHOSTNAMELEN
 #  define FQDN_SIZE   MAXHOSTNAMELEN + 1
