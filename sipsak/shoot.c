@@ -89,7 +89,7 @@
 struct timezone tz;
 struct timeval sendtime, recvtime, tv, firstsendt, starttime, delaytime;
 int dontsend, dontrecv, usock, csock, retryAfter, randretrys, retrans_s_c;
-int send_counter, retrans_r_c;
+int send_counter, retrans_r_c, inv_trans;
 char *usern;
 double senddiff, big_delay;
 regex_t redexp, proexp, okexp, tmhexp, errexp, authexp, replyexp;
@@ -127,7 +127,7 @@ void send_message(char* mes, struct sockaddr *dest) {
 #endif
 		send_counter++;
 	}
-	else {
+	else if (!inv_trans) {
 		dontsend = 0;
 	}
 }
@@ -217,10 +217,12 @@ int check_for_message(char *recv, int size) {
 			exit_code(3);
 		}
 		/* set retry time according to RFC3261 */
-		if (retryAfter *2 < SIP_T2)
+		if ((inv_trans) || (retryAfter *2 < SIP_T2)) {
 			retryAfter = retryAfter * 2;
-		else
+		}
+		else {
 			retryAfter = SIP_T2;
+		}
 		retrans_s_c++;
 		if (delaytime.tv_sec == 0)
 			memcpy(&delaytime, &sendtime, sizeof(struct timeval));
@@ -533,7 +535,12 @@ void handle_default()
 			printf("   provisional received; still"
 					" waiting for a final response\n");
 		}
-		retryAfter = SIP_T2;
+		if (inv_trans) {
+			retryAfter = retryAfter * 2;
+		}
+		else {
+			retryAfter = SIP_T2;
+		}
 		dontsend = 1;
 		return;
 	}
@@ -619,7 +626,12 @@ void handle_usrloc()
 		if (verbose > 2) {
 			printf("\nignoring provisional response\n");
 		}
-		retryAfter = SIP_T2;
+		if (inv_trans) {
+			retryAfter = retryAfter * 2;
+		}
+		else {
+			retryAfter = SIP_T2;
+		}
 		dontsend = 1;
 	}
 	else {
@@ -694,11 +706,13 @@ void handle_usrloc()
 				else if (invite == 1) {
 					cseq_counter++;
 					create_msg(REQ_INV, req, rep, usern, cseq_counter);
+					inv_trans = 1;
 					usrlocstep=INV_RECV;
 				}
 				else if (message == 1) {
 					cseq_counter++;
 					create_msg(REQ_MES, req, rep, usern, cseq_counter);
+					inv_trans = 0;
 					usrlocstep=MES_RECV;
 				}
 				break;
@@ -716,6 +730,7 @@ void handle_usrloc()
 					cpy_rr(rec, rep, 0);
 					swap_ptr(&req, &rep);
 					usrlocstep=INV_OK_RECV;
+					inv_trans = 0;
 				}
 				else {
 					printf("\nreceived:\n%s\nerror: did not "
@@ -830,6 +845,7 @@ void handle_usrloc()
 						cseq_counter++;
 						create_usern(usern, username, namebeg);
 						create_msg(REQ_INV, req, rep, usern, cseq_counter);
+						inv_trans = 1;
 						usrlocstep=INV_RECV;
 					}
 				} /* STRNCASECMP */
@@ -1072,6 +1088,7 @@ void shoot(char *buf, int buff_size)
 
 	/* retryAfter = DEFAULT_TIMEOUT; */
 	retryAfter = SIP_T1;
+	inv_trans = 0;
 	cseq_counter = 1;
 	usrlocstep = REG_REP;
 
@@ -1218,6 +1235,7 @@ void shoot(char *buf, int buff_size)
 		}
 		else if (invite == 1) {
 			create_msg(REQ_INV, req, rep, usern, cseq_counter);
+			inv_trans = 1;
 			usrlocstep=INV_RECV;
 		}
 		else {
@@ -1260,6 +1278,11 @@ void shoot(char *buf, int buff_size)
 			namebeg=1;
 			create_msg(REQ_OPT, req, NULL, usern, cseq_counter);
 		}
+		else {
+			if (STRNCASECMP(req, INV_STR, INV_STR_LEN) == 0) {
+				inv_trans = 1;
+			}
+		}
 		/* retryAfter = retryAfter / 10; */
 		if(maxforw!=-1)
 			set_maxforw(req, maxforw);
@@ -1297,6 +1320,8 @@ void shoot(char *buf, int buff_size)
 						(regexec(&replyexp, rec, 0, 0, 0) == REG_NOERROR) && 
 						(regexec(&proexp, rec, 0, 0, 0) == REG_NOMATCH)) { 
 					build_ack(req, rec);
+					dont_send = 0;
+					inv_trans = 0;
 					/* lets fire the ACK to the server */
 					send_message(req, (struct sockaddr *)&addr);
 				}
