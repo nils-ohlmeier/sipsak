@@ -244,6 +244,21 @@ void set_cl(char* mes, int contentlen) {
 	}
 }
 
+/* returns 1 if the rr_line contains the lr parameter
+ * otherwise 0 */
+int find_lr_parameter(char *rr_line) {
+	char *eol, *lr;
+
+	eol = strchr(rr_line, '\n');
+	lr = STRCASESTR(rr_line, ";lr");
+	if ((eol == NULL) || (lr == NULL) || (lr > eol)) {
+		return 0;
+	}
+	else {
+		return 1;
+	}
+}
+
 /* copies the Record-Route header from src to dst.
  * if route is set Record-Route will be replaced by Route */
 void cpy_rr(char* src, char *dst, int route) {
@@ -258,9 +273,7 @@ void cpy_rr(char* src, char *dst, int route) {
 	cr++;
 	rr = STRCASESTR(src, RR_STR);
 	if (rr != NULL) {
-		cr2 = strchr(rr, '\n');
-		lr = STRCASESTR(rr, ";lr");
-		if ((lr == NULL) || (lr > cr2)) {
+		if (find_lr_parameter(rr) == 0) {
 			printf("error: strict routing is not support yet\n");
 			exit_code(252);
 		}

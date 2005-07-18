@@ -32,6 +32,8 @@ void uri_replace(char *mes, char *uri);
 
 void set_cl(char* mes, int contentlen);
 
+int find_lr_parameter(char *rr_line);
+
 void cpy_rr(char* src, char *dst, int route);
 
 void build_ack(char *invite, char *reply);
