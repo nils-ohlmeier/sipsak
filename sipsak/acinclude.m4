@@ -23,17 +23,6 @@ AC_DEFUN([SIPSAK_ICMP],
 	]])
 ])
 
-AC_DEFUN([SIPSAK_RETRYS],
-[
-	# Check for default number of retrys
-	def_retrys=5
-	AC_ARG_ENABLE([retrys],AS_HELP_STRING(--enable-retrys=NUM,number NUM of retrys in default mode (default 5)),[def_retrys=$enableval])
-	if test "$def_retrys" = no; then
-	  def_retrys=1
-	fi
-	AC_DEFINE_UNQUOTED(DEFAULT_RETRYS, $def_retrys, [Default number of retrys in default mode.])
-])
-
 AC_DEFUN([SIPSAK_TIMER],
 [
 	# Check for T1 timer value

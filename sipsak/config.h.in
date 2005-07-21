@@ -1,8 +1,5 @@
 /* config.h.in.  Generated from configure.ac by autoheader.  */
 
-/* Default number of retrys in default mode. */
-#undef DEFAULT_RETRYS
-
 /* Default maximum timeout on waiting for response. */
 #undef DEFAULT_TIMEOUT
 

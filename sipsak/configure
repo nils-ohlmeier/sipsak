@@ -858,7 +858,6 @@ Optional Features:
   --disable-dependency-tracking  speeds up one-time build
   --enable-dependency-tracking   do not reject slow dependency extractors
   --enable-distcc         compile in parallel with distcc
-  --enable-retrys=NUM     number NUM of retrys in default mode (default 5)
   --enable-timeout=SEC    SIP timer T1 in SEC milliseconds (default 500)
 
 Some influential environment variables:
@@ -5168,23 +5167,6 @@ _ACEOF
 		LIBS="$LIBS -L$ruli_libdir -lruli"
 		CFLAGS="$CFLAGS -I$ruli_incdir"
 	fi
-
-
-
-	# Check for default number of retrys
-	def_retrys=5
-	# Check whether --enable-retrys or --disable-retrys was given.
-if test "${enable_retrys+set}" = set; then
-  enableval="$enable_retrys"
-  def_retrys=$enableval
-fi;
-	if test "$def_retrys" = no; then
-	  def_retrys=1
-	fi
-
-cat >>confdefs.h <<_ACEOF
-#define DEFAULT_RETRYS $def_retrys
-_ACEOF
 
 
 
