@@ -516,8 +516,8 @@ int main(int argc, char *argv[])
 				printf("sipsak %s  by Nils Ohlmeier\n Copyright (C) 2002-2004"
 						" FhG Fokus\n Copyright (C) 2004-2005 Nils Ohlmeier\n", 
 						SIPSAK_VERSION);
-				printf(" compiled with DEFAULT_RETRYS=%i, DEFAULT_TIMEOUT=%i, FQDN_SIZE=%i",
-						DEFAULT_RETRYS, DEFAULT_TIMEOUT, FQDN_SIZE);
+				printf(" compiled with DEFAULT_TIMEOUT=%i, FQDN_SIZE=%i",
+						DEFAULT_TIMEOUT, FQDN_SIZE);
 #ifdef RAW_SUPPORT
 				printf(", RAW_SUPPORT");
 #endif

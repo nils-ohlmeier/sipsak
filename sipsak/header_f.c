@@ -262,7 +262,7 @@ int find_lr_parameter(char *rr_line) {
 /* copies the Record-Route header from src to dst.
  * if route is set Record-Route will be replaced by Route */
 void cpy_rr(char* src, char *dst, int route) {
-	char *rr, *cr, *cr2, *lr, *backup;
+	char *rr, *cr, *cr2, *backup;
 	int len;
 
 	cr = strchr(dst, '\n');

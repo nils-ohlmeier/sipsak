@@ -43,6 +43,13 @@
 # include <netinet/in.h>
 #endif
 
+#ifdef HAVE_LIMITS_H
+# include <limits.h>
+#endif
+#ifndef INT_MAX
+# define INT_MAX 2147483648
+#endif
+
 #ifdef HAVE_STRCASESTR
 # define __USE_GNU
 # define STRCASESTR(s1,s2) strcasestr(s1,s2)

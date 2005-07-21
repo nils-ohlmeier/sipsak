@@ -19,9 +19,6 @@
 
 #include "sipsak.h"
 
-#ifdef HAVE_LIMITS_H
-# include <limits.h>
-#endif
 #ifdef TIME_WITH_SYS_TIME
 # include <sys/time.h>
 # include <time.h>
@@ -1320,7 +1317,7 @@ void shoot(char *buf, int buff_size)
 						(regexec(&replyexp, rec, 0, 0, 0) == REG_NOERROR) && 
 						(regexec(&proexp, rec, 0, 0, 0) == REG_NOMATCH)) { 
 					build_ack(req, rec);
-					dont_send = 0;
+					dontsend = 0;
 					inv_trans = 0;
 					/* lets fire the ACK to the server */
 					send_message(req, (struct sockaddr *)&addr);
