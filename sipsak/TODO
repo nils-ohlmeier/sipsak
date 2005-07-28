@@ -1,7 +1,6 @@
 ToDo List (no order):
  - fix: wrong nonce value after aprox. 2000 users
  - fix: after aprox. 3 users the password is missing except -p was set
- - add timers for INVITE requests
  - check the request target for the ACK
  - add option to tear down INVITED calls with BYE
  - parse the complete DNS resonses in util

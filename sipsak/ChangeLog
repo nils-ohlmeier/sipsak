@@ -1,3 +1,8 @@
+* version 0.9.1
+  - added RFC compliant retransmissons of INVITE requests
+  - fixed compilation errors for BSD and MacOSX
+  - ACK creation will be rejected for strict routing
+  - removed obsoleted options from configure
 * version 0.9.0
   - added new option -S to allow symmetrical signaling in non-root mode
   - the option -z now takes an percent argument for the likeliness of binding
