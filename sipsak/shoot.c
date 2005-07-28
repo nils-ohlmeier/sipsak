@@ -1071,9 +1071,6 @@ void before_sending()
 		if (verbose > 2)
 			printf("request:\n%s\n", req);
 	}
-	else if (trace == 0 && usrloc == 0 && flood == 0 && randtrash == 0 && (verbose > 1)	&& dontsend == 0){
-		printf("** request **\n%s\n", req);
-	}
 }
 
 /* this is the main function with the loops and modes */
