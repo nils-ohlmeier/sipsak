@@ -42,6 +42,9 @@
 #ifdef HAVE_NETINET_IN_H
 # include <netinet/in.h>
 #endif
+#ifndef INET_ADDRSTRLEN
+# define INET_ADDRSTRLEN 16
+#endif
 
 #ifdef HAVE_LIMITS_H
 # include <limits.h>
