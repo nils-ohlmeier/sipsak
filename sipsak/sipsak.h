@@ -45,6 +45,9 @@
 #ifndef INET_ADDRSTRLEN
 # define INET_ADDRSTRLEN 16
 #endif
+#ifdef HAVE_SIGNAL_H
+# include <signal.h>
+#endif
 
 #ifdef HAVE_LIMITS_H
 # include <limits.h>
