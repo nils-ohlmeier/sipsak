@@ -359,6 +359,7 @@ int str_to_int(char *num)
 	int ret;
 
 #ifdef HAVE_STRTOL
+	errno = 0;
 	ret = strtol(num, NULL, 10);
 	if (errno == EINVAL || errno == ERANGE) {
 		printf("%s\n", num);
