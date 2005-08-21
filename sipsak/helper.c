@@ -192,7 +192,7 @@ void get_fqdn(){
 		}
 		else {
 			if (gethostname(&hname[0], namelen) < 0) {
-				printf("error: cannot determine hostname\n");
+				fprintf(stderr, "error: cannot determine hostname\n");
 				exit_code(2);
 			}
 		}
@@ -200,7 +200,7 @@ void get_fqdn(){
 		/* a hostname with dots should be a domainname */
 		if ((strchr(hname, '.'))==NULL) {
 			if (getdomainname(&dname[0], namelen) < 0) {
-				printf("error: cannot determine domainname\n");
+				fprintf(stderr, "error: cannot determine domainname\n");
 				exit_code(2);
 			}
 			if (strcmp(&dname[0],"(none)")!=0)
@@ -228,16 +228,16 @@ void get_fqdn(){
 		}
 	}
 	else {
-		printf("error: cannot resolve hostname: %s\n", hname);
+		fprintf(stderr, "error: cannot resolve hostname: %s\n", hname);
 		exit_code(2);
 	}
 	if ((strchr(fqdn, '.'))==NULL) {
 		if (hostname) {
-			printf("WARNING: %s is not resolvable... continouing anyway\n", fqdn);
+			fprintf(stderr, "warning: %s is not resolvable... continouing anyway\n", fqdn);
 			strncpy(fqdn, hostname, FQDN_SIZE);
 		}
 		else {
-			printf("error: this FQDN or IP is not valid: %s\n", fqdn);
+			fprintf(stderr, "error: this FQDN or IP is not valid: %s\n", fqdn);
 			exit_code(2);
 		}
 	}
@@ -254,7 +254,7 @@ void replace_string(char *mess, char *search, char *replacement){
 	insert=STRCASESTR(mess, search);
 	if (insert==NULL){
 		if (verbose > 2)
-			printf("warning: could not find this '%s' replacement string in "
+			fprintf(stderr, "warning: could not find this '%s' replacement string in "
 					"message\n", search);
 	}
 	else {
@@ -381,13 +381,13 @@ int str_to_int(char *num)
 	backup = *end;
 	*end = '\0';
 	if (!is_number(start)) {
-		printf("error: string is not a number: %s\n", start);
+		fprintf(stderr, "error: string is not a number: %s\n", start);
 		exit_code(2);
 	}
 	ret = atoi(start);
 	*end = backup;
 	if (ret <= 0) {
-		printf("error: failed to convert string to integer: %s\n", num);
+		fprintf(stderr, "error: failed to convert string to integer: %s\n", num);
 		exit_code(2);
 	}
 #endif
@@ -412,7 +412,7 @@ int read_stdin(char *buf, int size)
 	}
 	*(buf + i) = '\0';
 	if (verbose)
-		printf("warning: readin buffer size exceeded\n");
+		fprintf(stderr, "warning: readin buffer size exceeded\n");
 	return i;
 }
 
@@ -448,7 +448,7 @@ void *str_alloc(size_t size)
 	ptr = malloc(size);
 #endif
 	if (ptr == NULL) {
-		printf("error: memory allocation failed\n");
+		fprintf(stderr, "error: memory allocation failed\n");
 		exit_code(255);
 	}
 #ifndef HAVE_CALLOC

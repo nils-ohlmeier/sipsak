@@ -318,12 +318,12 @@ int main(int argc, char *argv[])
 					strncpy(backup, optarg, strlen(optarg));
 					parse_uri(backup, &scheme, &user, &host, &port);
 					if (scheme == NULL) {
-					    printf("error: REGISTER Contact uri doesn't not contain "
+					    fprintf(stderr, "error: REGISTER Contact uri doesn't not contain "
 						   "sip:, sips:, *, or is not empty\n");
 				    	exit_code(2);
 					}
 					else if (user == NULL) {
-						printf("error: missing username in Contact uri\n");
+						fprintf(stderr, "error: missing username in Contact uri\n");
 						exit_code(2);
 					}
 					else {
@@ -347,13 +347,13 @@ int main(int argc, char *argv[])
 					   preserved */
 					pf = fopen(optarg, "rb");
 					if (!pf){
-						printf("error: unable to open the file '%s'.\n", optarg);
+						fprintf(stderr, "error: unable to open the file '%s'.\n", optarg);
 						exit_code(2);
 					}
 					if (fread(buff, 1, sizeof(buff), pf) >= sizeof(buff)){
-						printf("error:the file is too big. try files of less "
+						fprintf(stderr, "error:the file is too big. try files of less "
 							"than %i bytes.\n", BUFSIZE);
-						printf("      or recompile the program with bigger "
+						fprintf(stderr, "      or recompile the program with bigger "
 							"BUFSIZE defined.\n");
 						exit_code(2);
 					}
@@ -364,10 +364,10 @@ int main(int argc, char *argv[])
 						exit_code(0);
 					}
 				}
-        else {
-          printf("error: unable to handle input file name: %s\n", optarg);
-          exit_code(2);
-        }
+				else {
+					fprintf(stderr, "error: unable to handle input file name: %s\n", optarg);
+					exit_code(2);
+				}
 				file_b=1;
 				break;
 			case 'g':
@@ -420,13 +420,13 @@ int main(int argc, char *argv[])
 				strncpy(con_dis, optarg, strlen(optarg));
 				break;
 			case 'p':
-				parse_uri(optarg, &scheme, &user, &host, &port);
-				if (!port)
+				parse_uri(optarg, &scheme, &user, &host, &rport);
+				if (!rport)
 					address = getsrvaddress(host, &rport);
 				if (!address)
 					address = getaddress(host);
 				if (!address){
-					printf("error:unable to determine the outbound proxy "
+					fprintf(stderr, "error:unable to determine the outbound proxy "
 						"address\n");
 					exit_code(2);
 				}
@@ -453,23 +453,29 @@ int main(int argc, char *argv[])
 				};
 				break;
 			case 'r':
-				rport=str_to_int(optarg);
+				port = 0;
+				port=str_to_int(optarg);
+				if (rport) {
+					fprintf(stderr, "warning: you are overwritting the destination port with the r argument\n");
+				}
+				rport = port;
 				break;
 			case 'R':
 				randtrash=1;
 				break;
 			case 's':
-				parse_uri(optarg, &scheme, &user, &host, &rport);
+				port = 0;
+				parse_uri(optarg, &scheme, &user, &host, &port);
 				if (scheme == NULL) {
-					printf("error: missing scheme in sip uri\n");
+					fprintf(stderr, "error: missing scheme in sip uri\n");
 					exit_code(2);
 				}
 				if (strlen(optarg) == 4 && STRNCASECMP(optarg,"sips",4) == 0){
-					printf("error: sips is not supported yet\n");
+					fprintf(stderr, "error: sips is not supported yet\n");
 					exit_code(2);
 				}
 				else if (strlen(optarg) != 3 || STRNCASECMP(optarg,"sip",3) != 0){
-					printf("error: scheme of sip uri has to be sip\n");
+					fprintf(stderr, "error: scheme of sip uri has to be sip\n");
 					exit_code(2);
 				}
 				if (user != NULL) {
@@ -479,21 +485,24 @@ int main(int argc, char *argv[])
 					domainname = host;
 				}
 				else {
-					printf("error: missing hostname in sip uri\n");
+					fprintf(stderr, "error: missing hostname in sip uri\n");
 					exit_code(2);
+				}
+				if (port && !port) {
+					rport = port;
 				}
 				if (!rport && !address)
 					address = getsrvaddress(domainname, &rport);
 				if (!address)
 					address = getaddress(domainname);
 				if (!address){
-					printf("error:unable to determine the IP address for: %s\n", domainname);
+					fprintf(stderr, "error:unable to determine the IP address for: %s\n", domainname);
 					exit_code(2);
 				}
 				uri_b=1;
 				break;			break;
 			case 'S':
-				printf("warning: symmetric does not work with a-symmetric servers\n");
+				fprintf(stderr, "warning: symmetric does not work with a-symmetric servers\n");
 				symmetric=1;
 				break;
 			case 't':
@@ -556,12 +565,12 @@ int main(int argc, char *argv[])
 			case 'z':
 				rand_rem=str_to_int(optarg);
 				if (rand_rem < 0 || rand_rem > 100) {
-					printf("error: z option must between 0 and 100\n");
+					fprintf(stderr, "error: z option must between 0 and 100\n");
 					exit_code(2);
 				}
 				break;
 			default:
-				printf("error: unknown parameter %c\n", c);
+				fprintf(stderr, "error: unknown parameter %c\n", c);
 				exit_code(2);
 				break;
 		}
@@ -578,28 +587,28 @@ int main(int argc, char *argv[])
 	/* lots of conditions to check */
 	if (trace) {
 		if (usrloc || flood || randtrash) {
-			printf("error: trace can't be combined with usrloc, random or "
+			fprintf(stderr, "error: trace can't be combined with usrloc, random or "
 				"flood\n");
 			exit_code(2);
 		}
 		if (!uri_b) {
-			printf("error: for trace mode a SIPURI is realy needed\n");
+			fprintf(stderr, "error: for trace mode a SIPURI is realy needed\n");
 			exit_code(2);
 		}
 		if (file_b) {
-			printf("warning: file will be ignored for tracing.");
+			fprintf(stderr, "warning: file will be ignored for tracing.");
 		}
 		if (!username) {
-			printf("error: for trace mode without a file the SIPURI have to "
+			fprintf(stderr, "error: for trace mode without a file the SIPURI have to "
 				"contain a username\n");
 			exit_code(2);
 		}
 		if (!via_ins){
-			printf("warning: Via-Line is needed for tracing. Ignoring -i\n");
+			fprintf(stderr, "warning: Via-Line is needed for tracing. Ignoring -i\n");
 			via_ins=1;
 		}
 		if (!warning_ext) {
-			printf("warning: IP extract from warning activated to be more "
+			fprintf(stderr, "warning: IP extract from warning activated to be more "
 				"informational\n");
 			warning_ext=1;
 		}
@@ -607,48 +616,48 @@ int main(int argc, char *argv[])
 	}
 	else if (usrloc || invite || message) {
 		if (trace || flood || randtrash) {
-			printf("error: usrloc can't be combined with trace, random or "
+			fprintf(stderr, "error: usrloc can't be combined with trace, random or "
 				"flood\n");
 			exit_code(2);
 		}
 		if (!username || !uri_b) {
-			printf("error: for the USRLOC mode you have to give a SIPURI with "
+			fprintf(stderr, "error: for the USRLOC mode you have to give a SIPURI with "
 				"a username\n       at least\n");
 			exit_code(2);
 		}
 		if (namebeg>0 && nameend==-1) {
-			printf("error: if a starting numbers is given also an ending "
+			fprintf(stderr, "error: if a starting numbers is given also an ending "
 				"number have to be specified\n");
 			exit_code(2);
 		}
 		if (invite && message) {
-			printf("error: invite and message tests are XOR\n");
+			fprintf(stderr, "error: invite and message tests are XOR\n");
 			exit_code(2);
 		}
 		if (!usrloc && invite && !lport) {
-			printf("WARNING: Do NOT use the usrloc invite mode without "
+			fprintf(stderr, "warning: Do NOT use the usrloc invite mode without "
 				"registering sipsak before.\n         See man page for "
 				"details.\n");
 			exit_code(2);
 		}
 		if (contact_uri!=NULL) {
 			if (invite || message) {
-				printf("error: Contact uri is not support for invites or "
+				fprintf(stderr, "error: Contact uri is not support for invites or "
 					"messages\n");
 				exit_code(2);
 			}
 			if (nameend!=-1 || namebeg!=-1) {
-				printf("warning: ignoring starting or ending number if Contact"
+				fprintf(stderr, "warning: ignoring starting or ending number if Contact"
 					" is given\n");
 				nameend=namebeg=0;
 			}
 			if (rand_rem) {
-				printf("warning: ignoring -z option when Contact is given\n");
+				fprintf(stderr, "warning: ignoring -z option when Contact is given\n");
 				rand_rem=0;
 			}
 		}
 		if (via_ins) {
-			printf("warning: ignoring -i option when in usrloc mode\n");
+			fprintf(stderr, "warning: ignoring -i option when in usrloc mode\n");
 			via_ins=0;
 		}
 		if (nameend==-1)
@@ -658,47 +667,47 @@ int main(int argc, char *argv[])
 	}
 	else if (flood) {
 		if (trace || usrloc || randtrash) {
-			printf("error: flood can't be combined with trace, random or "
+			fprintf(stderr, "error: flood can't be combined with trace, random or "
 				"usrloc\n");
 			exit_code(2);
 		}
 		if (!uri_b) {
-			printf("error: we need at least a sip uri for flood\n");
+			fprintf(stderr, "error: we need at least a sip uri for flood\n");
 			exit_code(2);
 		}
 		if (redirects) {
-			printf("warning: redirects are not expected in flood. "
+			fprintf(stderr, "warning: redirects are not expected in flood. "
 				"disableing\n");
 			redirects=0;
 		}
 	}
 	else if (randtrash) {
 		if (trace || usrloc || flood) {
-			printf("error: random can't be combined with trace, flood or "
+			fprintf(stderr, "error: random can't be combined with trace, flood or "
 				"usrloc\n");
 			exit_code(2);
 		}
 		if (!uri_b) {
-			printf("error: need at least a sip uri for random\n");
+			fprintf(stderr, "error: need at least a sip uri for random\n");
 			exit_code(2);
 		}
 		if (redirects) {
-			printf("warning: redirects are not expected in random. "
+			fprintf(stderr, "warning: redirects are not expected in random. "
 				"disableing\n");
 			redirects=0;
 		}
 		if (verbose) {
-			printf("warning: random characters may destroy your terminal "
+			fprintf(stderr, "warning: random characters may destroy your terminal "
 				"output\n");
 		}
 	}
 	else if (mes_body) {
 		if (!message) {
-			printf("warning: to send a message mode (-M) is required. activating\n");
+			fprintf(stderr, "warning: to send a message mode (-M) is required. activating\n");
 			message=1;
 		}
 		if (!uri_b) {
-			printf("error: need at least a sip uri to send a meesage\n");
+			fprintf(stderr, "error: need at least a sip uri to send a meesage\n");
 			exit_code(2);
 		}
 		if (nameend==-1)
@@ -708,7 +717,7 @@ int main(int argc, char *argv[])
 	}
 	else {
 		if (!uri_b) {
-			printf("error: a spi uri is needed at least\n");
+			fprintf(stderr, "error: a spi uri is needed at least\n");
 			exit_code(2);
 		}
 	}
@@ -721,14 +730,14 @@ int main(int argc, char *argv[])
 	
 	if (processes > 1) {
 		if (signal(SIGCHLD , sigchld_handler)  == SIG_ERR ) {
-			printf("error: Could not install SIGCHLD handler\n");
+			fprintf(stderr, "error: Could not install SIGCHLD handler\n");
 			exit_code(2);
 		}
 	}
 
 	for(i = 0; i < processes - 1; i++) {
 		if ((pid = fork()) < 0) {
-			printf("error: Cannot fork\n");
+			fprintf(stderr, "error: Cannot fork\n");
 			exit_code(2);
 		}
 		

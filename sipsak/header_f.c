@@ -36,7 +36,7 @@ void add_via(char *mes)
 		   direct after the first line. */
 		via=strchr(mes,'\n');
 		if(via == NULL) {
-			printf("error: failed to find a position to insert Via\n");
+			fprintf(stderr, "error: failed to find a position to insert Via\n");
 			exit_code(1);
 		}
 		via++;
@@ -75,7 +75,7 @@ void cpy_vias(char *reply, char *dest){
 	/* lets see if we find any via */
 	if ((first_via=STRCASESTR(reply, VIA_STR))==NULL &&
 		(first_via=STRCASESTR(reply, VIA_SHORT_STR))==NULL ){
-		printf("error: the received message doesn't contain a Via header\n");
+		fprintf(stderr, "error: the received message doesn't contain a Via header\n");
 		exit_code(3);
 	}
 	last_via=first_via+4;
@@ -104,7 +104,7 @@ void cpy_to(char *reply, char *dest) {
 	/* find the position where we want to insert the To */
 	if ((dst_to=STRCASESTR(dest, TO_STR))==NULL &&
 		(dst_to=STRCASESTR(dest, TO_SHORT_STR))==NULL) {
-		printf("error: could not find To in the destination: %s\n", dest);
+		fprintf(stderr, "error: could not find To in the destination: %s\n", dest);
 		exit_code(2);
 	}
 	if (*dst_to == '\n')
@@ -113,7 +113,7 @@ void cpy_to(char *reply, char *dest) {
 	if ((src_to=STRCASESTR(reply, TO_STR))==NULL && 
 		(src_to=STRCASESTR(reply, TO_SHORT_STR))==NULL) {
 		if (verbose > 0)
-			printf("warning: could not find To in reply. "
+			fprintf(stderr, "warning: could not find To in reply. "
 				"trying with original To\n");
 	}
 	else {
@@ -267,14 +267,14 @@ void cpy_rr(char* src, char *dst, int route) {
 
 	cr = strchr(dst, '\n');
 	if (cr == NULL) {
-		printf("failed to end of line in destination\n");
+		fprintf(stderr, "error: failed to end of line in destination\n");
 		exit_code(3);
 	}
 	cr++;
 	rr = STRCASESTR(src, RR_STR);
 	if (rr != NULL) {
 		if (find_lr_parameter(rr) == 0) {
-			printf("error: strict routing is not support yet\n");
+			fprintf(stderr, "error: strict routing is not support yet\n");
 			exit_code(252);
 		}
 		backup=str_alloc(strlen(cr)+1);
@@ -293,7 +293,7 @@ void cpy_rr(char* src, char *dst, int route) {
 			cr += len;
 			cr2 = strchr(rr, '\n');
 			if (cr2 == NULL) {
-				printf("error: failed to find end of line\n");
+				fprintf(stderr, "error: failed to find end of line\n");
 				exit_code(3);
 			}
 			strncpy(cr, rr + RR_STR_LEN, (cr2 - (rr + len) + 1));
@@ -309,7 +309,7 @@ void cpy_rr(char* src, char *dst, int route) {
 
 /* build an ACK from the given invite and reply.
  * NOTE: space has to be allocated allready for the ACK */
-void build_ack(char *invite, char *reply) {
+void build_ack(char *invite, char *reply, char *dest) {
 	char *tmp;
 	int len;
 
@@ -319,16 +319,17 @@ void build_ack(char *invite, char *reply) {
 	else {
 		len = strlen(invite);
 	}
-	*(invite + len) = '\0';
-	replace_string(invite, "INVITE", "ACK");
-	set_cl(invite, 0);
-	cpy_to(reply, invite);
+	memcpy(dest, invite, len);
+	*(dest + len) = '\0';
+	replace_string(dest, "INVITE", "ACK");
+	set_cl(dest, 0);
+	cpy_to(reply, dest);
 	if (regexec(&okexp, reply, 0, 0, 0)==0) {
-		cpy_rr(reply, invite, 1);
+		cpy_rr(reply, dest, 1);
 		/* 200 ACK must be in new transaction */
-		new_branch(invite);
+		new_branch(dest);
 		if((tmp = uri_from_contact(reply))!= NULL) {
-			uri_replace(invite, tmp);
+			uri_replace(dest, tmp);
 			free(tmp);
 		}
 	}

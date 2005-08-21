@@ -411,7 +411,7 @@ void handle_3xx(struct sockaddr_in *tadr)
 		/* try to find the contact in the redirect */
 		contact = uri_from_contact(rec);
 		if (contact==NULL) {
-			printf("error: cannot find Contact in this "
+			fprintf(stderr, "error: cannot find Contact in this "
 				"redirect:\n%s\n", rec);
 			exit_code(3);
 		}
@@ -427,7 +427,7 @@ void handle_3xx(struct sockaddr_in *tadr)
 		if (!address)
 			address = getaddress(uhost);
 		if (!address){
-			printf("error: cannot determine host "
+			fprintf(stderr, "error: cannot determine host "
 					"address from Contact of redirect:"
 					"\n%s\n", rec);
 			exit_code(2);
@@ -440,7 +440,7 @@ void handle_3xx(struct sockaddr_in *tadr)
 			set_target(tadr, address, rport, csock);
 	}
 	else {
-		printf("error: cannot handle this redirect:"
+		fprintf(stderr, "error: cannot handle this redirect:"
 				"\n%s\n", rec);
 		exit_code(2);
 	}
@@ -594,7 +594,7 @@ void handle_randtrash()
 		}
 	}
 	else {
-		printf("warning: did not received 4xx\n");
+		fprintf(stderr, "warning: did not received 4xx\n");
 		if (verbose > 1) 
 			printf("sended:\n%s\nreceived:\n%s\n", req, rec);
 	}
@@ -647,7 +647,7 @@ void handle_usrloc()
 					}
 				}
 				else {
-					printf("\nreceived:\n%s\nerror: didn't "
+					fprintf(stderr, "received:\n%s\nerror: didn't "
 									"received '200 OK' on register (see "
 									"above). aborting\n", rec);
 					exit_code(1);
@@ -732,7 +732,7 @@ void handle_usrloc()
 					inv_trans = 0;
 				}
 				else {
-					printf("\nreceived:\n%s\nerror: did not "
+					fprintf(stderr, "received:\n%s\nerror: did not "
 								"received the INVITE that was sent "
 								"(see above). aborting\n", rec);
 					exit_code(1);
@@ -760,7 +760,7 @@ void handle_usrloc()
 					dontsend=1;
 				}
 				else {
-					printf("\nreceived:\n%s\nerror: did not "
+					fprintf(stderr, "received:\n%s\nerror: did not "
 								"received the '200 OK' that was sent "
 								"as the reply on the INVITE (see "
 								"above). aborting\n", rec);
@@ -849,7 +849,7 @@ void handle_usrloc()
 					}
 				} /* STRNCASECMP */
 				else {
-					printf("\nreceived:\n%s\nerror: did not "
+					fprintf(stderr, "received:\n%s\nerror: did not "
 								"received the 'ACK' that was sent "
 								"as the reply on the '200 OK' (see "
 								"above). aborting\n", rec);
@@ -874,7 +874,7 @@ void handle_usrloc()
 					usrlocstep=MES_OK_RECV;
 				}
 				else {
-					printf("\nreceived:\n%s\nerror: did not "
+					fprintf(stderr, "received:\n%s\nerror: did not "
 								"received the 'MESSAGE' that was sent "
 								"(see above). aborting\n", rec);
 					exit_code(1);
@@ -961,13 +961,13 @@ void handle_usrloc()
 				else {
 					if (verbose>0) {
 						if (mes_body) {
-							printf("\nreceived:\n%s\nerror: did"
+							fprintf(stderr, "received:\n%s\nerror: did"
 										" not received 200 for the "
 										"MESSAGE (see above)\n",
 										rec);
 						}
 						else {
-							printf("\nreceived:\n%s\nerror: did"
+							fprintf(stderr, "received:\n%s\nerror: did"
 										" not received the '200 OK' "
 										"that was sent as the reply on"
 										" the MESSAGE (see above). "
@@ -1004,7 +1004,7 @@ void handle_usrloc()
 					usrlocstep=REG_REP;
 				}
 				else {
-					printf("\nreceived:\n%s\nerror: did not "
+					fprintf(stderr, "received:\n%s\nerror: did not "
 								"received the expected 200 on the "
 								"remove bindings request for %s%i (see"
 								" above). aborting\n", rec, username, 
@@ -1013,7 +1013,7 @@ void handle_usrloc()
 				}
 				break;
 			default:
-				printf("error: unknown step in usrloc\n");
+				fprintf(stderr, "error: unknown step in usrloc\n");
 				exit_code(2);
 				break;
 		} /* switch */
@@ -1136,7 +1136,7 @@ void shoot(char *buf, int buff_size)
 	rawsock = (int)socket(PF_INET, SOCK_RAW, IPPROTO_ICMP);
 	if (rawsock==-1) {
 		if (verbose>0)
-			printf("Warning: need raw socket (root privileges) to receive all ICMP errors\n");
+			fprintf(stderr, "warning: need raw socket (root privileges) to receive all ICMP errors\n");
 #endif
 		/* create the connected socket as a primitve alternative to the 
 		   raw socket*/
@@ -1263,7 +1263,7 @@ void shoot(char *buf, int buff_size)
 			if (trashchar < nameend)
 				nameend=trashchar;
 			else
-				printf("warning: number of trashed chars to big. setting to "
+				fprintf(stderr, "warning: number of trashed chars to big. setting to "
 					"request length\n");
 		}
 		trash_random(req);
@@ -1308,18 +1308,19 @@ void shoot(char *buf, int buff_size)
 			ret = recv_message(rec, BUFSIZE);
 			if(ret > 0)
 			{
-				if (usrlocstep == INV_ACK_RECV) {
+				if (usrlocstep == INV_OK_RECV) {
 					swap_ptr(&rep, &req);
 				}
 				/* send ACK for non-provisional reply on INVITE */
 				if ((STRNCASECMP(req, "INVITE", 6)==0) && 
 						(regexec(&replyexp, rec, 0, 0, 0) == REG_NOERROR) && 
 						(regexec(&proexp, rec, 0, 0, 0) == REG_NOMATCH)) { 
-					build_ack(req, rec);
+					build_ack(req, rec, rep);
 					dontsend = 0;
 					inv_trans = 0;
 					/* lets fire the ACK to the server */
-					send_message(req, (struct sockaddr *)&addr);
+					send_message(rep, (struct sockaddr *)&addr);
+					inv_trans = 1;
 				}
 				/* check for old CSeq => ignore retransmission */
 				cseqtmp = cseq(rec);
@@ -1333,7 +1334,7 @@ void shoot(char *buf, int buff_size)
 					}
 				else if (regexec(&authexp, rec, 0, 0, 0) == REG_NOERROR) {
 					if (!username) {
-						printf("%s\nerror: received 401 but cannot "
+						fprintf(stderr, "%s\nerror: received 401 but cannot "
 							"authentication without a username\n", rec);
 						exit_code(2);
 					}

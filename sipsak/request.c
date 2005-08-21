@@ -32,7 +32,7 @@ void create_msg(int action, char *req_buff, char *repl_buff, char *username, int
 	unsigned int c, d, len;
 
 	if(cseq == 0) {
-		printf("error: CSeq 0 is not allowed\n");
+		fprintf(stderr, "error: CSeq 0 is not allowed\n");
 		exit_code(253);
 	}
 	if (req_buff == NULL)
@@ -285,7 +285,7 @@ void create_msg(int action, char *req_buff, char *repl_buff, char *username, int
 				UA_STR, SIPSAK_VERSION);
 			break;
 		default:
-			printf("error: unknown request type to create\n");
+			fprintf(stderr, "error: unknown request type to create\n");
 			exit_code(2);
 			break;
 	}

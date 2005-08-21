@@ -36,7 +36,7 @@ int find_lr_parameter(char *rr_line);
 
 void cpy_rr(char* src, char *dst, int route);
 
-void build_ack(char *invite, char *reply);
+void build_ack(char *invite, char *reply, char *dest);
 
 void warning_extract(char *message);
 
