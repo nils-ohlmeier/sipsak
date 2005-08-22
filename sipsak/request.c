@@ -154,7 +154,6 @@ void create_msg(int action, char *req_buff, char *repl_buff, char *username, int
 			sprintf(req_buff,
 				"%s sip:%s%s%s"
 				"%s%s:%i;branch=z9hG4bK.%08x;rport\r\n"
-				"%ssip:sipsak@%s:%i;tag=%x\r\n"
 				"%ssip:%s%s\r\n"
 				"%s%u@%s\r\n"
 				"%s%i %s\r\n"
@@ -163,13 +162,23 @@ void create_msg(int action, char *req_buff, char *repl_buff, char *username, int
 				"%ssipsak %s\r\n",
 				MES_STR, username, domainname, SIP20_STR, 
 				VIA_SIP_STR, fqdn, lport, d,
-				FROM_STR, fqdn, lport, c,
 				TO_STR, username, domainname, 
 				CALL_STR, c, fqdn, 
 				CSEQ_STR, cseq, MES_STR, 
 				CON_TYP_STR, TXT_PLA_STR, 
 				MAX_FRW_STR, 
 				UA_STR, SIPSAK_VERSION);
+			req_buff += strlen(req_buff);
+			if (from_uri) {
+				sprintf(req_buff,
+					"%s%s;tag=%x\r\n",
+					FROM_STR, from_uri, c);
+			}
+			else {
+				sprintf(req_buff,
+					"%ssip:sipsak@%s:%i;tag=%x\r\n",
+					FROM_STR, fqdn, lport, c);
+			}
 			req_buff += strlen(req_buff);
 			if (mes_body) {
 				len = strlen(mes_body);

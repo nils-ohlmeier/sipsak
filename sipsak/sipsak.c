@@ -80,7 +80,7 @@ void print_version() {
 		" usrloc : sipsak -U [-I|M] [-b NUMBER] [-e NUMBER] [-x NUMBER] [-z NUMBER] -s SIPURI\n"
 		" usrloc : sipsak -I|M [-b NUMBER] [-e NUMBER] -s SIPURI\n"
 		" usrloc : sipsak -U [-C SIPURI] [-x NUMBER] -s SIPURI\n"
-		" message: sipsak -M [-B STRING] [-O STRING] -s SIPURI\n"
+		" message: sipsak -M [-B STRING] [-O STRING] [-c SIPURI] -s SIPURI\n"
 		" flood  : sipsak -F [-e NUMBER] -s SIPURI\n"
 		" random : sipsak -R [-t NUMBER] -s SIPURI\n\n"
 		" additional parameter in every mode:\n"
@@ -144,6 +144,7 @@ void print_long_help() {
 		"                             on failfure\n"
 		"  --timing                   print the timing informations at the end\n"
 		"  --symmetric                send and received on the same port\n"
+		"  --from=SIPURI              use the given uri as From in MESSAGE\n"
 		);
 	exit_code(0);
 }
@@ -205,6 +206,7 @@ void print_help() {
 		"  -P NUMBER         Number of processes to start\n"
 		"  -A                print timing informations\n"
 		"  -S                use same port for receiving and sending\n"
+		"  -c SIPURI         use the given uri as From in MESSAGE\n"
 		);
 		exit_code(0);
 }
@@ -262,6 +264,7 @@ int main(int argc, char *argv[])
 		{"no-crlf", 0, 0, 'L'},
 		{"timing", 0, 0, 'A'},
 		{"symmetric", 0, 0, 'S'},
+		{"from", 1, 0, 'c'},
 		{0, 0, 0, 0}
 	};
 #endif
@@ -272,7 +275,7 @@ int main(int argc, char *argv[])
 	namebeg=nameend=maxforw= -1;
 	numeric=via_ins=redirects=fix_crlf=processes = 1;
 	username=password=replace_str=hostname=contact_uri=mes_body = NULL;
-	con_dis=auth_username = NULL;
+	con_dis=auth_username=from_uri = NULL;
 	scheme = user = host = backup = req = rep = rec = NULL;
 	re = NULL;
 	address = 0;
@@ -285,9 +288,9 @@ int main(int argc, char *argv[])
 
 	/* lots of command line switches to handle*/
 #ifdef HAVE_GETOPT_LONG
-	while ((c=getopt_long(argc, argv, "a:Ab:B:C:de:f:Fg:GhH:iIl:Lm:MnNo:O:p:P:q:r:Rs:St:Tu:UvVwW:x:Xz:", l_opts, &option_index)) != EOF){
+	while ((c=getopt_long(argc, argv, "a:Ab:B:c:C:de:f:Fg:GhH:iIl:Lm:MnNo:O:p:P:q:r:Rs:St:Tu:UvVwW:x:Xz:", l_opts, &option_index)) != EOF){
 #else
-	while ((c=getopt(argc,argv,"a:Ab:B:C:de:f:Fg:GhH:iIl:Lm:MnNo:O:p:P:q:r:Rs:St:Tu:UvVwW:x:z:")) != EOF){
+	while ((c=getopt(argc,argv,"a:Ab:B:c:C:de:f:Fg:GhH:iIl:Lm:MnNo:O:p:P:q:r:Rs:St:Tu:UvVwW:x:z:")) != EOF){
 #endif
 		switch(c){
 			case 'a':
@@ -303,6 +306,28 @@ int main(int argc, char *argv[])
 			case 'B':
 				mes_body=str_alloc(strlen(optarg) + 1);
 				strncpy(mes_body, optarg, strlen(optarg));
+				break;
+			case 'c':
+				backup=str_alloc(strlen(optarg)+1);
+				strncpy(backup, optarg, strlen(optarg));
+				parse_uri(backup, &scheme, &user, &host, &port);
+				if (scheme  == NULL) {
+					fprintf(stderr, "error: missing scheme in From URI\n");
+					exit_code(2);
+				}
+				else if (user == NULL) {
+					fprintf(stderr, "error: missing username in From URI\n");
+					exit_code(2);
+				}
+				else if (host == NULL) {
+					fprintf(stderr, "error: missing host in From URI\n");
+					exit_code(2);
+				}
+				else {
+					from_uri=str_alloc(strlen(optarg)+1);
+					strncpy(from_uri, optarg, strlen(optarg));
+				}
+				free(backup);
 				break;
 			case 'C':
 				if ((strlen(optarg) == 5 && STRNCASECMP(optarg, "empty", 5) == 0) || 
@@ -326,10 +351,15 @@ int main(int argc, char *argv[])
 						fprintf(stderr, "error: missing username in Contact uri\n");
 						exit_code(2);
 					}
+					else if (host == NULL) {
+						fprintf(stderr, "error: missing host in Contact uri\n");
+						exit_code(2);
+					}
 					else {
 						contact_uri=str_alloc(strlen(optarg)+1);
 						strncpy(contact_uri, optarg, strlen(optarg));
 					}
+					free(backup);
 				}
 				break;
 			case 'd':
@@ -421,6 +451,10 @@ int main(int argc, char *argv[])
 				break;
 			case 'p':
 				parse_uri(optarg, &scheme, &user, &host, &rport);
+				if (host == NULL) {
+					fprintf(stderr, "error: missing in host in outbound proxy\n");
+					exit_code(2);
+				}
 				if (!rport)
 					address = getsrvaddress(host, &rport);
 				if (!address)
@@ -464,7 +498,6 @@ int main(int argc, char *argv[])
 				randtrash=1;
 				break;
 			case 's':
-				port = 0;
 				parse_uri(optarg, &scheme, &user, &host, &port);
 				if (scheme == NULL) {
 					fprintf(stderr, "error: missing scheme in sip uri\n");
