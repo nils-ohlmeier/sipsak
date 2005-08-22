@@ -284,7 +284,9 @@ int main(int argc, char *argv[])
 	memset(buff, 0, BUFSIZE);
 	memset(fqdn, 0, FQDN_SIZE);
 
-	if (argc==1) print_help();
+	if (argc==1) {
+		print_help();
+	}
 
 	/* lots of command line switches to handle*/
 #ifdef HAVE_GETOPT_LONG
@@ -521,7 +523,7 @@ int main(int argc, char *argv[])
 					fprintf(stderr, "error: missing hostname in sip uri\n");
 					exit_code(2);
 				}
-				if (port && !port) {
+				if (port && !rport) {
 					rport = port;
 				}
 				if (!rport && !address)
@@ -611,6 +613,15 @@ int main(int argc, char *argv[])
 
 	if (rport == 0) {
 		rport =  5060;
+	}
+	if (rport != 5060) {
+		if (rport > 65535 || rport <= 0) {
+			fprintf(stderr, "error: invalid remote port: %i\n", rport);
+			exit_code(2);
+		}
+		backup = str_alloc(strlen(domainname)+1+6);
+		snprintf(backup, strlen(domainname)+6, "%s:%i", domainname, rport);
+		domainname = backup;
 	}
 
 	/* replace LF with CRLF if we read from a file */
