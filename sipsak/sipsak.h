@@ -62,7 +62,7 @@
 #else
 # define STRCASESTR(s1,s2) strstr(s1,s2)
 #endif
-#ifndef HAVE_STRNCASECMP
+#ifdef HAVE_STRNCASECMP
 # define STRNCASECMP(s1,s2,s3) strncasecmp(s1,s2,s3)
 #else
 # define STRNCASECMP(s1,s2,s3) strncmp(s1,s2,s3)
