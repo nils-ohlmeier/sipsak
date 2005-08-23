@@ -534,8 +534,13 @@ int main(int argc, char *argv[])
 					fprintf(stderr, "error:unable to determine the IP address for: %s\n", domainname);
 					exit_code(2);
 				}
+				if (port != 0) {
+					backup = str_alloc(strlen(domainname)+1+6);
+					snprintf(backup, strlen(domainname)+6, "%s:%i", domainname, port);
+					domainname = backup;
+				}
 				uri_b=1;
-				break;			break;
+				break;
 			case 'S':
 				fprintf(stderr, "warning: symmetric does not work with a-symmetric servers\n");
 				symmetric=1;
@@ -614,14 +619,9 @@ int main(int argc, char *argv[])
 	if (rport == 0) {
 		rport =  5060;
 	}
-	if (rport != 5060) {
-		if (rport > 65535 || rport <= 0) {
-			fprintf(stderr, "error: invalid remote port: %i\n", rport);
-			exit_code(2);
-		}
-		backup = str_alloc(strlen(domainname)+1+6);
-		snprintf(backup, strlen(domainname)+6, "%s:%i", domainname, rport);
-		domainname = backup;
+	if (rport > 65535 || rport <= 0) {
+		fprintf(stderr, "error: invalid remote port: %i\n", rport);
+		exit_code(2);
 	}
 
 	/* replace LF with CRLF if we read from a file */
