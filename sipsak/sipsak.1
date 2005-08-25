@@ -9,6 +9,8 @@ sipsak \- a utility for various tests on sip servers and user agents
 .I PASSWORD
 .B ] [-b
 .I NUMBER 
+.B ] [-c
+.I SIPURI
 .B ] [-C
 .I SIPURI
 .B ] [-e 
@@ -62,13 +64,16 @@ or generated as a new OPTIONS message.
 This mode is useful for learning request's path. It
 operates similarly to IP-layer utility
 .BR traceroute (8).
-.IP "- randtrash mode (-R)"
-Parser torture mode. 
-.B sipsak 
-keeps sending randomly corrupted messages to torture a SIP server's
-parser.
+.IP "- message mode (-M)"
+Sends a short message (similar to SMS from the mobile phones) to a given target. With the option
+.BR -B
+the content of the MESSAGE can be set. Usefull might be the options
+.BR -c
+and
+.BR -O
+in this mode.
 .IP "- usrloc mode (-U)"
-stress mode for SIP registrar. 
+Stress mode for SIP registrar. 
 .B sipsak
 keeps registering to a SIP server at high pace. Additionaly the registrar
 can be stressed with the 
@@ -86,8 +91,13 @@ can be used to register any given contact (with the
 .BR -C
 option) for an account at a registrar and to query the current bindings for
 an account at a registrar.
+.IP "- randtrash mode (-R)"
+Parser torture mode. 
+.B sipsak 
+keeps sending randomly corrupted messages to torture a SIP server's
+parser.
 .IP "- flood mode (-F)"
-stress mode for SIP servers.
+Stress mode for SIP servers.
 .B sipsak 
 keeps sending requests to a SIP server at high pace.
 
@@ -126,6 +136,16 @@ parameter. If omitted the starting number will be one.
 The given 
 .I STRING
 will be used as the body for outgoing MESSAGE requests.
+
+.IP "-c, --from SIPURI"
+The given
+.I SIPURI
+will be used in the From header if
+.B sipsak
+runs in the message mode (initiated with the
+.BR -M
+option). This is helpfull to present the receiver of a MESSAGE a meaningfull
+and usable address to where maybe even responses can be send.
 
 .IP "-C, --contact SIPURI"
 This is the content of the Contact header in the usrloc mode. This allows
