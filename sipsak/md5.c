@@ -1,6 +1,6 @@
 /* 
 
-$Id: md5.c,v 1.3 2005/04/10 20:25:48 calrissian Exp $
+$Id$
 
 MD5C.C - RSA Data Security, Inc., MD5 message-digest algorithm
 
@@ -30,14 +30,15 @@ documentation and/or software.
 # include "config.h"
 #endif
 
-#ifndef HAVE_OPENSSL_MD5_H
+#include "md5.h"
+
+#ifndef HAVE_EXTERNAL_MD5
 
 #ifdef HAVE_STRING_H
 # include <string.h>
 #endif
 
 #include "md5global.h"
-#include "md5.h"
 
 
 #define USE_MEM

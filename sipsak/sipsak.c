@@ -573,7 +573,9 @@ int main(int argc, char *argv[])
 #ifdef HAVE_GETOPT_LONG
 				printf(", LONG_OPTS");
 #endif
-#ifdef HAVE_OPENSSL_MD5_H
+#ifdef HAVE_GNUTLS
+				printf(", GNUTLS_MD5");
+#elif HAVE_OPENSSL_MD5_H
 				printf(", OPENSSL_MD5");
 #endif
 #ifdef HAVE_RULI_H

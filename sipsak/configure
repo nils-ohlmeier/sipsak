@@ -311,7 +311,7 @@ ac_includes_default="\
 # include <unistd.h>
 #endif"
 
-ac_subst_vars='SHELL PATH_SEPARATOR PACKAGE_NAME PACKAGE_TARNAME PACKAGE_VERSION PACKAGE_STRING PACKAGE_BUGREPORT exec_prefix prefix program_transform_name bindir sbindir libexecdir datadir sysconfdir sharedstatedir localstatedir libdir includedir oldincludedir infodir mandir build_alias host_alias target_alias DEFS ECHO_C ECHO_N ECHO_T LIBS INSTALL_PROGRAM INSTALL_SCRIPT INSTALL_DATA CYGPATH_W PACKAGE VERSION ACLOCAL AUTOCONF AUTOMAKE AUTOHEADER MAKEINFO install_sh STRIP ac_ct_STRIP INSTALL_STRIP_PROGRAM mkdir_p AWK SET_MAKE am__leading_dot AMTAR am__tar am__untar MAINTAINER_MODE_TRUE MAINTAINER_MODE_FALSE MAINT CC CFLAGS LDFLAGS CPPFLAGS ac_ct_CC EXEEXT OBJEXT DEPDIR am__include am__quote AMDEP_TRUE AMDEP_FALSE AMDEPBACKSLASH CCDEPMODE am__fastdepCC_TRUE am__fastdepCC_FALSE DISTCC build build_cpu build_vendor build_os host host_cpu host_vendor host_os CPP EGREP LIBOBJS LTLIBOBJS'
+ac_subst_vars='SHELL PATH_SEPARATOR PACKAGE_NAME PACKAGE_TARNAME PACKAGE_VERSION PACKAGE_STRING PACKAGE_BUGREPORT exec_prefix prefix program_transform_name bindir sbindir libexecdir datadir sysconfdir sharedstatedir localstatedir libdir includedir oldincludedir infodir mandir build_alias host_alias target_alias DEFS ECHO_C ECHO_N ECHO_T LIBS INSTALL_PROGRAM INSTALL_SCRIPT INSTALL_DATA CYGPATH_W PACKAGE VERSION ACLOCAL AUTOCONF AUTOMAKE AUTOHEADER MAKEINFO install_sh STRIP ac_ct_STRIP INSTALL_STRIP_PROGRAM mkdir_p AWK SET_MAKE am__leading_dot AMTAR am__tar am__untar MAINTAINER_MODE_TRUE MAINTAINER_MODE_FALSE MAINT CC CFLAGS LDFLAGS CPPFLAGS ac_ct_CC EXEEXT OBJEXT DEPDIR am__include am__quote AMDEP_TRUE AMDEP_FALSE AMDEPBACKSLASH CCDEPMODE am__fastdepCC_TRUE am__fastdepCC_FALSE DISTCC build build_cpu build_vendor build_os host host_cpu host_vendor host_os CPP EGREP LIBOBJS LIBGNUTLS_CONFIG LIBGNUTLS_CFLAGS LIBGNUTLS_LIBS LTLIBOBJS'
 ac_subst_files=''
 
 # Initialize some variables set by options.
@@ -859,6 +859,11 @@ Optional Features:
   --enable-dependency-tracking   do not reject slow dependency extractors
   --enable-distcc         compile in parallel with distcc
   --enable-timeout=SEC    SIP timer T1 in SEC milliseconds (default 500)
+
+Optional Packages:
+  --with-PACKAGE[=ARG]    use PACKAGE [ARG=yes]
+  --without-PACKAGE       do not use PACKAGE (same as --with-PACKAGE=no)
+  --with-libgnutls-prefix=PFX   Prefix where libgnutls is installed (optional)
 
 Some influential environment variables:
   CC          C compiler command
@@ -2890,7 +2895,7 @@ fi
 
 # Add -Wall if we are using GCC
 if test "x$GCC" = "xyes"; then
-	CFLAGS="$CFLAGS -Wall"
+  CFLAGS="$CFLAGS -Wall"
 fi
 
 
@@ -5060,7 +5065,277 @@ fi
 done
 
 
-echo "$as_me:$LINENO: checking for MD5_Init in -lcrypto" >&5
+
+# Check whether --with-libgnutls-prefix or --without-libgnutls-prefix was given.
+if test "${with_libgnutls_prefix+set}" = set; then
+  withval="$with_libgnutls_prefix"
+  libgnutls_config_prefix="$withval"
+else
+  libgnutls_config_prefix=""
+fi;
+
+  if test x$libgnutls_config_prefix != x ; then
+     if test x${LIBGNUTLS_CONFIG+set} != xset ; then
+        LIBGNUTLS_CONFIG=$libgnutls_config_prefix/bin/libgnutls-config
+     fi
+  fi
+
+  # Extract the first word of "libgnutls-config", so it can be a program name with args.
+set dummy libgnutls-config; ac_word=$2
+echo "$as_me:$LINENO: checking for $ac_word" >&5
+echo $ECHO_N "checking for $ac_word... $ECHO_C" >&6
+if test "${ac_cv_path_LIBGNUTLS_CONFIG+set}" = set; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+else
+  case $LIBGNUTLS_CONFIG in
+  [\\/]* | ?:[\\/]*)
+  ac_cv_path_LIBGNUTLS_CONFIG="$LIBGNUTLS_CONFIG" # Let the user override the test with a path.
+  ;;
+  *)
+  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+  for ac_exec_ext in '' $ac_executable_extensions; do
+  if $as_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
+    ac_cv_path_LIBGNUTLS_CONFIG="$as_dir/$ac_word$ac_exec_ext"
+    echo "$as_me:$LINENO: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+done
+
+  test -z "$ac_cv_path_LIBGNUTLS_CONFIG" && ac_cv_path_LIBGNUTLS_CONFIG="no"
+  ;;
+esac
+fi
+LIBGNUTLS_CONFIG=$ac_cv_path_LIBGNUTLS_CONFIG
+
+if test -n "$LIBGNUTLS_CONFIG"; then
+  echo "$as_me:$LINENO: result: $LIBGNUTLS_CONFIG" >&5
+echo "${ECHO_T}$LIBGNUTLS_CONFIG" >&6
+else
+  echo "$as_me:$LINENO: result: no" >&5
+echo "${ECHO_T}no" >&6
+fi
+
+  min_libgnutls_version=1.0.0
+  echo "$as_me:$LINENO: checking for libgnutls - version >= $min_libgnutls_version" >&5
+echo $ECHO_N "checking for libgnutls - version >= $min_libgnutls_version... $ECHO_C" >&6
+  no_libgnutls=""
+  if test "$LIBGNUTLS_CONFIG" = "no" ; then
+    no_libgnutls=yes
+  else
+    LIBGNUTLS_CFLAGS=`$LIBGNUTLS_CONFIG $libgnutls_config_args --cflags`
+    LIBGNUTLS_LIBS=`$LIBGNUTLS_CONFIG $libgnutls_config_args --libs`
+    libgnutls_config_version=`$LIBGNUTLS_CONFIG $libgnutls_config_args --version`
+
+
+      ac_save_CFLAGS="$CFLAGS"
+      ac_save_LIBS="$LIBS"
+      CFLAGS="$CFLAGS $LIBGNUTLS_CFLAGS"
+      LIBS="$LIBS $LIBGNUTLS_LIBS"
+      rm -f conf.libgnutlstest
+      if test "$cross_compiling" = yes; then
+  echo $ac_n "cross compiling; assumed OK... $ac_c"
+else
+  cat >conftest.$ac_ext <<_ACEOF
+/* confdefs.h.  */
+_ACEOF
+cat confdefs.h >>conftest.$ac_ext
+cat >>conftest.$ac_ext <<_ACEOF
+/* end confdefs.h.  */
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <gnutls/gnutls.h>
+
+int
+main ()
+{
+    system ("touch conf.libgnutlstest");
+
+    if( strcmp( gnutls_check_version(NULL), "$libgnutls_config_version" ) )
+    {
+      printf("\n*** 'libgnutls-config --version' returned %s, but LIBGNUTLS (%s)\n",
+             "$libgnutls_config_version", gnutls_check_version(NULL) );
+      printf("*** was found! If libgnutls-config was correct, then it is best\n");
+      printf("*** to remove the old version of LIBGNUTLS. You may also be able to fix the error\n");
+      printf("*** by modifying your LD_LIBRARY_PATH enviroment variable, or by editing\n");
+      printf("*** /etc/ld.so.conf. Make sure you have run ldconfig if that is\n");
+      printf("*** required on your system.\n");
+      printf("*** If libgnutls-config was wrong, set the environment variable LIBGNUTLS_CONFIG\n");
+      printf("*** to point to the correct copy of libgnutls-config, and remove the file config.cache\n");
+      printf("*** before re-running configure\n");
+    }
+    else if ( strcmp(gnutls_check_version(NULL), LIBGNUTLS_VERSION ) )
+    {
+      printf("\n*** LIBGNUTLS header file (version %s) does not match\n", LIBGNUTLS_VERSION);
+      printf("*** library (version %s)\n", gnutls_check_version(NULL) );
+    }
+    else
+    {
+      if ( gnutls_check_version( "$min_libgnutls_version" ) )
+      {
+        return 0;
+      }
+     else
+      {
+        printf("no\n*** An old version of LIBGNUTLS (%s) was found.\n",
+                gnutls_check_version(NULL) );
+        printf("*** You need a version of LIBGNUTLS newer than %s. The latest version of\n",
+               "$min_libgnutls_version" );
+        printf("*** LIBGNUTLS is always available from ftp://gnutls.hellug.gr/pub/gnutls.\n");
+        printf("*** \n");
+        printf("*** If you have already installed a sufficiently new version, this error\n");
+        printf("*** probably means that the wrong copy of the libgnutls-config shell script is\n");
+        printf("*** being found. The easiest way to fix this is to remove the old version\n");
+        printf("*** of LIBGNUTLS, but you can also set the LIBGNUTLS_CONFIG environment to point to the\n");
+        printf("*** correct copy of libgnutls-config. (In this case, you will have to\n");
+        printf("*** modify your LD_LIBRARY_PATH enviroment variable, or edit /etc/ld.so.conf\n");
+        printf("*** so that the correct libraries are found at run-time))\n");
+      }
+    }
+  return 1;
+}
+
+_ACEOF
+rm -f conftest$ac_exeext
+if { (eval echo "$as_me:$LINENO: \"$ac_link\"") >&5
+  (eval $ac_link) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } && { ac_try='./conftest$ac_exeext'
+  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+  (eval $ac_try) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; }; then
+  :
+else
+  echo "$as_me: program exited with status $ac_status" >&5
+echo "$as_me: failed program was:" >&5
+sed 's/^/| /' conftest.$ac_ext >&5
+
+( exit $ac_status )
+no_libgnutls=yes
+fi
+rm -f core *.core gmon.out bb.out conftest$ac_exeext conftest.$ac_objext conftest.$ac_ext
+fi
+       CFLAGS="$ac_save_CFLAGS"
+       LIBS="$ac_save_LIBS"
+  fi
+
+  if test "x$no_libgnutls" = x ; then
+     echo "$as_me:$LINENO: result: yes" >&5
+echo "${ECHO_T}yes" >&6
+
+cat >>confdefs.h <<\_ACEOF
+#define HAVE_GNUTLS 1
+_ACEOF
+
+  LIBS="$LIBS $LIBGNUTLS_LIBS -lgnutls-openssl"
+  CFLAGS="$CFLAGS $LIBGNUTLS_CFLAGS"
+
+  else
+     if test -f conf.libgnutlstest ; then
+        :
+     else
+        echo "$as_me:$LINENO: result: no" >&5
+echo "${ECHO_T}no" >&6
+     fi
+     if test "$LIBGNUTLS_CONFIG" = "no" ; then
+       echo "*** The libgnutls-config script installed by LIBGNUTLS could not be found"
+       echo "*** If LIBGNUTLS was installed in PREFIX, make sure PREFIX/bin is in"
+       echo "*** your path, or set the LIBGNUTLS_CONFIG environment variable to the"
+       echo "*** full path to libgnutls-config."
+     else
+       if test -f conf.libgnutlstest ; then
+        :
+       else
+          echo "*** Could not run libgnutls test program, checking why..."
+          CFLAGS="$CFLAGS $LIBGNUTLS_CFLAGS"
+          LIBS="$LIBS $LIBGNUTLS_LIBS"
+          cat >conftest.$ac_ext <<_ACEOF
+/* confdefs.h.  */
+_ACEOF
+cat confdefs.h >>conftest.$ac_ext
+cat >>conftest.$ac_ext <<_ACEOF
+/* end confdefs.h.  */
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <gnutls/gnutls.h>
+
+int
+main ()
+{
+ return !!gnutls_check_version(NULL);
+  ;
+  return 0;
+}
+_ACEOF
+rm -f conftest.$ac_objext conftest$ac_exeext
+if { (eval echo "$as_me:$LINENO: \"$ac_link\"") >&5
+  (eval $ac_link) 2>conftest.er1
+  ac_status=$?
+  grep -v '^ *+' conftest.er1 >conftest.err
+  rm -f conftest.er1
+  cat conftest.err >&5
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } &&
+	 { ac_try='test -z "$ac_c_werror_flag"
+			 || test ! -s conftest.err'
+  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+  (eval $ac_try) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; } &&
+	 { ac_try='test -s conftest$ac_exeext'
+  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+  (eval $ac_try) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; }; then
+   echo "*** The test program compiled, but did not run. This usually means"
+          echo "*** that the run-time linker is not finding LIBGNUTLS or finding the wrong"
+          echo "*** version of LIBGNUTLS. If it is not finding LIBGNUTLS, you'll need to set your"
+          echo "*** LD_LIBRARY_PATH environment variable, or edit /etc/ld.so.conf to point"
+          echo "*** to the installed location  Also, make sure you have run ldconfig if that"
+          echo "*** is required on your system"
+          echo "***"
+          echo "*** If you have an old version installed, it is best to remove it, although"
+          echo "*** you may also be able to get things to work by modifying LD_LIBRARY_PATH"
+          echo "***"
+else
+  echo "$as_me: failed program was:" >&5
+sed 's/^/| /' conftest.$ac_ext >&5
+
+ echo "*** The test program failed to compile or link. See the file config.log for the"
+          echo "*** exact error that occured. This usually means LIBGNUTLS was incorrectly installed"
+          echo "*** or that you have moved LIBGNUTLS since it was installed. In the latter case, you"
+          echo "*** may want to edit the libgnutls-config script: $LIBGNUTLS_CONFIG"
+fi
+rm -f conftest.err conftest.$ac_objext \
+      conftest$ac_exeext conftest.$ac_ext
+          CFLAGS="$ac_save_CFLAGS"
+          LIBS="$ac_save_LIBS"
+       fi
+     fi
+     LIBGNUTLS_CFLAGS=""
+     LIBGNUTLS_LIBS=""
+     :
+  fi
+  rm -f conf.libgnutlstest
+
+
+
+
+if test "X$HAVE_GNUTLS" != "X";then
+  echo "$as_me:$LINENO: checking for MD5_Init in -lcrypto" >&5
 echo $ECHO_N "checking for MD5_Init in -lcrypto... $ECHO_C" >&6
 if test "${ac_cv_lib_crypto_MD5_Init+set}" = set; then
   echo $ECHO_N "(cached) $ECHO_C" >&6
@@ -5126,6 +5401,8 @@ echo "$as_me:$LINENO: result: $ac_cv_lib_crypto_MD5_Init" >&5
 echo "${ECHO_T}$ac_cv_lib_crypto_MD5_Init" >&6
 if test $ac_cv_lib_crypto_MD5_Init = yes; then
   LIBS="$LIBS -lcrypto"
+
+fi
 
 fi
 
@@ -5888,6 +6165,9 @@ s,@host_os@,$host_os,;t t
 s,@CPP@,$CPP,;t t
 s,@EGREP@,$EGREP,;t t
 s,@LIBOBJS@,$LIBOBJS,;t t
+s,@LIBGNUTLS_CONFIG@,$LIBGNUTLS_CONFIG,;t t
+s,@LIBGNUTLS_CFLAGS@,$LIBGNUTLS_CFLAGS,;t t
+s,@LIBGNUTLS_LIBS@,$LIBGNUTLS_LIBS,;t t
 s,@LTLIBOBJS@,$LTLIBOBJS,;t t
 CEOF
 

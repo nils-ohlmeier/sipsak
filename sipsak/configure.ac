@@ -12,7 +12,7 @@ AC_CONFIG_HEADER([config.h])
 AC_PROG_CC
 # Add -Wall if we are using GCC
 if test "x$GCC" = "xyes"; then
-	CFLAGS="$CFLAGS -Wall"
+  CFLAGS="$CFLAGS -Wall"
 fi
 GCC_STACK_PROTECT_CC
 CHECK_PROG_DISTCC
@@ -52,9 +52,18 @@ AC_FUNC_SELECT_ARGTYPES
 AC_CHECK_FUNCS([getchar gethostbyname gethostname getopt getpid gettimeofday memset ntohs regcomp select socket strchr strcmp strstr strtol uname],,[AC_MSG_ERROR([missing required function (see above)])])
 AC_CHECK_FUNCS([calloc getdomainname getopt_long inet_ntop strncasecmp strcasestr])
 
-AC_CHECK_LIB(crypto, MD5_Init,
- LIBS="$LIBS -lcrypto"
+AM_PATH_LIBGNUTLS([1.0.0],
+  AC_DEFINE([HAVE_GNUTLS], [1], [Has gnutls])
+  LIBS="$LIBS $LIBGNUTLS_LIBS -lgnutls-openssl"
+  CFLAGS="$CFLAGS $LIBGNUTLS_CFLAGS"
 )
+
+if test "X$HAVE_GNUTLS" != "X";then
+  AC_CHECK_LIB(crypto, MD5_Init,
+    LIBS="$LIBS -lcrypto"
+  )
+fi
+
 CHECK_LIB_RULI
 
 SIPSAK_TIMER

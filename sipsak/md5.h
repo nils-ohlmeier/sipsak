@@ -1,5 +1,5 @@
 /* MD5.H - header file for MD5C.C
- * $Id: md5.h,v 1.3 2005/04/10 20:25:48 calrissian Exp $
+ * $Id$
  */
 
 
@@ -29,12 +29,19 @@ documentation and/or software.
 # include "config.h"
 #endif
 
-#ifdef HAVE_OPENSSL_MD5_H
-#include <openssl/md5.h>
+#ifdef HAVE_GNUTLS
+# include <gnutls/openssl.h>
+# define HAVE_EXTERNAL_MD5
+#elif HAVE_OPENSSL_MD5_H
+# include <openssl/md5.h>
+# define HAVE_EXTERNAL_MD5
+#endif
 
-#define MD5Init   MD5_Init
-#define MD5Update MD5_Update
-#define MD5Final  MD5_Final
+#ifdef HAVE_EXTERNAL_MD5
+
+# define MD5Init   MD5_Init
+# define MD5Update MD5_Update
+# define MD5Final  MD5_Final
 
 #else
 /* MD5 context. */
