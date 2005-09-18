@@ -113,7 +113,7 @@ unsigned long getsrvaddress(char *host, int *port) {
 #ifdef HAVE_RULI_H
 	int srv_code;
 
-	ruli_sync_t *sync_query = ruli_sync_query("_sip._udp", host, -1, RULI_RES_OPT_SEARCH | RULI_RES_OPT_SRV_NOINET6 | RULI_RES_OPT_SRV_NOSORT6);
+	ruli_sync_t *sync_query = ruli_sync_query("_sip._udp", host, 5060, RULI_RES_OPT_SEARCH | RULI_RES_OPT_SRV_NOINET6 | RULI_RES_OPT_SRV_NOSORT6);
 
 	/* sync query failure? */
 	if (!sync_query) {
