@@ -300,12 +300,12 @@ int recv_message(char *buf, int size) {
 		if (icmp_len < 8) {
 			if (verbose > 1)
 				printf(": ignoring (ICMP header length below 8 bytes)\n");
-			return 0;
+			return -2;
 		}
 		else if (icmp_len < 36) {
 			if (verbose > 1)
 				printf(": ignoring (ICMP message too short to contain IP and UDP header)\n");
-			return 0;
+			return -2;
 		}
 		s_ip_hdr = (struct ip *) ((char *)icmp_hdr + 8);
 		s_ip_len = s_ip_hdr->ip_hl << 2;
@@ -328,13 +328,13 @@ int recv_message(char *buf, int size) {
 			else {
 				if (verbose > 2)
 					printf(": ignoring (ICMP error does not match send data)\n");
-				return 0;
+				return -2;
 			}
 		}
 		else {
 			if (verbose > 1)
 				printf(": ignoring (ICMP data is not a UDP packet)\n");
-			return 0;
+			return -2;
 		}
 	}
 #endif
@@ -1364,6 +1364,10 @@ void shoot(char *buf, int buff_size)
 				} /* redirect, auth, and modes */
 			} /* ret > 0 */
 			else if (ret == -1) { // we did not got anything back, send again
+				continue;
+			}
+			else if (ret == -2) { // we received non-matching ICMP
+				dontsend = 1;
 				continue;
 			}
 			else {
