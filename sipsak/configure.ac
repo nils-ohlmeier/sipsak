@@ -58,7 +58,7 @@ AM_PATH_LIBGNUTLS([1.0.0],
   CFLAGS="$CFLAGS $LIBGNUTLS_CFLAGS"
 )
 
-if test "X$HAVE_GNUTLS" != "X";then
+if test "X$LIBGNUTLS_LIBS" == "X";then
   AC_CHECK_LIB(crypto, MD5_Init,
     LIBS="$LIBS -lcrypto"
   )

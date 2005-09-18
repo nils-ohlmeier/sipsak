@@ -5334,7 +5334,7 @@ rm -f conftest.err conftest.$ac_objext \
 
 
 
-if test "X$HAVE_GNUTLS" != "X";then
+if test "X$LIBGNUTLS_LIBS" == "X";then
   echo "$as_me:$LINENO: checking for MD5_Init in -lcrypto" >&5
 echo $ECHO_N "checking for MD5_Init in -lcrypto... $ECHO_C" >&6
 if test "${ac_cv_lib_crypto_MD5_Init+set}" = set; then
@@ -5455,7 +5455,7 @@ if test "${enable_timeout+set}" = set; then
   enableval="$enable_timeout"
   def_timeout=$enableval
 fi;
-	if test "$def_timeout" = no; then
+	if test "X$def_timeout" = "Xno"; then
 	  # no timeout makes no sense
 	  def_timeout=500
 	fi

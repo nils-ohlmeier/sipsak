@@ -28,7 +28,7 @@ AC_DEFUN([SIPSAK_TIMER],
 	# Check for T1 timer value
 	def_timeout=500
 	AC_ARG_ENABLE([timeout],AS_HELP_STRING(--enable-timeout=SEC,SIP timer T1 in SEC milliseconds (default 500)),[def_timeout=$enableval])
-	if test "$def_timeout" = no; then
+	if test "X$def_timeout" = "Xno"; then
 	  # no timeout makes no sense
 	  def_timeout=500
 	fi
