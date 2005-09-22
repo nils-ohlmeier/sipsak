@@ -254,7 +254,7 @@ int sleep_ms, processes, cseq_counter;
 int verbose, nameend, namebeg, expires_t, flood, warning_ext, invite, message;
 int maxforw, lport, rport, randtrash, trashchar, numeric, symmetric;
 int file_b, uri_b, trace, via_ins, usrloc, redirects, rand_rem, replace_b;
-int empty_contact, nagios_warn, fix_crlf, timing, outbound_proxy;
+int empty_contact, nagios_warn, fix_crlf, timing, outbound_proxy, inv_final;
 char *username, *domainname, *password, *replace_str, *hostname, *contact_uri;
 char *mes_body, *con_dis, *auth_username, *from_uri;
 char fqdn[FQDN_SIZE];

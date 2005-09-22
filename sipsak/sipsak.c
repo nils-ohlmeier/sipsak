@@ -145,6 +145,7 @@ void print_long_help() {
 		"  --timing                   print the timing informations at the end\n"
 		"  --symmetric                send and received on the same port\n"
 		"  --from=SIPURI              use the given uri as From in MESSAGE\n"
+		"  --invite-timeout=NUMBER    timeout multiplier for INVITE transactions\n"
 		);
 	exit_code(0);
 }
@@ -207,6 +208,7 @@ void print_help() {
 		"  -A                print timing informations\n"
 		"  -S                use same port for receiving and sending\n"
 		"  -c SIPURI         use the given uri as From in MESSAGE\n"
+		"  -D NUMBER         timeout multiplier for INVITE transactions\n"
 		);
 		exit_code(0);
 }
@@ -265,6 +267,7 @@ int main(int argc, char *argv[])
 		{"timing", 0, 0, 'A'},
 		{"symmetric", 0, 0, 'S'},
 		{"from", 1, 0, 'c'},
+		{"invite-timeout", 1, 0, 'D'},
 		{0, 0, 0, 0}
 	};
 #endif
@@ -281,6 +284,7 @@ int main(int argc, char *argv[])
 	address = 0;
 	rport = port = 0;
 	expires_t = USRLOC_EXP_DEF;
+	inv_final = 64 * SIP_T1;
 	memset(buff, 0, BUFSIZE);
 	memset(fqdn, 0, FQDN_SIZE);
 
@@ -290,9 +294,9 @@ int main(int argc, char *argv[])
 
 	/* lots of command line switches to handle*/
 #ifdef HAVE_GETOPT_LONG
-	while ((c=getopt_long(argc, argv, "a:Ab:B:c:C:de:f:Fg:GhH:iIl:Lm:MnNo:O:p:P:q:r:Rs:St:Tu:UvVwW:x:Xz:", l_opts, &option_index)) != EOF){
+	while ((c=getopt_long(argc, argv, "a:Ab:B:c:C:dD:e:f:Fg:GhH:iIl:Lm:MnNo:O:p:P:q:r:Rs:St:Tu:UvVwW:x:Xz:", l_opts, &option_index)) != EOF){
 #else
-	while ((c=getopt(argc,argv,"a:Ab:B:c:C:de:f:Fg:GhH:iIl:Lm:MnNo:O:p:P:q:r:Rs:St:Tu:UvVwW:x:z:")) != EOF){
+	while ((c=getopt(argc,argv,"a:Ab:B:c:C:dD:e:f:Fg:GhH:iIl:Lm:MnNo:O:p:P:q:r:Rs:St:Tu:UvVwW:x:z:")) != EOF){
 #endif
 		switch(c){
 			case 'a':
@@ -366,6 +370,9 @@ int main(int argc, char *argv[])
 				break;
 			case 'd':
 				redirects=0;
+				break;
+			case 'D':
+				inv_final = str_to_int(optarg) * SIP_T1;
 				break;
 			case 'e':
 				nameend=str_to_int(optarg);
@@ -577,6 +584,8 @@ int main(int argc, char *argv[])
 				printf(", GNUTLS_MD5");
 #elif HAVE_OPENSSL_MD5_H
 				printf(", OPENSSL_MD5");
+#else
+				printf(", INTERNAL_MD5");
 #endif
 #ifdef HAVE_RULI_H
 				printf(", SRV_SUPPORT");

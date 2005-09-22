@@ -534,7 +534,7 @@ void handle_default()
 					" waiting for a final response\n");
 		}
 		if (inv_trans) {
-			retryAfter = retryAfter * 2;
+			retryAfter = inv_final;
 		}
 		else {
 			retryAfter = SIP_T2;
@@ -626,7 +626,7 @@ void handle_usrloc()
 			printf("ignoring provisional response\n\n");
 		}
 		if (inv_trans) {
-			retryAfter = retryAfter * 2;
+			retryAfter = inv_final;
 		}
 		else {
 			retryAfter = SIP_T2;
