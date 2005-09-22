@@ -1,7 +1,7 @@
 .\" Process this file with
 .\" groff -man -Tascii sipsak.1
 .\"
-.TH SIPSAK 1 "JULY 2002 - JULY 2005" Linux "User Manuals"
+.TH SIPSAK 1 "JULY 2002 - SEPTEMBER 2005" Linux "User Manuals"
 .SH NAME
 sipsak \- a utility for various tests on sip servers and user agents
 .SH SYNOPSIS
@@ -13,6 +13,8 @@ sipsak \- a utility for various tests on sip servers and user agents
 .I SIPURI
 .B ] [-C
 .I SIPURI
+.B ] [-D
+.I NUMBER
 .B ] [-e 
 .I NUMBER 
 .B ] [-f 
@@ -165,6 +167,12 @@ should answer with the current bindings for the account at the registrar.
 If this option is set all redirects will be ignored. By default without this 
 option received redirects will be respected. This option is automaticly 
 activated in the randtrash mode and in the flood mode.
+
+.IP "-D, --invite-timeout NUMBER"
+The SIP_T1 timer is getting multiplied with the given NUMBER. After receiving
+a provisional response for an INVITE request
+.B sipsak
+waits for the resulting umount of time for a final response until it gives up.
 
 .IP "-e, --appendix-end NUMBER"
 The ending number which is appended to the user name in the usrloc mode.
