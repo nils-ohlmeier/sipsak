@@ -311,7 +311,7 @@ ac_includes_default="\
 # include <unistd.h>
 #endif"
 
-ac_subst_vars='SHELL PATH_SEPARATOR PACKAGE_NAME PACKAGE_TARNAME PACKAGE_VERSION PACKAGE_STRING PACKAGE_BUGREPORT exec_prefix prefix program_transform_name bindir sbindir libexecdir datadir sysconfdir sharedstatedir localstatedir libdir includedir oldincludedir infodir mandir build_alias host_alias target_alias DEFS ECHO_C ECHO_N ECHO_T LIBS INSTALL_PROGRAM INSTALL_SCRIPT INSTALL_DATA CYGPATH_W PACKAGE VERSION ACLOCAL AUTOCONF AUTOMAKE AUTOHEADER MAKEINFO install_sh STRIP ac_ct_STRIP INSTALL_STRIP_PROGRAM mkdir_p AWK SET_MAKE am__leading_dot AMTAR am__tar am__untar MAINTAINER_MODE_TRUE MAINTAINER_MODE_FALSE MAINT CC CFLAGS LDFLAGS CPPFLAGS ac_ct_CC EXEEXT OBJEXT DEPDIR am__include am__quote AMDEP_TRUE AMDEP_FALSE AMDEPBACKSLASH CCDEPMODE am__fastdepCC_TRUE am__fastdepCC_FALSE DISTCC build build_cpu build_vendor build_os host host_cpu host_vendor host_os CPP EGREP LIBOBJS LIBGNUTLS_CONFIG LIBGNUTLS_CFLAGS LIBGNUTLS_LIBS LTLIBOBJS'
+ac_subst_vars='SHELL PATH_SEPARATOR PACKAGE_NAME PACKAGE_TARNAME PACKAGE_VERSION PACKAGE_STRING PACKAGE_BUGREPORT exec_prefix prefix program_transform_name bindir sbindir libexecdir datadir sysconfdir sharedstatedir localstatedir libdir includedir oldincludedir infodir mandir build_alias host_alias target_alias DEFS ECHO_C ECHO_N ECHO_T LIBS INSTALL_PROGRAM INSTALL_SCRIPT INSTALL_DATA CYGPATH_W PACKAGE VERSION ACLOCAL AUTOCONF AUTOMAKE AUTOHEADER MAKEINFO install_sh STRIP ac_ct_STRIP INSTALL_STRIP_PROGRAM mkdir_p AWK SET_MAKE am__leading_dot AMTAR am__tar am__untar MAINTAINER_MODE_TRUE MAINTAINER_MODE_FALSE MAINT CC CFLAGS LDFLAGS CPPFLAGS ac_ct_CC EXEEXT OBJEXT DEPDIR am__include am__quote AMDEP_TRUE AMDEP_FALSE AMDEPBACKSLASH CCDEPMODE am__fastdepCC_TRUE am__fastdepCC_FALSE DISTCC build build_cpu build_vendor build_os host host_cpu host_vendor host_os CPP EGREP LIBOBJS DISABLE_GNUTLS LIBGNUTLS_CONFIG LIBGNUTLS_CFLAGS LIBGNUTLS_LIBS LTLIBOBJS'
 ac_subst_files=''
 
 # Initialize some variables set by options.
@@ -858,6 +858,7 @@ Optional Features:
   --disable-dependency-tracking  speeds up one-time build
   --enable-dependency-tracking   do not reject slow dependency extractors
   --enable-distcc         compile in parallel with distcc
+  --disable-gnutls        compile without gnutls
   --enable-timeout=SEC    SIP timer T1 in SEC milliseconds (default 500)
 
 Optional Packages:
@@ -5065,6 +5066,22 @@ fi
 done
 
 
+echo "$as_me:$LINENO: checking disabled gnutls" >&5
+echo $ECHO_N "checking disabled gnutls... $ECHO_C" >&6
+# Check whether --enable-gnutls or --disable-gnutls was given.
+if test "${enable_gnutls+set}" = set; then
+  enableval="$enable_gnutls"
+
+   echo "$as_me:$LINENO: result: yes" >&5
+echo "${ECHO_T}yes" >&6
+   DISABLE_GNUTLS=yes
+
+
+else
+  echo "$as_me:$LINENO: result: not requested" >&5
+echo "${ECHO_T}not requested" >&6
+
+fi;
 
 # Check whether --with-libgnutls-prefix or --without-libgnutls-prefix was given.
 if test "${with_libgnutls_prefix+set}" = set; then
@@ -5080,7 +5097,8 @@ fi;
      fi
   fi
 
-  # Extract the first word of "libgnutls-config", so it can be a program name with args.
+  if test "$DISABLE_GNUTLS" != "yes"; then
+    # Extract the first word of "libgnutls-config", so it can be a program name with args.
 set dummy libgnutls-config; ac_word=$2
 echo "$as_me:$LINENO: checking for $ac_word" >&5
 echo $ECHO_N "checking for $ac_word... $ECHO_C" >&6
@@ -5120,10 +5138,14 @@ else
 echo "${ECHO_T}no" >&6
 fi
 
+  fi
   min_libgnutls_version=1.0.0
   echo "$as_me:$LINENO: checking for libgnutls - version >= $min_libgnutls_version" >&5
 echo $ECHO_N "checking for libgnutls - version >= $min_libgnutls_version... $ECHO_C" >&6
   no_libgnutls=""
+  if test "$DISABLE_GNUTLS" = "yes"; then
+	LIBGNUTLS_CONFIG=no
+  fi
   if test "$LIBGNUTLS_CONFIG" = "no" ; then
     no_libgnutls=yes
   else
@@ -5246,12 +5268,7 @@ _ACEOF
         echo "$as_me:$LINENO: result: no" >&5
 echo "${ECHO_T}no" >&6
      fi
-     if test "$LIBGNUTLS_CONFIG" = "no" ; then
-       echo "*** The libgnutls-config script installed by LIBGNUTLS could not be found"
-       echo "*** If LIBGNUTLS was installed in PREFIX, make sure PREFIX/bin is in"
-       echo "*** your path, or set the LIBGNUTLS_CONFIG environment variable to the"
-       echo "*** full path to libgnutls-config."
-     else
+     if test "$LIBGNUTLS_CONFIG" != "no" ; then
        if test -f conf.libgnutlstest ; then
         :
        else
@@ -6165,6 +6182,7 @@ s,@host_os@,$host_os,;t t
 s,@CPP@,$CPP,;t t
 s,@EGREP@,$EGREP,;t t
 s,@LIBOBJS@,$LIBOBJS,;t t
+s,@DISABLE_GNUTLS@,$DISABLE_GNUTLS,;t t
 s,@LIBGNUTLS_CONFIG@,$LIBGNUTLS_CONFIG,;t t
 s,@LIBGNUTLS_CFLAGS@,$LIBGNUTLS_CFLAGS,;t t
 s,@LIBGNUTLS_LIBS@,$LIBGNUTLS_LIBS,;t t
