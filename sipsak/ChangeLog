@@ -1,3 +1,14 @@
+* version 0.9.2
+  - added new option -D to specify maximum INVITE timeout value
+  - option -c takes From header for MESSAGE's
+  - added support for gnutls, which is prefered over openssl now
+    see configure options --disable-gnutls and --with-libgnutls-prefix
+  - fixed compilation for Solaris
+  - fixed ACK building
+  - fixed several issues with ports and usernames in ruri and outbound proxy
+  - fixed mis-interpretation of ICMP error messages
+  - fixed wrong port from SRV entry
+  - fixed sipsk was still case-sensitive allthough strcasecmp was available
 * version 0.9.1
   - added RFC compliant retransmissons of INVITE requests
   - fixed compilation errors for BSD and MacOSX
