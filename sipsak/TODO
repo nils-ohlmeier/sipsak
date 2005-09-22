@@ -4,6 +4,8 @@ ToDo List (no order):
  - add displayname support to  parse_uri
  - check the request target for the ACK
  - add option to tear down INVITED calls with BYE
+ - add support for CANCEL
+ - add support for spoofed IPs
  - parse the complete DNS resonses in util
  - increase hostname detection for the Via line
  - endless randtrash mode with logfile
