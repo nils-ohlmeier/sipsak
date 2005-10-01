@@ -129,10 +129,29 @@ void send_message(char* mes, struct sockaddr *dest) {
 	}
 }
 
+void check_socket_error(int socket, int size) {
+	struct pollfd sockerr;
+	int ret = 0;
+
+	/* lets see if we at least received an icmp error */
+	sockerr.fd=socket;
+	sockerr.events=POLLERR;
+	ret = poll(&sockerr, 1, 10);
+	if (ret==1) {
+		if (sockerr.revents && POLLERR) {
+			recvfrom(socket, recv, size, 0, NULL, 0);
+			printf("\n");
+			perror("send failure");
+			if (randtrash == 1) 
+				printf ("last message before send failure:\n%s\n", req);
+			exit_code(3);
+		}
+	}
+}
+
 int check_for_message(char *recv, int size) {
 	fd_set	fd;
 	int ret = 0;
-	struct pollfd sockerr;
 
 	if (dontrecv == 0) {
 		/* set the timeout and wait for a response */
@@ -167,23 +186,9 @@ int check_for_message(char *recv, int size) {
 	{
 		/* lets see if we at least received an icmp error */
 		if (csock == -1) 
-			sockerr.fd=usock;
+			check_socket_error(usock, size);
 		else
-			sockerr.fd=csock;
-		sockerr.events=POLLERR;
-		if ((poll(&sockerr, 1, 10))==1) {
-			if (sockerr.revents && POLLERR) {
-				if (csock == -1)
-					recvfrom(usock, recv, size, 0, NULL, 0);
-				else
-					recvfrom(csock, recv, size, 0, NULL, 0);
-				printf("\n");
-				perror("send failure");
-				if (randtrash == 1) 
-					printf ("last message before send failure:\n%s\n", req);
-				exit_code(3);
-			}
-		}
+			check_socket_error(csock, size);
 		/* printout that we did not received anything */
 		if (trace == 1) {
 			printf("%i: timeout after %i ms\n", namebeg, retryAfter);
@@ -235,8 +240,12 @@ int check_for_message(char *recv, int size) {
 	else if (((usock != -1) && FD_ISSET(usock, &fd)) || ((csock != -1) && FD_ISSET(csock, &fd))) {
 		if ((usock != -1) && FD_ISSET(usock, &fd))
 			ret = usock;
-		else
+		else if ((csock != -1) && FD_ISSET(csock, &fd))
 			ret = csock;
+		else {
+			printf("unable to determine the socket which received something\n");
+			exit_code(2);
+		}
 		/* no timeout, no error ... something has happened :-) */
 	 	if (trace == 0 && usrloc ==0 && invite == 0 && message == 0 && randtrash == 0 && (verbose > 1))
 			printf ("\nmessage received");
@@ -278,6 +287,7 @@ int recv_message(char *buf, int size) {
 		return -1;
 	}
 	if (sock != rawsock) {
+		check_socket_error(sock, size);
 		ret = recvfrom(sock, buf, size, 0, NULL, 0);
 	}
 #ifdef RAW_SUPPORT
@@ -338,8 +348,8 @@ int recv_message(char *buf, int size) {
 		}
 	}
 #endif
-	*(buf+ ret) = '\0';
 	if (ret > 0) {
+		*(buf+ ret) = '\0';
 		if (!inv_trans && (regexec(&proexp, rec, 0, 0, 0) != REG_NOERROR)) {
 			retryAfter = SIP_T1;
 		}
@@ -361,6 +371,11 @@ int recv_message(char *buf, int size) {
 		if (trace == 0 && usrloc == 0)
 			printf(":\n");
 #endif
+	}
+	else {
+		check_socket_error(sock, size);
+		printf("nothing received, select returned error\n");
+		exit_code(2);
 	}
 	return ret;
 }
