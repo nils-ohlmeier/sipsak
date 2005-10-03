@@ -247,10 +247,10 @@ void create_msg(int action, char *req_buff, char *repl_buff, char *username, int
 			break;
 		case REQ_FLOOD:
 			sprintf(req_buff, 
-				"%s sip:%s%s"
+				"%s sip:%s%s%s"
 				"%s%s:9;branch=z9hG4bK.%08x\r\n"
 				"%ssip:sipsak@%s:9;tag=%x\r\n"
-				"%ssip:%s\r\n"
+				"%ssip:%s%s\r\n"
 				"%s%u@%s\r\n"
 				"%s%i %s\r\n"
 				"%ssip:sipsak@%s:9\r\n"
@@ -258,10 +258,10 @@ void create_msg(int action, char *req_buff, char *repl_buff, char *username, int
 				"%s70\r\n"
 				"%ssipsak %s\r\n"
 				"\r\n", 
-				FLOOD_METH, domainname, SIP20_STR, 
+				FLOOD_METH, username, domainname, SIP20_STR, 
 				VIA_SIP_STR, fqdn, d,
 				FROM_STR, fqdn, c,
-				TO_STR, domainname, 
+				TO_STR, username, domainname, 
 				CALL_STR, c, fqdn, 
 				CSEQ_STR, cseq, FLOOD_METH, 
 				CONT_STR, fqdn, 
