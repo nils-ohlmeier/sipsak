@@ -554,5 +554,5 @@ void print_message_line(char *message)
 	}
 	else if (*(crlf - 1) == '\r')
 		crlf--;
-	printf("%.*s\n", crlf - message, message);
+	printf("%.*s\n", (int)(crlf - message), message);
 }
