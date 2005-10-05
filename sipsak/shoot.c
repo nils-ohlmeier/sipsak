@@ -1186,11 +1186,11 @@ void shoot(char *buf, int buff_size)
 		if (sleep_ms == -2) {
 			rand_tmp = rand();
 			sleep_ms_s.tv_sec = rand_tmp / 1000;
-			sleep_ms_s.tv_nsec = (rand_tmp % 1000) * 1000;
+			sleep_ms_s.tv_nsec = (rand_tmp % 1000) * 1000000;
 		}
 		else {
 			sleep_ms_s.tv_sec = sleep_ms / 1000;
-			sleep_ms_s.tv_nsec = (sleep_ms % 1000) * 1000;
+			sleep_ms_s.tv_nsec = (sleep_ms % 1000) * 1000000;
 		}
 	}
 
