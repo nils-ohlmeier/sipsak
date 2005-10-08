@@ -1116,12 +1116,12 @@ void shoot(char *buf, int buff_size)
 
 	csock = usock = -1;
 
-  memset(&sendtime, 0, sizeof(sendtime));
-  memset(&recvtime, 0, sizeof(recvtime));
-  memset(&tv, 0, sizeof(tv));
-  memset(&firstsendt, 0, sizeof(firstsendt));
-  memset(&starttime, 0, sizeof(starttime));
-  memset(&delaytime, 0, sizeof(delaytime));
+	memset(&sendtime, 0, sizeof(sendtime));
+	memset(&recvtime, 0, sizeof(recvtime));
+	memset(&tv, 0, sizeof(tv));
+	memset(&firstsendt, 0, sizeof(firstsendt));
+	memset(&starttime, 0, sizeof(starttime));
+	memset(&delaytime, 0, sizeof(delaytime));
 
 	memset(&addr, 0, sizeof(addr));
 	addr.sin_family=AF_INET;
@@ -1199,7 +1199,6 @@ void shoot(char *buf, int buff_size)
 		replace_string(req, "$srchost$", fqdn);
 		sprintf(lport_str, "%i", lport);
 		replace_string(req, "$port$", lport_str);
-		free(lport_str);
 		if (username)
 			replace_string(req, "$user$", username);
 	}
