@@ -124,7 +124,7 @@ void send_message(char* mes, struct sockaddr *dest) {
 #endif
 		send_counter++;
 	}
-	else if (!inv_trans) {
+	else {
 		dontsend = 0;
 	}
 }
