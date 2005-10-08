@@ -1,5 +1,5 @@
 /*
- * $Id: exit_code.h,v 1.2 2005/04/10 20:57:28 calrissian Exp $
+ * $Id$
  *
  * Copyright (C) 2002-2004 Fhg Fokus
  * Copyright (C) 2004-2005 Nils Ohlmeier
@@ -17,13 +17,11 @@
  * GNU General Public License for more details.
  */
 
-#ifndef SIPSAK_EXITCODE_H
-#define SIPSAK_EXITCODE_H
+#ifndef SIPSAK_AUTH_H
+#define SIPSAK_AUTH_H
 
-enum exit_modes { EM_DEFAULT, EM_NAGIOS };
+void cvt_hex(unsigned char *_b, unsigned char *_h);
 
-extern enum exit_modes exit_mode;
-
-void exit_code( int code );
+void insert_auth(char *message, char *authreq);
 
 #endif
