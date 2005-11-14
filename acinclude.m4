@@ -37,7 +37,7 @@ AC_DEFUN([SIPSAK_TIMER],
 
 AC_DEFUN([CHECK_LIB_CARES],
 [
-	AC_MSG_CHECKING([for cares])
+	AC_MSG_CHECKING([for ares_version.h])
 
 	ares_incidr=NONE
 	ares_libdir=NONE
@@ -54,35 +54,43 @@ AC_DEFUN([CHECK_LIB_CARES],
 		fi
 	done
 
-	for dir in $ares_libdirs; do
-		for extension in $ares_libexten; do
-			try="$dir/libcares$extension"
-			if test -f $try; then
-				ares_libdir=$dir;
-				ares_libcall=cares;
+	if test "$ares_incdir" = "NONE"; then
+		AC_MSG_RESULT([not found])
+	else
+		AC_MSG_RESULT([found at $ares_incdir])
+
+		AC_MSG_CHECKING([for c-ares lib])
+
+		for dir in $ares_libdirs; do
+			for extension in $ares_libexten; do
+				try="$dir/libcares$extension"
+				if test -f $try; then
+					ares_libdir=$dir;
+					ares_libcall=cares;
+					break;
+				fi
+			done
+			if test "$ares_libdir" != "NONE"; then
 				break;
 			fi
 		done
-		if test "$ares_libdir" != "NONE"; then
-			break;
-		fi
-	done
 
-	if test "$ares_incdir" = "NONE" || test "$ares_libdir" = "NONE"; then
-		AC_MSG_RESULT([no])
-	else
-		AC_MSG_RESULT([yes])
-		AC_DEFINE([HAVE_CARES_H], [1], [Has cares.h])
-		LIBS="$LIBS -L$ares_libdir -l$ares_libcall"
-		CFLAGS="$CFLAGS -I$ares_incdir"
-		SIPSAK_HAVE_ARES="1"
-		AC_SUBST(SIPSAK_HAVE_ARES)
+		if test "$ares_libdir" = "NONE"; then
+			AC_MSG_RESULT([not found])
+		else
+			AC_MSG_RESULT([found at $ares_libdir])
+			AC_DEFINE([HAVE_CARES_H], [1], [Has cares.h])
+			LIBS="$LIBS -L$ares_libdir -l$ares_libcall"
+			CFLAGS="$CFLAGS -I$ares_incdir"
+			SIPSAK_HAVE_ARES="1"
+			AC_SUBST(SIPSAK_HAVE_ARES)
+		fi
 	fi
 ])
 
 AC_DEFUN([CHECK_LIB_RULI],
 [
-	AC_MSG_CHECKING([for libruli])
+	AC_MSG_CHECKING([for ruli.h])
 
 	ruli_incidr=NONE
 	ruli_libdir=NONE
@@ -98,26 +106,34 @@ AC_DEFUN([CHECK_LIB_RULI],
 		fi
 	done
 
-	for dir in $ruli_libdirs; do
-		for extension in $ruli_libexten; do
-			try="$dir/libruli$extension"
-			if test -f $try; then
-				ruli_libdir=$dir;
+	if test "$ruli_incdir" = "NONE"; then
+		AC_MSG_RESULT([not found])
+	else
+		AC_MSG_RESULT([found at $ruli_incdir])
+
+		AC_MSG_CHECKING([for libruli])
+
+		for dir in $ruli_libdirs; do
+			for extension in $ruli_libexten; do
+				try="$dir/libruli$extension"
+				if test -f $try; then
+					ruli_libdir=$dir;
+					break;
+				fi
+			done
+			if test "$ruli_libdir" != "NONE"; then
 				break;
 			fi
 		done
-		if test "$ruli_libdir" != "NONE"; then
-			break;
-		fi
-	done
 
-	if test "$ruli_incdir" = "NONE" || test "$ruli_libdir" = "NONE"; then
-		AC_MSG_RESULT([no])
-	else
-		AC_MSG_RESULT([yes])
-		AC_DEFINE([HAVE_RULI_H], [1], [Has ruli.h])
-		LIBS="$LIBS -L$ruli_libdir -lruli"
-		CFLAGS="$CFLAGS -I$ruli_incdir"
+		if test "$ruli_libdir" = "NONE"; then
+			AC_MSG_RESULT([not found])
+		else
+			AC_MSG_RESULT([found at $ruli_libdir])
+			AC_DEFINE([HAVE_RULI_H], [1], [Has ruli.h])
+			LIBS="$LIBS -L$ruli_libdir -lruli"
+			CFLAGS="$CFLAGS -I$ruli_incdir"
+		fi
 	fi
 ])
 

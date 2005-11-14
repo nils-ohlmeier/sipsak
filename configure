@@ -5424,14 +5424,14 @@ fi
 fi
 
 
-	echo "$as_me:$LINENO: checking for cares" >&5
-echo $ECHO_N "checking for cares... $ECHO_C" >&6
+	echo "$as_me:$LINENO: checking for ares_version.h" >&5
+echo $ECHO_N "checking for ares_version.h... $ECHO_C" >&6
 
 	ares_incidr=NONE
 	ares_libdir=NONE
 	ares_libcall=NONE
-	ares_incdirs="/usr/include /usr/local/include"
-	ares_libdirs="/usr/lib /usr/local/lib"
+	ares_incdirs="/usr/include /usr/local/include /sw/include"
+	ares_libdirs="/usr/lib64 /usr/lib /usr/local/lib64 /usr/local/lib /sw/lib"
 	ares_libexten=".so .dylib .a"
 
 	for dir in $ares_incdirs; do
@@ -5442,43 +5442,59 @@ echo $ECHO_N "checking for cares... $ECHO_C" >&6
 		fi
 	done
 
-	for dir in $ares_libdirs; do
-		for extension in $ares_libexten; do
-			try="$dir/libcares$extension"
-			if test -f $try; then
-				ares_libdir=$dir;
-				ares_libcall=cares;
+	if test "$ares_incdir" = "NONE"; then
+		echo "$as_me:$LINENO: result: not found" >&5
+echo "${ECHO_T}not found" >&6
+	else
+		echo "$as_me:$LINENO: result: found at $ares_incdir" >&5
+echo "${ECHO_T}found at $ares_incdir" >&6
+
+		echo "$as_me:$LINENO: checking for c-ares lib" >&5
+echo $ECHO_N "checking for c-ares lib... $ECHO_C" >&6
+
+		for dir in $ares_libdirs; do
+			for extension in $ares_libexten; do
+				try="$dir/libcares$extension"
+				if test -f $try; then
+					ares_libdir=$dir;
+					ares_libcall=cares;
+					break;
+				fi
+			done
+			if test "$ares_libdir" != "NONE"; then
 				break;
 			fi
 		done
-	done
 
-	if test "$ares_incdir" = "NONE" || test "$ares_libdir" = "NONE"; then
-		echo "$as_me:$LINENO: result: no" >&5
-echo "${ECHO_T}no" >&6
-	else
-		echo "$as_me:$LINENO: result: yes" >&5
-echo "${ECHO_T}yes" >&6
+		if test "$ares_libdir" = "NONE"; then
+			echo "$as_me:$LINENO: result: not found" >&5
+echo "${ECHO_T}not found" >&6
+		else
+			echo "$as_me:$LINENO: result: found at $ares_libdir" >&5
+echo "${ECHO_T}found at $ares_libdir" >&6
 
 cat >>confdefs.h <<\_ACEOF
 #define HAVE_CARES_H 1
 _ACEOF
 
-		LIBS="$LIBS -L$ares_libdir -l$ares_libcall"
-		CFLAGS="$CFLAGS -I$ares_incdir"
-		SIPSAK_HAVE_ARES="1"
+			LIBS="$LIBS -L$ares_libdir -l$ares_libcall"
+			CFLAGS="$CFLAGS -I$ares_incdir"
+			SIPSAK_HAVE_ARES="1"
 
+		fi
 	fi
 
 if test "X$SIPSAK_HAVE_ARES" == "X"; then
 
-	echo "$as_me:$LINENO: checking for libruli" >&5
-echo $ECHO_N "checking for libruli... $ECHO_C" >&6
+	echo "$as_me:$LINENO: checking for ruli.h" >&5
+echo $ECHO_N "checking for ruli.h... $ECHO_C" >&6
 
 	ruli_incidr=NONE
 	ruli_libdir=NONE
+	ruli_incdirs="/usr/include /usr/local/include /sw/include"
+	ruli_libdirs="/usr/lib64 /usr/lib /usr/local/lib64 /usr/local/lib /sw/lib"
+	ruli_libexten=".so .dylib .a"
 
-	ruli_incdirs="/usr/include /usr/local/include"
 	for dir in $ruli_incdirs; do
 		try="$dir/ruli.h"
 		if test -f $try; then
@@ -5487,28 +5503,43 @@ echo $ECHO_N "checking for libruli... $ECHO_C" >&6
 		fi
 	done
 
-	ruli_libdirs="/usr/lib /usr/local/lib"
-	for dir in $ruli_libdirs; do
-		try="$dir/libruli.so"
-		if test -f $try; then
-			ruli_libdir=$dir;
-			break;
-		fi
-	done
-
-	if test "$ruli_incdir" = "NONE" || test "$ruli_libdir" = "NONE"; then
-		echo "$as_me:$LINENO: result: no" >&5
-echo "${ECHO_T}no" >&6
+	if test "$ruli_incdir" = "NONE"; then
+		echo "$as_me:$LINENO: result: not found" >&5
+echo "${ECHO_T}not found" >&6
 	else
-		echo "$as_me:$LINENO: result: yes" >&5
-echo "${ECHO_T}yes" >&6
+		echo "$as_me:$LINENO: result: found at $ruli_incdir" >&5
+echo "${ECHO_T}found at $ruli_incdir" >&6
+
+		echo "$as_me:$LINENO: checking for libruli" >&5
+echo $ECHO_N "checking for libruli... $ECHO_C" >&6
+
+		for dir in $ruli_libdirs; do
+			for extension in $ruli_libexten; do
+				try="$dir/libruli$extension"
+				if test -f $try; then
+					ruli_libdir=$dir;
+					break;
+				fi
+			done
+			if test "$ruli_libdir" != "NONE"; then
+				break;
+			fi
+		done
+
+		if test "$ruli_libdir" = "NONE"; then
+			echo "$as_me:$LINENO: result: not found" >&5
+echo "${ECHO_T}not found" >&6
+		else
+			echo "$as_me:$LINENO: result: found at $ruli_libdir" >&5
+echo "${ECHO_T}found at $ruli_libdir" >&6
 
 cat >>confdefs.h <<\_ACEOF
 #define HAVE_RULI_H 1
 _ACEOF
 
-		LIBS="$LIBS -L$ruli_libdir -lruli"
-		CFLAGS="$CFLAGS -I$ruli_incdir"
+			LIBS="$LIBS -L$ruli_libdir -lruli"
+			CFLAGS="$CFLAGS -I$ruli_incdir"
+		fi
 	fi
 
 fi
