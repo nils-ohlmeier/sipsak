@@ -42,8 +42,8 @@ AC_DEFUN([CHECK_LIB_CARES],
 	ares_incidr=NONE
 	ares_libdir=NONE
 	ares_libcall=NONE
-	ares_incdirs="/usr/include /usr/local/include"
-	ares_libdirs="/usr/lib /usr/local/lib"
+	ares_incdirs="/usr/include /usr/local/include /sw/include"
+	ares_libdirs="/usr/lib64 /usr/lib /usr/local/lib64 /usr/local/lib /sw/lib"
 	ares_libexten=".so .dylib .a"
 
 	for dir in $ares_incdirs; do
@@ -63,13 +63,16 @@ AC_DEFUN([CHECK_LIB_CARES],
 				break;
 			fi
 		done
+		if test "$ares_libdir" != "NONE"; then
+			break;
+		fi
 	done
 
 	if test "$ares_incdir" = "NONE" || test "$ares_libdir" = "NONE"; then
 		AC_MSG_RESULT([no])
 	else
 		AC_MSG_RESULT([yes])
-		AC_DEFINE([HAVE_CARES_H], [1], [Has ares.h])
+		AC_DEFINE([HAVE_CARES_H], [1], [Has cares.h])
 		LIBS="$LIBS -L$ares_libdir -l$ares_libcall"
 		CFLAGS="$CFLAGS -I$ares_incdir"
 		SIPSAK_HAVE_ARES="1"
@@ -83,8 +86,10 @@ AC_DEFUN([CHECK_LIB_RULI],
 
 	ruli_incidr=NONE
 	ruli_libdir=NONE
+	ruli_incdirs="/usr/include /usr/local/include /sw/include"
+	ruli_libdirs="/usr/lib64 /usr/lib /usr/local/lib64 /usr/local/lib /sw/lib"
+	ruli_libexten=".so .dylib .a"
 
-	ruli_incdirs="/usr/include /usr/local/include"
 	for dir in $ruli_incdirs; do
 		try="$dir/ruli.h"
 		if test -f $try; then
@@ -93,11 +98,15 @@ AC_DEFUN([CHECK_LIB_RULI],
 		fi
 	done
 
-	ruli_libdirs="/usr/lib /usr/local/lib"
 	for dir in $ruli_libdirs; do
-		try="$dir/libruli.so"
-		if test -f $try; then
-			ruli_libdir=$dir;
+		for extension in $ruli_libexten; do
+			try="$dir/libruli$extension"
+			if test -f $try; then
+				ruli_libdir=$dir;
+				break;
+			fi
+		done
+		if test "$ruli_libdir" != "NONE"; then
 			break;
 		fi
 	done
