@@ -17,6 +17,8 @@ sipsak \- a utility for various tests on sip servers and user agents
 .I NUMBER
 .B ] [-e 
 .I NUMBER 
+.B ] [-E
+.I STRING
 .B ] [-f 
 .I FILE 
 .B ] [-g
@@ -168,11 +170,12 @@ If this option is set all redirects will be ignored. By default without this
 option received redirects will be respected. This option is automaticly 
 activated in the randtrash mode and in the flood mode.
 
-.IP "-D, --invite-timeout NUMBER"
+.IP "-D, --timeout-factor NUMBER"
 The SIP_T1 timer is getting multiplied with the given NUMBER. After receiving
-a provisional response for an INVITE request
+a provisional response for an INVITE request, or when a reliable transport
+like TCP or TLS is used
 .B sipsak
-waits for the resulting umount of time for a final response until it gives up.
+waits for the resulting amount of time for a final response until it gives up.
 
 .IP "-e, --appendix-end NUMBER"
 The ending number which is appended to the user name in the usrloc mode.
@@ -180,6 +183,14 @@ This number is increased until it reaches this ending
 .I number.
 In the flood mode this is the maximum number of messages which will be send. 
 If omitted the default value is 2^31 (2147483647) in the flood mode.
+
+.IP "-E, --transport STRING"
+The value of
+.I STRING
+will be used as IP transport for sending and receiving requests and responses.
+This option overwrites any result from the URI evaluation and SRV lookup.
+Currently only 'udp' and 'tcp' are accepted as value for
+.I STRING.
 
 .IP "-f, --filename FILE"
 The content of 

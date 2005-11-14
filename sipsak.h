@@ -104,7 +104,18 @@
 #define REQ_FLOOD 6
 #define REQ_RAND 7
 
-#define VIA_SIP_STR "Via: SIP/2.0/UDP "
+#undef WITH_TLS_TRANSP
+
+#define SIP_TLS_TRANSPORT 1
+#define SIP_TCP_TRANSPORT 2
+#define SIP_UDP_TRANSPORT 3
+
+#define TRANSPORT_TLS_STR "TLS"
+#define TRANSPORT_TCP_STR "TCP"
+#define TRANSPORT_UDP_STR "UDP"
+#define TRANSPORT_STR_LEN 3
+
+#define VIA_SIP_STR "Via: SIP/2.0/"
 #define VIA_SIP_STR_LEN (sizeof(VIA_SIP_STR) - 1)
 
 #define SIP20_STR " SIP/2.0\r\n"
@@ -241,6 +252,9 @@
 #define SIP100_STR "SIP/2.0 100"
 #define SIP100_STR_LEN (sizeof(SIP100_STR) - 1)
 
+#define TRANSPORT_PARAMETER_STR ";transport="
+#define TRANSPORT_PARAMETER_STR_LEN (sizeof(TRANSPORT_PARAMETER_STR) - 1)
+
 #define USRLOC_EXP_DEF 15
 #define FLOOD_METH "OPTIONS"
 
@@ -249,7 +263,7 @@
 
 /* lots of global variables. ugly but makes life easier. */
 unsigned long address;
-unsigned int nonce_count;
+unsigned int nonce_count, transport;
 int sleep_ms, processes, cseq_counter;
 int verbose, nameend, namebeg, expires_t, flood, warning_ext, invite, message;
 int maxforw, lport, rport, randtrash, trashchar, numeric, symmetric;
@@ -259,7 +273,7 @@ char *username, *domainname, *password, *replace_str, *hostname, *contact_uri;
 char *mes_body, *con_dis, *auth_username, *from_uri;
 char fqdn[FQDN_SIZE];
 char target_dot[INET_ADDRSTRLEN], source_dot[INET_ADDRSTRLEN];
-char *req, *rep, *rec;
+char *req, *rep, *rec, *transport_str;
 regex_t* re;
 
 #endif

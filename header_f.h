@@ -20,6 +20,8 @@
 #ifndef SIPSAK_HEADER_H
 #define SIPSAK_HEADER_H
 
+#include "shoot.h"
+
 void add_via(char *mes);
 
 void cpy_vias(char *reply, char *dest);
@@ -32,11 +34,15 @@ void uri_replace(char *mes, char *uri);
 
 void set_cl(char* mes, int contentlen);
 
+int get_cl(char* mes);
+
 int find_lr_parameter(char *rr_line);
 
 void cpy_rr(char* src, char *dst, int route);
 
-void build_ack(char *invite, char *reply, char *dest);
+//void build_ack(char *invite, char *reply, char *dest);
+void build_ack(char *invite, char *reply, char *dest, 
+			struct sipsak_regexp *reg);
 
 void warning_extract(char *message);
 
@@ -53,4 +59,6 @@ void new_branch(char *message);
 void new_transaction(char *message);
 
 void print_message_line(char *message);
+
+inline char* get_body(char *mes);
 #endif

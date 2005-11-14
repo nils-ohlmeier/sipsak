@@ -58,7 +58,7 @@ binPROGRAMS_INSTALL = $(INSTALL_PROGRAM)
 PROGRAMS = $(bin_PROGRAMS)
 am_sipsak_OBJECTS = auth.$(OBJEXT) header_f.$(OBJEXT) helper.$(OBJEXT) \
 	md5.$(OBJEXT) request.$(OBJEXT) shoot.$(OBJEXT) \
-	sipsak.$(OBJEXT) exit_code.$(OBJEXT)
+	sipsak.$(OBJEXT) exit_code.$(OBJEXT) transport.$(OBJEXT)
 sipsak_OBJECTS = $(am_sipsak_OBJECTS)
 sipsak_LDADD = $(LDADD)
 DEFAULT_INCLUDES = -I. -I$(srcdir) -I.
@@ -134,6 +134,7 @@ PACKAGE_VERSION = @PACKAGE_VERSION@
 PATH_SEPARATOR = @PATH_SEPARATOR@
 SET_MAKE = @SET_MAKE@
 SHELL = @SHELL@
+SIPSAK_HAVE_ARES = @SIPSAK_HAVE_ARES@
 STRIP = @STRIP@
 VERSION = @VERSION@
 ac_ct_CC = @ac_ct_CC@
@@ -173,7 +174,7 @@ sbindir = @sbindir@
 sharedstatedir = @sharedstatedir@
 sysconfdir = @sysconfdir@
 target_alias = @target_alias@
-sipsak_SOURCES = auth.c auth.h header_f.c header_f.h helper.c helper.h md5.c md5.h md5global.h request.c request.h shoot.c shoot.h sipsak.c sipsak.h exit_code.h exit_code.c
+sipsak_SOURCES = auth.c auth.h header_f.c header_f.h helper.c helper.h md5.c md5.h md5global.h request.c request.h shoot.c shoot.h sipsak.c sipsak.h exit_code.h exit_code.c transport.c transport.h
 dist_man1_MANS = sipsak.1
 all: config.h
 	$(MAKE) $(AM_MAKEFLAGS) all-am
@@ -271,6 +272,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/request.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/shoot.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/sipsak.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/transport.Po@am__quote@
 
 .c.o:
 @am__fastdepCC_TRUE@	if $(COMPILE) -MT $@ -MD -MP -MF "$(DEPDIR)/$*.Tpo" -c -o $@ $<; \

@@ -26,10 +26,12 @@
 #include "request.h"
 #include "exit_code.h"
 #include "helper.h"
+#include "header_f.h"
 
 /* create a valid sip header for the different modes */
 void create_msg(int action, char *req_buff, char *repl_buff, char *username, int cseq){
 	unsigned int c, d, len;
+	char *req_buf_begin = req_buff;
 
 	if(cseq == 0) {
 		fprintf(stderr, "error: CSeq 0 is not allowed\n");
@@ -46,7 +48,6 @@ void create_msg(int action, char *req_buff, char *repl_buff, char *username, int
 		case REQ_REG:
 			sprintf(req_buff, 
 				"%s sip:%s%s"
-				"%s%s:%i;branch=z9hG4bK.%08x;rport\r\n"
 				"%ssip:%s%s;tag=%x\r\n"
 				"%ssip:%s%s\r\n"
 				"%s%u@%s\r\n"
@@ -55,7 +56,6 @@ void create_msg(int action, char *req_buff, char *repl_buff, char *username, int
 				"%s70\r\n"
 				"%ssipsak %s\r\n",
 				REG_STR, domainname, SIP20_STR, 
-				VIA_SIP_STR, fqdn, lport, d,
 				FROM_STR, username, domainname, c,
 				TO_STR, username, domainname, 
 				CALL_STR, c, fqdn, 
@@ -72,44 +72,56 @@ void create_msg(int action, char *req_buff, char *repl_buff, char *username, int
 			}
 			else if (empty_contact == 0) {
 				sprintf(req_buff, "%s%i\r\n"
-					"%ssip:%s%s:%i\r\n\r\n",
+					"%ssip:%s%s:%i",
 					EXP_STR, expires_t,
 					CONT_STR, username, fqdn, lport);
+				req_buff += strlen(req_buff);
+				if (transport != SIP_UDP_TRANSPORT)
+					sprintf(req_buff, "%s%s\r\n\r\n", TRANSPORT_PARAMETER_STR,
+							transport_str);
+				else
+					sprintf(req_buff, "\r\n\r\n");
 			}
 			else{
 				sprintf(req_buff, "\r\n");
 			}
+			add_via(req_buf_begin);
 			break;
 		case REQ_REM:
 			sprintf(req_buff, 
 				"%s sip:%s%s"
-				"%s%s:%i;branch=z9hG4bK.%08x;rport\r\n"
 				"%ssip:%s%s;tag=%x\r\n"
 				"%ssip:%s%s\r\n"
 				"%s%u@%s\r\n"
 				"%s%i %s\r\n"
-				"%ssip:%s%s:%i;%s0\r\n"
 				"%s%i\r\n"
 				"%s0\r\n"
 				"%s70\r\n"
 				"%ssipsak %s\r\n"
-				"\r\n", 
+				"%ssip:%s%s:%i;%s0",
 				REG_STR, domainname, SIP20_STR, 
-				VIA_SIP_STR, fqdn, lport, d,
 				FROM_STR, username, domainname, c,
 				TO_STR, username, domainname, 
 				CALL_STR, c, fqdn,
 				CSEQ_STR, cseq, REG_STR, 
-				CONT_STR, username, fqdn, lport, CON_EXP_STR, 
 				EXP_STR, expires_t, 
 				CON_LEN_STR, 
 				MAX_FRW_STR, 
-				UA_STR, SIPSAK_VERSION);
+				UA_STR, SIPSAK_VERSION,
+				CONT_STR, username, fqdn, lport, CON_EXP_STR);
+			req_buff += strlen(req_buff);
+			if (transport != SIP_UDP_TRANSPORT) {
+				sprintf(req_buff, "\r\n\r\n");
+			}
+			else {
+				sprintf(req_buff, "%s%s\r\n\r\n", TRANSPORT_PARAMETER_STR,
+						transport_str);
+			}
+			add_via(req_buf_begin);
 			break;
 		case REQ_INV:
 			sprintf(req_buff, 
 				"%s sip:%s%s%s"
-				"%s%s:%i;branch=z9hG4bK.%08x;rport\r\n"
 				"%ssip:sipsak@%s:%i;tag=%x\r\n"
 				"%ssip:%s%s\r\n"
 				"%s%u@%s\r\n"
@@ -121,7 +133,6 @@ void create_msg(int action, char *req_buff, char *repl_buff, char *username, int
 				"%ssipsak %s\r\n"
 				"\r\n", 
 				INV_STR, username, domainname, SIP20_STR, 
-				VIA_SIP_STR, fqdn, lport, d,
 				FROM_STR, fqdn, lport, c,
 				TO_STR, username, domainname, 
 				CALL_STR, c, fqdn, 
@@ -131,6 +142,7 @@ void create_msg(int action, char *req_buff, char *repl_buff, char *username, int
 				SUB_STR, 
 				MAX_FRW_STR, 
 				UA_STR, SIPSAK_VERSION);
+			add_via(req_buf_begin);
 			sprintf(repl_buff, 
 				"%s"
 				"%ssip:sipsak@%s:%i;tag=%x\r\n"
@@ -153,7 +165,6 @@ void create_msg(int action, char *req_buff, char *repl_buff, char *username, int
 		case REQ_MES:
 			sprintf(req_buff,
 				"%s sip:%s%s%s"
-				"%s%s:%i;branch=z9hG4bK.%08x;rport\r\n"
 				"%ssip:%s%s\r\n"
 				"%s%u@%s\r\n"
 				"%s%i %s\r\n"
@@ -161,7 +172,6 @@ void create_msg(int action, char *req_buff, char *repl_buff, char *username, int
 				"%s70\r\n"
 				"%ssipsak %s\r\n",
 				MES_STR, username, domainname, SIP20_STR, 
-				VIA_SIP_STR, fqdn, lport, d,
 				TO_STR, username, domainname, 
 				CALL_STR, c, fqdn, 
 				CSEQ_STR, cseq, MES_STR, 
@@ -204,6 +214,7 @@ void create_msg(int action, char *req_buff, char *repl_buff, char *username, int
 				req_buff += strlen(req_buff) - 1;
 				*(req_buff) = '.';
 			}
+			add_via(req_buf_begin);
 			sprintf(repl_buff,
 				"%s"
 				"%ssip:sipsak@%s:%i;tag=%x\r\n"
@@ -244,11 +255,12 @@ void create_msg(int action, char *req_buff, char *repl_buff, char *username, int
 				MAX_FRW_STR, 
 				UA_STR, SIPSAK_VERSION, 
 				ACP_STR, TXT_PLA_STR);
+			add_via(req_buf_begin);
 			break;
 		case REQ_FLOOD:
 			sprintf(req_buff, 
 				"%s sip:%s%s%s"
-				"%s%s:9;branch=z9hG4bK.%08x\r\n"
+				"%s%s %s:9;branch=z9hG4bK.%08x\r\n"
 				"%ssip:sipsak@%s:9;tag=%x\r\n"
 				"%ssip:%s%s\r\n"
 				"%s%u@%s\r\n"
@@ -259,7 +271,7 @@ void create_msg(int action, char *req_buff, char *repl_buff, char *username, int
 				"%ssipsak %s\r\n"
 				"\r\n", 
 				FLOOD_METH, username, domainname, SIP20_STR, 
-				VIA_SIP_STR, fqdn, d,
+				VIA_SIP_STR, TRANSPORT_UDP_STR, fqdn, d,
 				FROM_STR, fqdn, c,
 				TO_STR, username, domainname, 
 				CALL_STR, c, fqdn, 
@@ -272,7 +284,6 @@ void create_msg(int action, char *req_buff, char *repl_buff, char *username, int
 		case REQ_RAND:
 			sprintf(req_buff, 
 				"%s sip:%s%s"
-				"%s%s:%i;branch=z9hG4bK.%08x;rport\r\n"
 				"%ssip:sipsak@%s:%i;tag=%x\r\n"
 				"%ssip:%s\r\n"
 				"%s%u@%s\r\n"
@@ -283,7 +294,6 @@ void create_msg(int action, char *req_buff, char *repl_buff, char *username, int
 				"%ssipsak %s\r\n"
 				"\r\n", 
 				OPT_STR, domainname, SIP20_STR, 
-				VIA_SIP_STR, fqdn, lport, d,
 				FROM_STR, fqdn, lport, c,
 				TO_STR, domainname,	
 				CALL_STR, c, fqdn, 
@@ -292,6 +302,7 @@ void create_msg(int action, char *req_buff, char *repl_buff, char *username, int
 				CON_LEN_STR, 
 				MAX_FRW_STR, 
 				UA_STR, SIPSAK_VERSION);
+			add_via(req_buf_begin);
 			break;
 		default:
 			fprintf(stderr, "error: unknown request type to create\n");

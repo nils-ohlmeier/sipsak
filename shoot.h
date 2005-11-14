@@ -34,7 +34,27 @@
 
 #define LPORT_STR_LEN 6
 
-extern regex_t redexp, proexp, okexp, tmhexp, errexp, authexp, replyexp;
+struct sipsak_regexp {
+	regex_t redexp;
+	regex_t proexp;
+	regex_t okexp;
+	regex_t tmhexp;
+	regex_t errexp;
+	regex_t authexp;
+	regex_t replyexp;
+};
+
+enum usteps { 
+	REG_REP,
+	INV_RECV,
+	INV_OK_RECV,
+	INV_ACK_RECV,
+	MES_RECV, 
+	MES_OK_RECV,
+	UNREG_REP
+};
+
+int inv_trans;
 
 void shoot(char *buff, int buff_size);
 

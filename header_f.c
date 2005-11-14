@@ -36,18 +36,21 @@ void add_via(char *mes)
 		   direct after the first line. */
 		via=strchr(mes,'\n');
 		if(via == NULL) {
-			fprintf(stderr, "error: failed to find a position to insert Via\n");
-			exit_code(1);
+			fprintf(stderr, "error: failed to find a position to insert Via:\n"
+											"'%s'\n", mes);
+			exit_code(2);
 		}
 		via++;
 	}
 	if (*via == '\n')
 		via++;
 	/* build our own Via-header-line */
-	via_line = str_alloc(VIA_SIP_STR_LEN+strlen(fqdn)+15+24+1);
-	snprintf(via_line, VIA_SIP_STR_LEN+strlen(fqdn)+15+24, 
-					"%s%s:%i;branch=z9hG4bK.%08x;rport\r\n", 
-					VIA_SIP_STR, fqdn, lport, rand());
+	via_line = str_alloc(VIA_SIP_STR_LEN+TRANSPORT_STR_LEN+1+
+			strlen(fqdn)+15+30+1);
+	snprintf(via_line,
+					VIA_SIP_STR_LEN+TRANSPORT_STR_LEN+1+strlen(fqdn)+15+30, 
+					"%s%s %s:%i;branch=z9hG4bK.%08x;rport;alias\r\n", 
+					VIA_SIP_STR, transport_str, fqdn, lport, rand());
 	if (verbose > 2)
 		printf("our Via-Line: %s\n", via_line);
 
@@ -244,6 +247,26 @@ void set_cl(char* mes, int contentlen) {
 	}
 }
 
+/* returns the content length from the message; in case of error it
+ * return -1 */
+int get_cl(char* mes) {
+	char *cl;
+
+	if ((cl=STRCASESTR(mes, CON_LEN_STR)) == NULL &&
+		(cl=STRCASESTR(mes, CON_LEN_SHORT_STR)) == NULL) {
+		if (verbose > 1)
+			printf("missing Content-Length in message\n");
+		return -1;
+	}
+	if (*cl == '\n') {
+		cl+=3;
+	}
+	else {
+		cl+=15;
+	}
+	return str_to_int(cl);
+}
+
 /* returns 1 if the rr_line contains the lr parameter
  * otherwise 0 */
 int find_lr_parameter(char *rr_line) {
@@ -309,7 +332,8 @@ void cpy_rr(char* src, char *dst, int route) {
 
 /* build an ACK from the given invite and reply.
  * NOTE: space has to be allocated allready for the ACK */
-void build_ack(char *invite, char *reply, char *dest) {
+void build_ack(char *invite, char *reply, char *dest, 
+			struct sipsak_regexp *reg) {
 	char *tmp;
 	int len;
 
@@ -324,7 +348,7 @@ void build_ack(char *invite, char *reply, char *dest) {
 	replace_string(dest, "INVITE", "ACK");
 	set_cl(dest, 0);
 	cpy_to(reply, dest);
-	if (regexec(&okexp, reply, 0, 0, 0)==0) {
+	if (regexec(&(reg->okexp), reply, 0, 0, 0)==0) {
 		cpy_rr(reply, dest, 1);
 		/* 200 ACK must be in new transaction */
 		new_branch(dest);
@@ -555,4 +579,14 @@ void print_message_line(char *message)
 	else if (*(crlf - 1) == '\r')
 		crlf--;
 	printf("%.*s\n", (int)(crlf - message), message);
+}
+
+/* return pointer to the beginning of the message body */
+inline char* get_body(char *mes) {
+	char *cr;
+
+	if ((cr = strstr(mes, "\r\n\r\n")) != NULL) {
+		cr+=4;
+	}
+	return cr;
 }

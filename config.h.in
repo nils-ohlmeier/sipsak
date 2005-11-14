@@ -12,6 +12,9 @@
 /* Define to 1 if you have the `calloc' function. */
 #undef HAVE_CALLOC
 
+/* Has ares.h */
+#undef HAVE_CARES_H
+
 /* Define to 1 if you have the <ctype.h> header file. */
 #undef HAVE_CTYPE_H
 

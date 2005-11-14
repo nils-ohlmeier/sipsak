@@ -35,6 +35,48 @@ AC_DEFUN([SIPSAK_TIMER],
 	AC_DEFINE_UNQUOTED(DEFAULT_TIMEOUT, $def_timeout, [Default maximum timeout on waiting for response.])
 ])
 
+AC_DEFUN([CHECK_LIB_CARES],
+[
+	AC_MSG_CHECKING([for cares])
+
+	ares_incidr=NONE
+	ares_libdir=NONE
+	ares_libcall=NONE
+	ares_incdirs="/usr/include /usr/local/include"
+	ares_libdirs="/usr/lib /usr/local/lib"
+	ares_libexten=".so .dylib .a"
+
+	for dir in $ares_incdirs; do
+		try="$dir/ares_version.h"
+		if test -f $try; then
+			ares_incdir=$dir;
+			break;
+		fi
+	done
+
+	for dir in $ares_libdirs; do
+		for extension in $ares_libexten; do
+			try="$dir/libcares$extension"
+			if test -f $try; then
+				ares_libdir=$dir;
+				ares_libcall=cares;
+				break;
+			fi
+		done
+	done
+
+	if test "$ares_incdir" = "NONE" || test "$ares_libdir" = "NONE"; then
+		AC_MSG_RESULT([no])
+	else
+		AC_MSG_RESULT([yes])
+		AC_DEFINE([HAVE_CARES_H], [1], [Has ares.h])
+		LIBS="$LIBS -L$ares_libdir -l$ares_libcall"
+		CFLAGS="$CFLAGS -I$ares_incdir"
+		SIPSAK_HAVE_ARES="1"
+		AC_SUBST(SIPSAK_HAVE_ARES)
+	fi
+])
+
 AC_DEFUN([CHECK_LIB_RULI],
 [
 	AC_MSG_CHECKING([for libruli])
