@@ -38,9 +38,6 @@ documentation and/or software.
 # include <string.h>
 #endif
 
-#include "md5global.h"
-
-
 #define USE_MEM
 
 /* Constants for MD5Transform routine.

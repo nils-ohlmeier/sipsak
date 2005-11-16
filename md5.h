@@ -44,6 +44,9 @@ documentation and/or software.
 # define MD5Final  MD5_Final
 
 #else
+
+#include "md5global.h"
+
 /* MD5 context. */
 typedef struct {
   UINT4 state[4];                                   /* state (ABCD) */

@@ -22,8 +22,6 @@
 # include <gnutls/openssl.h>
 #elif HAVE_OPENSSL_MD5_H
 # include <openssl/md5.h>
-#else
-# include "md5global.h"
 #endif
 
 #include "auth.h"
