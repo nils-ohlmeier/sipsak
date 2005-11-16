@@ -29,12 +29,14 @@ documentation and/or software.
 # include "config.h"
 #endif
 
+#include "sipsak.h"
+
 #ifdef HAVE_GNUTLS
 # include <gnutls/openssl.h>
-# define HAVE_EXTERNAL_MD5
-#elif HAVE_OPENSSL_MD5_H
-# include <openssl/md5.h>
-# define HAVE_EXTERNAL_MD5
+#else
+# ifdef HAVE_FULL_OPENSSL
+#  include <openssl/md5.h>
+# endif
 #endif
 
 #ifdef HAVE_EXTERNAL_MD5

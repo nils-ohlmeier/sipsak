@@ -635,15 +635,19 @@ int main(int argc, char *argv[])
 #endif
 #ifdef HAVE_GNUTLS
 				printf(", GNUTLS_MD5");
-#elif HAVE_OPENSSL_MD5_H
-				printf(", OPENSSL_MD5");
 #else
+# ifdef HAVE_FULL_OPENSSL
+				printf(", OPENSSL_MD5");
+# else
 				printf(", INTERNAL_MD5");
+# endif
 #endif
 #ifdef HAVE_CARES_H
 				printf(", SRV_SUPPORT(ARES)");
-#elif HAVE_RULI_H
+#else
+# ifdef HAVE_RULI_H
 				printf(", SRV_SUPPORT(RULI)");
+# endif
 #endif
 #ifdef HAVE_STRCASESTR
 				printf(", STR_CASE_INSENSITIVE");

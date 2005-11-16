@@ -17,13 +17,6 @@
  * GNU General Public License for more details.
  */
 #include "sipsak.h"
-
-#ifdef HAVE_GNUTLS
-# include <gnutls/openssl.h>
-#elif HAVE_OPENSSL_MD5_H
-# include <openssl/md5.h>
-#endif
-
 #include "auth.h"
 #include "exit_code.h"
 #include "helper.h"

@@ -33,8 +33,10 @@
 
 #ifdef HAVE_CARES_H
 # define HAVE_SRV
-#elif HAVE_RULI_H
-# define HAVE_SRV
+#else
+# ifdef HAVE_RULI_H
+#  define HAVE_SRV
+# endif
 #endif
 
 #ifdef HAVE_CARES_H

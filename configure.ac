@@ -35,7 +35,7 @@ AC_SUBST([LIBS])
 # Checks for header files.
 AC_HEADER_STDC
 AC_CHECK_HEADERS([ctype.h errno.h arpa/inet.h netdb.h netinet/in.h netinet/in_systm.h limits.h sys/poll.h regex.h signal.h stdlib.h stdio.h string.h sys/param.h sys/socket.h sys/time.h unistd.h sys/utsname.h],,[AC_MSG_ERROR([missing required header (see above)])],)
-AC_CHECK_HEADERS([getopt.h openssl/md5.h])
+AC_CHECK_HEADERS([getopt.h])
 AC_HEADER_SYS_WAIT
 AC_HEADER_TIME
 
@@ -59,7 +59,9 @@ AM_PATH_SIPSAK_LIBGNUTLS([1.0.0],
 )
 
 if test "X$LIBGNUTLS_LIBS" == "X";then
+  AC_CHECK_HEADERS([openssl/md5.h])
   AC_CHECK_LIB(crypto, MD5_Init,
+	AC_DEFINE([HAVE_CRYPTO_WITH_MD5], [1], [The crypto lib has MD5 functions])
     LIBS="$LIBS -lcrypto"
   )
 fi

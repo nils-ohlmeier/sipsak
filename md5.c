@@ -361,4 +361,4 @@ unsigned int len;
 #endif
 }
 
-#endif /* ! HAVE_OPENSSL_MD5_H */
+#endif /* ! HAVE_EXTERNAL_MD5 */

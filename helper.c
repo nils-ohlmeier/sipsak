@@ -416,10 +416,12 @@ inline unsigned long srv_ruli(char *host, int *port, char *srv) {
 unsigned long getsrvaddress(char *host, int *port, char *srv) {
 #ifdef HAVE_RULI_H
 	return srv_ruli(host, port, srv);
-#elif HAVE_CARES_H // HAVE_RULI_H
+#else
+# ifdef HAVE_CARES_H // HAVE_RULI_H
 	return srv_ares(host, port, srv);
-#else // HAVE_CARES_H
+# else // HAVE_CARES_H
 	return 0;
+# endif
 #endif
 }
 

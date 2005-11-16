@@ -71,6 +71,17 @@
 # include <string.h>
 #endif
 
+#ifdef HAVE_GNUTLS
+# define HAVE_EXTERNAL_MD5
+#else
+# ifdef HAVE_OPENSSL_MD5_H
+#  ifdef HAVE_CRYPTO_WITH_MD5
+#   define HAVE_FULL_OPENSSL
+#   define HAVE_EXTERNAL_MD5
+#  endif
+# endif
+#endif
+
 #ifndef REG_NOERROR
 # define REG_NOERROR 0
 #endif
