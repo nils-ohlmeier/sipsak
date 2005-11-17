@@ -5581,7 +5581,7 @@ fi
 	echo "$as_me:$LINENO: checking for ares_version.h" >&5
 echo $ECHO_N "checking for ares_version.h... $ECHO_C" >&6
 
-	ares_incidr=NONE
+	ares_incdir=NONE
 	ares_libdir=NONE
 	ares_libcall=NONE
 	ares_incdirs="/usr/include /usr/local/include /sw/include"
@@ -5643,7 +5643,7 @@ if test "X$SIPSAK_HAVE_ARES" == "X"; then
 	echo "$as_me:$LINENO: checking for ruli.h" >&5
 echo $ECHO_N "checking for ruli.h... $ECHO_C" >&6
 
-	ruli_incidr=NONE
+	ruli_incdir=NONE
 	ruli_libdir=NONE
 	ruli_incdirs="/usr/include /usr/local/include /sw/include"
 	ruli_libdirs="/usr/lib64 /usr/lib /usr/local/lib64 /usr/local/lib /sw/lib"
