@@ -39,7 +39,7 @@ AC_DEFUN([CHECK_LIB_CARES],
 [
 	AC_MSG_CHECKING([for ares_version.h])
 
-	ares_incidr=NONE
+	ares_incdir=NONE
 	ares_libdir=NONE
 	ares_libcall=NONE
 	ares_incdirs="/usr/include /usr/local/include /sw/include"
@@ -92,7 +92,7 @@ AC_DEFUN([CHECK_LIB_RULI],
 [
 	AC_MSG_CHECKING([for ruli.h])
 
-	ruli_incidr=NONE
+	ruli_incdir=NONE
 	ruli_libdir=NONE
 	ruli_incdirs="/usr/include /usr/local/include /sw/include"
 	ruli_libdirs="/usr/lib64 /usr/lib /usr/local/lib64 /usr/local/lib /sw/lib"
