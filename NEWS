@@ -1,5 +1,8 @@
 * version 0.9.5
   - renamed --invite-timeout to --timeout-factor
+  - new option -E specifies the transport (UDP or TCP)
+  - SRV lookup via c-ares is available
+    (http://daniel.haxx.se/projects/c-ares/)
 * version 0.9.2
   - prefers gnutls over openssl now
   - new option -D specifies the maximum INVITE timeout value
