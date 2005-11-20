@@ -56,15 +56,6 @@
 #define DEFAULT_TIMEOUT 5000
 #endif
 
-//struct timeval sendtime, recvtime, tv, firstsendt, starttime, timers.delaytime;
-//int cdata.dontsend, cdata.dontrecv, cdata.usock, cdata.csock, 
-//int delays.retryAfter, randretrys;
-//, counters.retrans_s_c;
-//int counters.send_counter, counters.retrans_r_c, 
-//, cdata.connected;
-//double senddiff, delays.big_delay;
-//regex_t redexp, proexp, okexp, tmhexp, errexp, authexp, replyexp;
-
 char *usern;
 
 enum usteps usrlocstep;
@@ -784,7 +775,7 @@ void before_sending()
 /* this is the main function with the loops and modes */
 void shoot(char *buf, int buff_size)
 {
-	struct sockaddr_in	addr;
+	struct sockaddr_in	daddr;
 	struct timespec sleep_ms_s, sleep_rem;
 	int ret, cseqtmp, rand_tmp;
 	char buf2[BUFSIZE], buf3[BUFSIZE], lport_str[LPORT_STR_LEN];
@@ -818,15 +809,9 @@ void shoot(char *buf, int buff_size)
 
 	memset(&(times.sendtime), 0, sizeof(times.sendtime));
 	memset(&(times.recvtime), 0, sizeof(times.recvtime));
-//	memset(&tv, 0, sizeof(tv));
 	memset(&(times.firstsendt), 0, sizeof(times.firstsendt));
 	memset(&(times.starttime), 0, sizeof(times.starttime));
 	memset(&(times.delaytime), 0, sizeof(times.delaytime));
-
-	memset(&addr, 0, sizeof(addr));
-	addr.sin_family=AF_INET;
-	addr.sin_addr.s_addr = htonl( INADDR_ANY );
-	addr.sin_port = htons((short)lport);
 
 	req = buf;
 	rep = buf2;
@@ -951,7 +936,7 @@ void shoot(char *buf, int buff_size)
 			set_maxforw(req, maxforw);
 	}
 
-	cdata.connected = set_target(&addr, address, rport, cdata.csock, cdata.connected);
+	cdata.connected = set_target(&daddr, address, rport, cdata.csock, cdata.connected);
 
 	/* here we go until someone decides to exit */
 	while(1) {
@@ -966,7 +951,6 @@ void shoot(char *buf, int buff_size)
 			nanosleep(&sleep_ms_s, &sleep_rem);
 		}
 
-		//send_message(req, (struct sockaddr *)&addr, cdata.usock, cdata.csock, cdata.dontsend);
 		send_message(req, &cdata, &counters, &times);
 
 		/* in flood we are only interested in sending so skip the rest */
@@ -1015,7 +999,7 @@ void shoot(char *buf, int buff_size)
 				} /* if auth...*/
 				/* lets see if received a redirect */
 				if (redirects == 1 && regexec(&(regexps.redexp), rec, 0, 0, 0) == REG_NOERROR) {
-					handle_3xx(&addr);
+					handle_3xx(&daddr);
 				} /* if redircts... */
 				else if (trace == 1) {
 					trace_reply();

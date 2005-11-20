@@ -73,6 +73,11 @@ int rawsock;
 void create_sockets(struct sipsak_con_data *cd) {
 	socklen_t slen;
 
+	memset(&(cd->adr), 0, sizeof(struct sockaddr_in));
+	cd->adr.sin_family = AF_INET;
+	cd->adr.sin_addr.s_addr = htonl( INADDR_ANY);
+	cd->adr.sin_port = htons((short)lport);
+
 	if (transport == SIP_UDP_TRANSPORT) {
 		/* create the un-connected socket */
 		if (!symmetric) {

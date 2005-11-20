@@ -40,7 +40,6 @@ int find_lr_parameter(char *rr_line);
 
 void cpy_rr(char* src, char *dst, int route);
 
-//void build_ack(char *invite, char *reply, char *dest);
 void build_ack(char *invite, char *reply, char *dest, 
 			struct sipsak_regexp *reg);
 
