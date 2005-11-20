@@ -1,3 +1,14 @@
+* version 0.9.5
+  - added support for TCP transport
+  - added new option -E to specify the transport
+  - renamed --invite-timeout to --timeout-after
+  - added support for c-ares for DNS SRV lookups (http://daniel.haxx.se/projects/c-ares/)
+  - improved lib ruli detection
+  - openssl detection is only done when gnutls is missing
+  - added username to flood mode
+  - fixed millisecond sleep (thanks to Juri Glass)
+  - fixed variable replacing (thanks to Todd Ingarfield)
+  - fixed MD5 detection and compilation
 * version 0.9.2
   - added new option -D to specify maximum INVITE timeout value
   - option -c takes From header for MESSAGE's
