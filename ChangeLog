@@ -9,6 +9,7 @@
   - fixed millisecond sleep (thanks to Juri Glass)
   - fixed variable replacing (thanks to Todd Ingarfield)
   - fixed MD5 detection and compilation
+  - re-enabled compilation and usage for CygWin
 * version 0.9.2
   - added new option -D to specify maximum INVITE timeout value
   - option -c takes From header for MESSAGE's
