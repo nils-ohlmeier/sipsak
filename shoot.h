@@ -27,7 +27,9 @@
 #ifdef HAVE_NETINET_IP_H
 # ifdef HAVE_NETINET_IP_ICMP_H
 #  ifdef HAVE_NETINET_UDP_H
-#   define RAW_SUPPORT
+#   ifndef HAVE_CYGWIN_ICMP_H
+#    define RAW_SUPPORT
+#   endif
 #  endif
 # endif
 #endif

@@ -379,7 +379,11 @@ int recv_message(char *buf, int size, int inv_trans,
 	if (sock <= 1) {
 		return -1;
 	}
+#ifdef RAW_SUPPORT
 	if (sock != rawsock) {
+#else
+	else {
+#endif
 		check_socket_error(sock, size);
 		ret = recvfrom(sock, buf, size, 0, NULL, 0);
 	}
