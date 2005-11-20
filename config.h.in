@@ -21,6 +21,9 @@
 /* Define to 1 if you have the <ctype.h> header file. */
 #undef HAVE_CTYPE_H
 
+/* Define to 1 if you have the <cygwin/icmp.h> header file. */
+#undef HAVE_CYGWIN_ICMP_H
+
 /* Define to 1 if you have the <errno.h> header file. */
 #undef HAVE_ERRNO_H
 
