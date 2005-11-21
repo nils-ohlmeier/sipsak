@@ -331,4 +331,40 @@ main ()
   AC_SUBST(LIBGNUTLS_LIBS)
 ])
 
+dnl
+dnl Useful macros for autoconf to check for ssp-patched gcc
+dnl 1.0 - September 2003 - Tiago Sousa <mirage@kaotik.org>
+dnl
+dnl About ssp:
+dnl GCC extension for protecting applications from stack-smashing attacks
+dnl http://www.research.ibm.com/trl/projects/security/ssp/
+dnl
+dnl Usage:
+dnl After calling the correct AC_LANG_*, use the corresponding macro:
+dnl
+dnl GCC_STACK_PROTECT_CC
+dnl checks -fstack-protector with the C compiler, if it exists then updates
+dnl CFLAGS and defines ENABLE_SSP_CC
+dnl
+dnl GCC_STACK_PROTECT_CXX
+dnl checks -fstack-protector with the C++ compiler, if it exists then updates
+dnl CXXFLAGS and defines ENABLE_SSP_CXX
+dnl
+
+AC_DEFUN([SIPSAK_GCC_STACK_PROTECT_CC],[
+  ssp_cc=yes
+  if test "X$CC" != "X"; then
+    AC_MSG_CHECKING([whether ${CC} accepts -fstack-protector])
+    ssp_old_cflags="$CFLAGS"
+    CFLAGS="$CFLAGS -fstack-protector"
+    AC_TRY_COMPILE(,,, ssp_cc=no)
+    echo $ssp_cc
+    if test "X$ssp_cc" = "Xno"; then
+      CFLAGS="$ssp_old_cflags"
+    else
+      AC_DEFINE([ENABLE_SSP_CC], 1, [Define if SSP C support is enabled.])
+    fi
+  fi
+])
+
 dnl *-*wedit:notab*-*  Please keep this as the last line.
