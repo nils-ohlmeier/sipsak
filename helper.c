@@ -258,6 +258,11 @@ static void cares_callback(void *arg, int status, unsigned char *abuf, int alen)
 #ifdef DEBUG
 	printf("cares_callback: status=%i, alen=%i\n", status, alen);
 #endif
+	if (status != ARES_SUCCESS) {
+		printf("ares failed: %s\n", ares_strerror(status));
+		return;
+	}
+
 	ancount = DNS_HEADER_ANCOUNT(abuf);
 	nscount = DNS_HEADER_NSCOUNT(abuf);
 	arcount = DNS_HEADER_ARCOUNT(abuf);
@@ -266,10 +271,6 @@ static void cares_callback(void *arg, int status, unsigned char *abuf, int alen)
 	printf("ancount: %i, nscount: %i, arcount: %i\n", ancount, nscount, arcount);
 #endif
 
-	if (status != ARES_SUCCESS) {
-		printf("ares failed: %s\n", ares_strerror(status));
-		return;
-	}
 	/* safety check */
 	if (alen < NS_HFIXEDSZ)
 		return;
