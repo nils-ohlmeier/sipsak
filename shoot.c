@@ -775,7 +775,6 @@ void before_sending()
 /* this is the main function with the loops and modes */
 void shoot(char *buf, int buff_size)
 {
-	struct sockaddr_in	daddr;
 	struct timespec sleep_ms_s, sleep_rem;
 	int ret, cseqtmp, rand_tmp;
 	char buf2[BUFSIZE], buf3[BUFSIZE], lport_str[LPORT_STR_LEN];
@@ -936,7 +935,7 @@ void shoot(char *buf, int buff_size)
 			set_maxforw(req, maxforw);
 	}
 
-	cdata.connected = set_target(&daddr, address, rport, cdata.csock, cdata.connected);
+	cdata.connected = set_target(&(cdata.adr), address, rport, cdata.csock, cdata.connected);
 
 	/* here we go until someone decides to exit */
 	while(1) {
@@ -999,7 +998,7 @@ void shoot(char *buf, int buff_size)
 				} /* if auth...*/
 				/* lets see if received a redirect */
 				if (redirects == 1 && regexec(&(regexps.redexp), rec, 0, 0, 0) == REG_NOERROR) {
-					handle_3xx(&daddr);
+					handle_3xx(&(cdata.adr));
 				} /* if redircts... */
 				else if (trace == 1) {
 					trace_reply();
