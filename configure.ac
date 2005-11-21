@@ -70,6 +70,8 @@ fi
 CHECK_LIB_CARES
 if test "X$SIPSAK_HAVE_ARES" == "X"; then
   CHECK_LIB_RULI
+else
+  AC_CHECK_HEADERS([arpa/nameser.h])
 fi
 
 SIPSAK_TIMER

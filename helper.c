@@ -46,19 +46,21 @@
 # include <errno.h>
 #endif
 #ifdef HAVE_CARES_H
-# include <arpa/nameser.h>
-# include <ares.h>
-int caport;
-unsigned long caadr;
-char *ca_tmpname;
-ares_channel channel;
-
-# ifndef RRFIXEDSZ
-#  define RRFIXEDSZ NS_RRFIXEDSZ
-#  define QFIXEDSZ  NS_QFIXEDSZ
-#  define HFIXEDSZ  NS_HFIXEDSZ
+# ifdef HAVE_ARPA_NAMESER_H
+#  include <arpa/nameser.h>
 # endif
-#endif
+# include <ares.h>
+# ifndef NS_RRFIXEDSZ
+#  define NS_RRFIXEDSZ 10
+#  define NS_QFIXEDSZ  4
+#  define NS_HFIXEDSZ  12
+# endif
+ int caport;
+ unsigned long caadr;
+ char *ca_tmpname;
+ ares_channel channel;
+
+#endif // HAVE_CARES_H
 
 #include "helper.h"
 #include "exit_code.h"
@@ -147,7 +149,7 @@ static const unsigned char *parse_rr(const unsigned char *aptr, const unsigned c
 		exit_code(2);
 	}
 	aptr += len;
-	if (aptr + RRFIXEDSZ > abuf + alen) {
+	if (aptr + NS_RRFIXEDSZ > abuf + alen) {
 		printf("error: not enough data in DNS answer 1\n");
 		free(name);
 		return NULL;
@@ -155,7 +157,7 @@ static const unsigned char *parse_rr(const unsigned char *aptr, const unsigned c
 	type = DNS_RR_TYPE(aptr);
 	dnsclass = DNS_RR_CLASS(aptr);
 	dlen = DNS_RR_LEN(aptr);
-	aptr += RRFIXEDSZ;
+	aptr += NS_RRFIXEDSZ;
 	if (aptr + dlen > abuf + alen) {
 		printf("error: not enough data in DNS answer 2\n");
 		free(name);
@@ -227,7 +229,7 @@ static const unsigned char *skip_rr(const unsigned char *aptr, const unsigned ch
 	status = ares_expand_name(aptr, abuf, alen, &name, &len);
 	aptr += len;
 	dlen = DNS_RR_LEN(aptr);
-	aptr += RRFIXEDSZ;
+	aptr += NS_RRFIXEDSZ;
 	aptr += dlen;
 	free(name);
 	return aptr;
@@ -243,7 +245,7 @@ static const unsigned char *skip_query(const unsigned char *aptr, const unsigned
 #endif
 	status = ares_expand_name(aptr, abuf, alen, &name, &len);
 	aptr += len;
-	aptr += QFIXEDSZ;
+	aptr += NS_QFIXEDSZ;
 	free(name);
 	return aptr;
 }
@@ -269,9 +271,9 @@ static void cares_callback(void *arg, int status, unsigned char *abuf, int alen)
 		return;
 	}
 	/* safety check */
-	if (alen < HFIXEDSZ)
+	if (alen < NS_HFIXEDSZ)
 		return;
-	aptr = abuf + HFIXEDSZ;
+	aptr = abuf + NS_HFIXEDSZ;
 
 	aptr = skip_query(aptr, abuf, alen);
 
