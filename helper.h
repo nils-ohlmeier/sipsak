@@ -70,6 +70,8 @@ void get_fqdn();
 
 void replace_string(char *mes, char *search, char *replacement);
 
+void replace_strings(char *mes, char *strings);
+
 void insert_cr(char *mes);
 
 void swap_buffers(char *fst, char *snd);

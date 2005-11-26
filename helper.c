@@ -592,6 +592,62 @@ void replace_string(char *mess, char *search, char *replacement){
 	}
 }
 
+/* checks if the strings contains special double marks and then
+ * replace all occurences of this strings in the message */
+void replace_strings(char *mes, char *strings) {
+	char *pos, *atr, *val, *repl, *end;
+	char sep;
+
+	pos=atr=val=repl = NULL;
+#ifdef DEBUG
+	printf("replace_strings entered\nstrings: '%s'\n", strings);
+#endif
+	if ((isalnum(*strings) != 0) && 
+		(isalnum(*(strings + strlen(strings) - 1)) != 0)) {
+		replace_string(req, "$replace$", replace_str);
+	}
+	else {
+		sep = *strings;
+#ifdef DEBUG
+		printf("sep: '%c'\n", sep);
+#endif
+		end = strings + strlen(strings);
+		pos = strings + 1;
+		while (pos < end) {
+			atr = pos;
+			pos = strchr(atr, sep);
+			if (pos != NULL) {
+				*pos = '\0';
+				val = pos + 1;
+				pos = strchr(val, sep);
+				if (pos != NULL) {
+					*pos = '\0';
+					pos++;
+				}
+			}
+#ifdef DEBUG
+			printf("atr: '%s'\nval: '%s'\n", atr, val);
+#endif
+			if ((atr != NULL) && (val != NULL)) {
+				repl = str_alloc(strlen(val) + 2);
+				if (repl == NULL) {
+					printf("failed to allocate memory\n");
+					exit_code(2);
+				}
+				sprintf(repl, "$%s$", atr);
+				replace_string(mes, repl, val);
+				free(repl);
+			}
+#ifdef DEBUG
+			printf("pos: '%s'\n", pos);
+#endif
+		}
+	}
+#ifdef DEBUG
+	printf("mes:\n'%s'\n", mes);
+#endif
+}
+
 /* insert \r in front of all \n if it is not present allready */
 void insert_cr(char *mes){
 	char *lf, *pos, *backup;

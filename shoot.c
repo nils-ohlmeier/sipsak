@@ -839,7 +839,7 @@ void shoot(char *buf, int buff_size)
 			replace_string(req, "$user$", username);
 	}
 	if (replace_str)
-		replace_string(req, "$replace$", replace_str);
+		replace_strings(req, replace_str);
 
 	/* set all regular expression to simplfy the result code indetification */
 	regcomp(&(regexps.replyexp), "^SIP/[0-9]\\.[0-9] [1-6][0-9][0-9]", 

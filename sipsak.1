@@ -224,6 +224,11 @@ is available it will print out a help message with the available long options.
 Activates the replacement of $replace$ within the request (usualy read 
 in from a file) with the
 .I STRING.
+Alternatively you can also specify a list of attribute and values.
+This list has to start and end with a non alpha-numeric character. The
+same character has to be used also as seperator between the attribute and
+the value and between new further attribute value pairs. The string
+"$attribute$" will be replaced with the value string in the message.
 
 .IP "-G, --replace"
 Activates the automatic replacement of the following variables in the
@@ -513,6 +518,9 @@ displays received replies.
 traces SIP path to nobody.
 .IP "sipsak -U -C sip:me@home -x 3600 -a password -s sip:myself@company"
 inserts forwarding from work to home for one hour.
+.IP "sipsak -f bye.sip -g '!FTAG!345.af23!TTAG!1208.12!' -s sip:myproxy"
+reads the file bye.sip, replaces $FTAG$ with 345.af23 and $TTAG$ with
+1208.12 and finally send this message to myproxy
 
 .SH LIMITATIONS / NOT IMPLEMENTED
 Many servers may decide NOT to include SIP "Warning" header fields.
