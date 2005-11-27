@@ -148,6 +148,7 @@ void print_long_help() {
 		"  --timeout-factor=NUMBER    timeout multiplier for INVITE transactions\n"
 		"                             and reliable transports (default: 64)\n"
 		"  --transport=STRING         specify transport to be used\n"
+		"  --headers=STRING           adds additional headers to the request\n"
 		);
 	exit_code(0);
 }
@@ -213,6 +214,7 @@ void print_help() {
 		"  -D NUMBER         timeout multiplier for INVITE transactions\n"
 		"                    and reliable transports (default: 64)\n"
 		"  -E STRING         specify transport to be used\n"
+		"  -j STRING         adds additional headers to the request\n"
 		);
 		exit_code(0);
 }
@@ -274,6 +276,7 @@ int main(int argc, char *argv[])
 		{"from", 1, 0, 'c'},
 		{"timeout-factor", 1, 0, 'D'},
 		{"transport", 1, 0, 'E'},
+		{"headers", 1, 0, 'j'},
 		{0, 0, 0, 0}
 	};
 #endif
@@ -284,7 +287,7 @@ int main(int argc, char *argv[])
 	namebeg=nameend=maxforw= -1;
 	numeric=via_ins=redirects=fix_crlf=processes = 1;
 	username=password=replace_str=hostname=contact_uri=mes_body = NULL;
-	con_dis=auth_username=from_uri = NULL;
+	con_dis=auth_username=from_uri=headers = NULL;
 	scheme = user = host = backup = req = rep = rec = NULL;
 	re = NULL;
 	address= 0;
@@ -301,9 +304,9 @@ int main(int argc, char *argv[])
 
 	/* lots of command line switches to handle*/
 #ifdef HAVE_GETOPT_LONG
-	while ((c=getopt_long(argc, argv, "a:Ab:B:c:C:dD:e:E:f:Fg:GhH:iIl:Lm:MnNo:O:p:P:q:r:Rs:St:Tu:UvVwW:x:Xz:", l_opts, &option_index)) != EOF){
+	while ((c=getopt_long(argc, argv, "a:Ab:B:c:C:dD:e:E:f:Fg:GhH:iIj:l:Lm:MnNo:O:p:P:q:r:Rs:St:Tu:UvVwW:x:Xz:", l_opts, &option_index)) != EOF){
 #else
-	while ((c=getopt(argc, argv, "a:Ab:B:c:C:dD:e:E:f:Fg:GhH:iIl:Lm:MnNo:O:p:P:q:r:Rs:St:Tu:UvVwW:x:z:")) != EOF){
+	while ((c=getopt(argc, argv, "a:Ab:B:c:C:dD:e:E:f:Fg:GhH:iIj:l:Lm:MnNo:O:p:P:q:r:Rs:St:Tu:UvVwW:x:z:")) != EOF){
 #endif
 		switch(c){
 			case 'a':
@@ -453,6 +456,9 @@ int main(int argc, char *argv[])
 				break;
 			case 'I':
 				invite=1;
+				break;
+			case 'j':
+				headers=optarg;
 				break;
 			case 'l':
 				lport=str_to_int(optarg);
@@ -700,6 +706,18 @@ int main(int argc, char *argv[])
 	/* replace LF with CRLF if we read from a file */
 	if ((file_b) && (fix_crlf)) {
 		insert_cr(buff);
+	}
+	if (headers) {
+		backup = str_alloc(strlen(headers) + 30); // FIXME
+		strcpy(backup, headers);
+		headers = backup;
+		replace_string(headers, "\\n", "\r\n");
+		backup = headers + strlen(headers) - 1;
+		if (*backup != '\n') {
+			strcpy(backup + 1, "\r\n");
+		}
+		if (file_b)
+			insert_header(buff, headers, 1);
 	}
 	/* lots of conditions to check */
 	if (trace) {

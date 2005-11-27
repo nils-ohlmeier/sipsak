@@ -25,6 +25,28 @@
 #include "shoot.h"
 
 
+/* add the given header(s) below the request line */
+void insert_header(char *mes, char *header, int first) {
+	char *ins, *backup;
+
+	if (first) {
+		ins = strchr(mes, '\n');
+		if (ins == NULL) {
+			printf("failed to find a new line in the message\n");
+			exit_code(2);
+		}
+		ins++;
+	}
+	else {
+		ins = mes;
+	}
+	backup = str_alloc(strlen(ins) + 1);
+	strncpy(backup, ins, strlen(ins));
+	strncpy(ins, header, strlen(header));
+	strncpy(ins + strlen(header), backup, strlen(backup)+1);
+	free(backup);
+}
+
 /* add a Via Header Field in the message. */
 void add_via(char *mes)
 {

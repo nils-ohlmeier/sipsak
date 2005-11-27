@@ -282,6 +282,13 @@ and the same fixed local port can be successful.
 is no real UA and invitations to real UAs can result in unexpected 
 behaivior.
 
+.IP "-j, --headers STRING"
+The
+.BR string
+will be added as one or more additional headers to the request. The string
+"\\n" (note: two characters) will be replaced with CRLF and thus result
+in two  seperate headers. That way more then one header can be added.
+
 .IP "-l, --local-port PORT"
 The receiving UDP socket will use the local network 
 .I port.
