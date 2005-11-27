@@ -309,5 +309,10 @@ void create_msg(int action, char *req_buff, char *repl_buff, char *username, int
 			exit_code(2);
 			break;
 	}
+	if (headers) {
+		insert_header(req_buf_begin, headers, 1);
+		if (repl_buff)
+			insert_header(repl_buff, headers, 1);
+	}
 }
 
