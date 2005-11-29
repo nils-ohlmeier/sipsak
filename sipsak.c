@@ -310,8 +310,17 @@ int main(int argc, char *argv[])
 #endif
 		switch(c){
 			case 'a':
-				password=str_alloc(strlen(optarg) + 1);
-				strncpy(password, optarg, strlen(optarg));
+				if (strlen(optarg) == 1 && STRNCASECMP(optarg, "-", 1) == 0) {
+					password = str_alloc(SIPSAK_MAX_PASSWD_LEN);
+					printf("Please enter the password (max. length %i): ", SIPSAK_MAX_PASSWD_LEN);
+					if (read_stdin(password, SIPSAK_MAX_PASSWD_LEN, 1) == 0) {
+						exit_code(0);
+					}
+				}
+				else {
+					password=str_alloc(strlen(optarg) + 1);
+					strncpy(password, optarg, strlen(optarg));
+				}
 				break;
 			case 'A':
 				timing=1;
@@ -429,7 +438,7 @@ int main(int argc, char *argv[])
 					fclose(pf);
 				}
 				else if (strlen(optarg) == 1 && STRNCASECMP(optarg, "-", 1) == 0) {
-					if (read_stdin(&buff[0], sizeof(buff)) == 0) {
+					if (read_stdin(&buff[0], sizeof(buff), 0) == 0) {
 						exit_code(0);
 					}
 				}

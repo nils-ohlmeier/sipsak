@@ -114,12 +114,19 @@ URI the SRV lookup is omitted. Failover, load distribution and other
 transports are not supported yet.
 
 .SH OPTIONS
-.IP "-a, --pasword PASSWORD"
+.IP "-a, --password PASSWORD"
 With the given 
 .I PASSWORD
 an authentication will be tryed on received '401 Unauthorized'. Authorization
 will be tryed on time. If this option is omitted an authorization with an
-empty password ("") will be tryed.
+empty password ("") will be tryed. If the password is equal to 
+.I -
+the password will be read from the standard input (e.g. the keyboard). This
+prevents other users on the same host from seeing the password the password
+in the process list.
+.B NOTE:
+the password still can be read from the memory if other users have access to
+it.
 
 .IP "-A, --timing"
 prints only the timing values of the test run if verbosity is zero because no 
@@ -196,15 +203,16 @@ Currently only 'udp' and 'tcp' are accepted as value for
 The content of 
 .I FILE
 will be read in in binary mode and will be used as replacement for the
-alternatively created sip header. This can used in the default mode to make
+alternatively created sip message. This can used in the default mode to make
 other requests than OPTIONS requests (e.g. INVITE). By default missing
 carriage returns in front of line feeds will be inserted (use
 .BR -L
-to de-activate this function).
-But be warned that
-the manipulation functions (e.g. inserting Via header) are only tested
-with RFC conform requests. Additionaly special strings within the file
-can be replaced with some local or given values (see 
+to de-activate this function). If the filename is equal to 
+.I -
+the file is read from standard input, e.g. from the keyboard or a pipe.
+Please note that the manipulation functions (e.g. inserting Via header)
+are only tested with RFC conform requests. Additionaly special strings
+within the file can be replaced with some local or given values (see 
 .BR -g
 and
 .BR -G

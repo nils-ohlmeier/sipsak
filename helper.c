@@ -774,14 +774,15 @@ int str_to_int(char *num)
 }
 
 /* reads into the given buffer from standard input until the EOF
- * character or the given size of the buffer is exceeded */
-int read_stdin(char *buf, int size)
+ * character, LF character or the given size of the buffer is exceeded */
+int read_stdin(char *buf, int size, int ret)
 {
 	int i, j;
 
 	for(i = 0; i < size - 1; i++) {
 		j = getchar();
-		if (j == EOF) {
+		if (((ret == 0) && (j == EOF)) ||
+			((ret == 1) && (j == '\n'))) {
 			*(buf + i) = '\0';
 			return i;
 		}

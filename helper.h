@@ -86,7 +86,7 @@ int is_number(char *number);
 
 int str_to_int(char *num);
 
-int read_stdin(char *buf, int size);
+int read_stdin(char *buf, int size, int ret);
 
 void *str_alloc(size_t size);
 #endif

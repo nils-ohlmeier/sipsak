@@ -107,6 +107,8 @@
 #define SIPSAK_VERSION PACKAGE_VERSION
 #define BUFSIZE		4096
 
+#define SIPSAK_MAX_PASSWD_LEN 20
+
 #define REQ_REG 1
 #define REQ_REM 2
 #define REQ_INV 3
