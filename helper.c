@@ -629,7 +629,7 @@ void replace_strings(char *mes, char *strings) {
 			printf("atr: '%s'\nval: '%s'\n", atr, val);
 #endif
 			if ((atr != NULL) && (val != NULL)) {
-				repl = str_alloc(strlen(val) + 2);
+				repl = str_alloc(strlen(val) + 3);
 				if (repl == NULL) {
 					printf("failed to allocate memory\n");
 					exit_code(2);
