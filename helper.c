@@ -349,6 +349,7 @@ inline unsigned long srv_ares(char *host, int *port, char *srv) {
 	}
 	if (ca_tmpname != NULL)
 		free(ca_tmpname);
+	free(srvh);
 	return caadr;
 }
 #endif // HAVE_CARES_H
