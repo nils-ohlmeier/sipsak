@@ -97,7 +97,7 @@ void create_sockets(struct sipsak_con_data *cd) {
 		/* try to create the raw socket */
 		rawsock = (int)socket(PF_INET, SOCK_RAW, IPPROTO_ICMP);
 		if (rawsock==-1) {
-			if (verbose>0)
+			if (verbose>1)
 				fprintf(stderr, "warning: need raw socket (root privileges) to receive all ICMP errors\n");
 #endif
 			/* create the connected socket as a primitve alternative to the 
@@ -115,6 +115,17 @@ void create_sockets(struct sipsak_con_data *cd) {
 				exit_code(2);
 			}
 #ifdef RAW_SUPPORT
+		}
+		else if (symmetric) {
+			cd->csock = (int)socket(PF_INET, SOCK_DGRAM, IPPROTO_UDP);
+			if (cd->csock==-1) {
+				perror("connected UDP socket creation failed");
+				exit_code(2);
+			}
+			if (bind(cd->csock, (struct sockaddr *) &(cd->adr), sizeof(struct sockaddr_in) )==-1) {
+				perror("connected UDP socket binding failed");
+				exit_code(2);
+			}
 		}
 #endif
 	}
@@ -153,9 +164,15 @@ void send_message(char* mes, struct sipsak_con_data *cd,
 		}
 		/* lets fire the request to the server and store when we did */
 		if (cd->csock == -1) {
+#ifdef DEBUG
+			printf("\nusing un-connected socket for sending\n");
+#endif
 			ret = sendto(cd->usock, mes, strlen(mes), 0, (struct sockaddr *) &(cd->adr), sizeof(struct sockaddr));
 		}
 		else {
+#ifdef DEBUG
+			printf("\nusing connected socket for sending\n");
+#endif
 			ret = send(cd->csock, mes, strlen(mes), 0);
 		}
 		(void)gettimeofday(&(srt->sendtime), &tz);
@@ -305,7 +322,7 @@ int check_for_message(char *recv, int size, struct sipsak_con_data *cd,
 #ifdef RAW_SUPPORT
 	else if ((rawsock != -1) && FD_ISSET(rawsock, &fd)) {
 		if (verbose > 1)
-			printf("\nreceived ICMP packet");
+			printf("\nreceived ICMP message");
 		ret = rawsock;
 	}
 #endif
@@ -425,6 +442,9 @@ int recv_message(char *buf, int size, int inv_trans,
 			udp_hdr = (struct udphdr *) ((char *)s_ip_hdr + s_ip_len);
 			srcport = ntohs(udp_hdr->uh_sport);
 			dstport = ntohs(udp_hdr->uh_dport);
+#ifdef DEBUG
+			printf("\nlport: %i, rport: %i\n", lport, rport);
+#endif
 			if ((srcport == lport) && (dstport == rport)) {
 				printf(" (type: %u, code: %u)", icmp_hdr->icmp_type, icmp_hdr->icmp_code);
 #ifdef HAVE_INET_NTOP
@@ -439,7 +459,7 @@ int recv_message(char *buf, int size, int inv_trans,
 			}
 			else {
 				if (verbose > 2)
-					printf(": ignoring (ICMP error does not match send data)\n");
+					printf(": ignoring (ICMP message does not match used ports)\n");
 				return -2;
 			}
 		}
