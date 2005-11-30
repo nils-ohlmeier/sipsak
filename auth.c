@@ -216,7 +216,6 @@ void insert_auth(char *message, char *authreq)
 			snprintf(insert, NC_STR_LEN+11, "%s%08x, ", NC_STR, nonce_count);
 			insert+=strlen(insert);
 			cnonce=(unsigned int)rand();
-			/* FIXME: RANDMAX has probably 4 bytes on 32 arch, but 64 bits..? */
 			snprintf(insert, 12+8, "cnonce=\"%x\", ", cnonce);
 			insert+=strlen(insert);
 			/* hopefully 100 is enough */
