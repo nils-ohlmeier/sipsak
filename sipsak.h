@@ -82,6 +82,12 @@
 # endif
 #endif
 
+#ifdef HAVE_OPENSSL_SHA_H
+# ifdef HAVE_CRYPTO_WITH_SHA1
+#  define HAVE_OPENSSL_SHA1
+# endif
+#endif
+
 #ifndef REG_NOERROR
 # define REG_NOERROR 0
 #endif
@@ -229,8 +235,14 @@
 #define PROXYAUZ_STR "Proxy-Authorization: Digest "
 #define PROXYAUZ_STR_LEN (sizeof(PROXYAUZ_STR) - 1)
 
-#define ALGO_MD5_STR "algorithm=MD5, "
-#define ALGO_MD5_STR_LEN (sizeof(ALGO_MD5_STR) - 1)
+#define ALGO_STR "algorithm="
+#define ALGO_STR_LEN (sizeof(ALGO_STR) - 1)
+
+#define MD5_STR "MD5, "
+#define MD5_STR_LEN (sizeof(MD5_STR) - 1)
+
+#define SHA1_STR "SHA1, "
+#define SHA1_STR_LEN (sizeof(SHA1_STR) - 1)
 
 #define REALM_STR "realm="
 #define REALM_STR_LEN (sizeof(REALM_STR) - 1)
@@ -271,8 +283,16 @@
 #define USRLOC_EXP_DEF 15
 #define FLOOD_METH "OPTIONS"
 
-#define MD5_HASHLEN 16
-#define HASHHEXLEN 2 * MD5_HASHLEN
+#define SIPSAK_HASHLEN_MD5 16
+#define SIPSAK_HASHHEXLEN_MD5 2 * SIPSAK_HASHLEN_MD5 
+#ifdef HAVE_OPENSSL_SHA1
+# define SIPSAK_HASHLEN_SHA1 20
+# define SIPSAK_HASHLEN SIPSAK_HASHLEN_SHA1 
+# define SIPSAK_HASHHEXLEN_SHA1 2 * SIPSAK_HASHLEN_SHA1 
+#else
+# define SIPSAK_HASHLEN SIPSAK_HASHLEN_MD5 
+#endif
+#define SIPSAK_HASHHEXLEN 2 * SIPSAK_HASHLEN
 
 /* lots of global variables. ugly but makes life easier. */
 unsigned long address;

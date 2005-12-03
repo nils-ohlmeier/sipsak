@@ -20,8 +20,6 @@
 #ifndef SIPSAK_AUTH_H
 #define SIPSAK_AUTH_H
 
-void cvt_hex(unsigned char *_b, unsigned char *_h);
-
 void insert_auth(char *message, char *authreq);
 
 #endif

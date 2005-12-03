@@ -22,14 +22,21 @@
 #include "helper.h"
 #include "md5.h"
 
+#ifdef HAVE_OPENSSL_SHA1
+# include <openssl/sha.h>
+#endif
+
+#define SIPSAK_ALGO_MD5 1
+#define SIPSAK_ALGO_SHA1 2
+
 /* converts a hash into hex output
    taken from the RFC 2617 */
-void cvt_hex(unsigned char *_b, unsigned char *_h)
+void cvt_hex(unsigned char *_b, unsigned char *_h, int length)
 {
         unsigned short i;
         unsigned char j;
 
-        for (i = 0; i < MD5_HASHLEN; i++) {
+        for (i = 0; i < length; i++) {
                 j = (_b[i] >> 4) & 0xf;
                 if (j <= (unsigned char)9) {
                         _h[i * 2] = (j + (unsigned char)'0');
@@ -43,7 +50,7 @@ void cvt_hex(unsigned char *_b, unsigned char *_h)
                         _h[i * 2 + 1] = (unsigned char)(j + (unsigned char)'a' - (unsigned char)10);
                 }
         };
-        _h[HASHHEXLEN] = '\0';
+        _h[2*length] = '\0';
 }
 
 /* check for, create and insert a auth header into the message */
@@ -52,13 +59,23 @@ void insert_auth(char *message, char *authreq)
 	char *auth, *begin, *end, *insert, *backup, *realm, *usern, *nonce;
 	char *method, *uri;
 	char *qop_tmp = NULL;
-	unsigned char ha1[MD5_HASHLEN], ha2[MD5_HASHLEN], resp[MD5_HASHLEN]; 
-	unsigned char ha1_hex[HASHHEXLEN+1], ha2_hex[HASHHEXLEN+1], resp_hex[HASHHEXLEN+1];
-	int qop_auth=0, proxy_auth=0;
+	unsigned char ha1[SIPSAK_HASHLEN], ha2[SIPSAK_HASHLEN], resp[SIPSAK_HASHLEN]; 
+	unsigned char ha1_hex[SIPSAK_HASHHEXLEN+1], ha2_hex[SIPSAK_HASHHEXLEN+1], resp_hex[SIPSAK_HASHHEXLEN+1];
+	int qop_auth=0, proxy_auth=0, algo=0;
 	unsigned int cnonce;
 	MD5_CTX Md5Ctx;
+#ifdef HAVE_OPENSSL_SHA1
+	SHA_CTX Sha1Ctx;
+#endif
 
 	auth=begin=end=insert=backup=realm=usern=nonce=method=uri = NULL;
+
+	memset(&ha1[0], '\0', SIPSAK_HASHLEN);
+	memset(&ha2[0], '\0', SIPSAK_HASHLEN);
+	memset(&resp[0], '\0', SIPSAK_HASHLEN);
+	memset(&ha1_hex[0], '\0', SIPSAK_HASHHEXLEN+1);
+	memset(&ha2_hex[0], '\0', SIPSAK_HASHHEXLEN+1);
+	memset(&resp_hex[0], '\0', SIPSAK_HASHHEXLEN+1);
 
 	/* prevent double auth insertion */
 	if ((begin=STRCASESTR(message, AUTH_STR))!=NULL ||
@@ -90,7 +107,7 @@ void insert_auth(char *message, char *authreq)
 		end=strchr(begin, '\n');
 		auth=str_alloc((size_t)(end-begin+1));
 		strncpy(auth, begin, (size_t)(end-begin));
-		/* we support Digest and MD5 only */
+		/* we support Digest with MD5 or SHA1 */
 		if ((begin=STRCASESTR(auth, "Basic"))!=NULL) {
 			fprintf(stderr, "%s\nerror: authentication method Basic is deprecated since"
 				" RFC 3261 and not supported by sipsak\n", authreq);
@@ -103,11 +120,21 @@ void insert_auth(char *message, char *authreq)
 		}
 		if ((begin=STRCASESTR(auth, "algorithm="))!=NULL) {
 			begin+=10;
-			if ((STRNCASECMP(begin, "MD5", 3))!=0 && (STRNCASECMP(begin, "\"MD5\"", 5))!=0) {
-				fprintf(stderr, "\n%s\nerror: unsupported authentication algorithm\n", 
-					authreq);
+			if ((STRNCASECMP(begin, "MD5", 3))==0 && (STRNCASECMP(begin, "\"MD5\"", 5))==0) {
+				algo = SIPSAK_ALGO_MD5;
+			}
+#ifdef HAVE_OPENSSL_SHA1
+			else if ((STRNCASECMP(begin, "SHA1", 3))==0 && (STRNCASECMP(begin, "\"SHA1\"", 5))==0) {
+				algo = SIPSAK_ALGO_SHA1;
+			}
+#endif
+			else {
+				fprintf(stderr, "\n%s\nerror: unsupported authentication algorithm\n", authreq);
 				exit_code(2);
 			}
+		}
+		else {
+			algo = SIPSAK_ALGO_MD5;
 		}
 		/* we need the username at some points */
 		if (auth_username != NULL) {
@@ -144,8 +171,18 @@ void insert_auth(char *message, char *authreq)
 		insert+=strlen(insert);
 		snprintf(insert, strlen(uri)+9, "uri=\"%s\", ", uri);
 		insert+=strlen(insert);
-		snprintf(insert, ALGO_MD5_STR_LEN+1, ALGO_MD5_STR);
-		insert+=ALGO_MD5_STR_LEN;
+		snprintf(insert, ALGO_STR_LEN+1, ALGO_STR);
+		insert+=ALGO_STR_LEN;
+		if (algo == SIPSAK_ALGO_MD5) {
+			snprintf(insert, MD5_STR_LEN+1, MD5_STR);
+			insert+=MD5_STR_LEN;
+		}
+#ifdef HAVE_OPENSSL_SHA1
+		else if (algo == SIPSAK_ALGO_SHA1) {
+			snprintf(insert, SHA1_STR_LEN+1, SHA1_STR);
+			insert+=SHA1_STR_LEN;
+		}
+#endif
 		/* search for the realm, copy it to request and extract it for hash*/
 		if ((begin=STRCASESTR(auth, REALM_STR))!=NULL) {
 			end=strchr(begin, ',');
@@ -226,37 +263,70 @@ void insert_auth(char *message, char *authreq)
 		if (!password)
 			password = EMPTY_STR;
 
-		MD5Init(&Md5Ctx);
-		MD5Update(&Md5Ctx, usern, (unsigned int)strlen(usern));
-		MD5Update(&Md5Ctx, ":", 1);
-		MD5Update(&Md5Ctx, realm, (unsigned int)strlen(realm));
-		MD5Update(&Md5Ctx, ":", 1);
-		MD5Update(&Md5Ctx, password, (unsigned int)strlen(password));
-		MD5Final(&ha1[0], &Md5Ctx);
-		cvt_hex(&ha1[0], &ha1_hex[0]);
+		if (algo == SIPSAK_ALGO_MD5) {
+			MD5Init(&Md5Ctx);
+			MD5Update(&Md5Ctx, usern, (unsigned int)strlen(usern));
+			MD5Update(&Md5Ctx, ":", 1);
+			MD5Update(&Md5Ctx, realm, (unsigned int)strlen(realm));
+			MD5Update(&Md5Ctx, ":", 1);
+			MD5Update(&Md5Ctx, password, (unsigned int)strlen(password));
+			MD5Final(&ha1[0], &Md5Ctx);
+			cvt_hex(&ha1[0], &ha1_hex[0], SIPSAK_HASHLEN_MD5);
 
-		MD5Init(&Md5Ctx);
-		MD5Update(&Md5Ctx, method, (unsigned int)strlen(method));
-		MD5Update(&Md5Ctx, ":", 1);
-		MD5Update(&Md5Ctx, uri, (unsigned int)strlen(uri));
-		MD5Final(&ha2[0], &Md5Ctx);
-		cvt_hex(&ha2[0], &ha2_hex[0]);
+			MD5Init(&Md5Ctx);
+			MD5Update(&Md5Ctx, method, (unsigned int)strlen(method));
+			MD5Update(&Md5Ctx, ":", 1);
+			MD5Update(&Md5Ctx, uri, (unsigned int)strlen(uri));
+			MD5Final(&ha2[0], &Md5Ctx);
+			cvt_hex(&ha2[0], &ha2_hex[0], SIPSAK_HASHLEN_MD5);
 
-		MD5Init(&Md5Ctx);
-		MD5Update(&Md5Ctx, &ha1_hex, HASHHEXLEN);
-		MD5Update(&Md5Ctx, ":", 1);
-		MD5Update(&Md5Ctx, nonce, (unsigned int)strlen(nonce));
-		MD5Update(&Md5Ctx, ":", 1);
-		if (qop_auth == 1) {
-			MD5Update(&Md5Ctx, qop_tmp, (unsigned int)strlen(qop_tmp));
+			MD5Init(&Md5Ctx);
+			MD5Update(&Md5Ctx, &ha1_hex, SIPSAK_HASHHEXLEN_MD5);
+			MD5Update(&Md5Ctx, ":", 1);
+			MD5Update(&Md5Ctx, nonce, (unsigned int)strlen(nonce));
+			MD5Update(&Md5Ctx, ":", 1);
+			if (qop_auth == 1) {
+				MD5Update(&Md5Ctx, qop_tmp, (unsigned int)strlen(qop_tmp));
+			}
+			MD5Update(&Md5Ctx, &ha2_hex, SIPSAK_HASHHEXLEN_MD5);
+			MD5Final(&resp[0], &Md5Ctx);
+			cvt_hex(&resp[0], &resp_hex[0], SIPSAK_HASHLEN_MD5);
 		}
-		MD5Update(&Md5Ctx, &ha2_hex, HASHHEXLEN);
-		MD5Final(&resp[0], &Md5Ctx);
-		cvt_hex(&resp[0], &resp_hex[0]);
+#ifdef HAVE_OPENSSL_SHA1
+		else if (algo == SIPSAK_ALGO_SHA1) {
+			SHA1_Init(&Sha1Ctx);
+			SHA1_Update(&Sha1Ctx, usern, (unsigned int)strlen(usern));
+			SHA1_Update(&Sha1Ctx, ":", 1);
+			SHA1_Update(&Sha1Ctx, realm, (unsigned int)strlen(realm));
+			SHA1_Update(&Sha1Ctx, ":", 1);
+			SHA1_Update(&Sha1Ctx, password, (unsigned int)strlen(password));
+			SHA1_Final(&ha1[0], &Sha1Ctx);
+			cvt_hex(&ha1[0], &ha1_hex[0], SIPSAK_HASHLEN_SHA1);
+
+			SHA1_Init(&Sha1Ctx);
+			SHA1_Update(&Sha1Ctx, method, (unsigned int)strlen(method));
+			SHA1_Update(&Sha1Ctx, ":", 1);
+			SHA1_Update(&Sha1Ctx, uri, (unsigned int)strlen(uri));
+			SHA1_Final(&ha2[0], &Sha1Ctx);
+			cvt_hex(&ha2[0], &ha2_hex[0], SIPSAK_HASHLEN_SHA1);
+
+			SHA1_Init(&Sha1Ctx);
+			SHA1_Update(&Sha1Ctx, &ha1_hex, SIPSAK_HASHHEXLEN_SHA1);
+			SHA1_Update(&Sha1Ctx, ":", 1);
+			SHA1_Update(&Sha1Ctx, nonce, (unsigned int)strlen(nonce));
+			SHA1_Update(&Sha1Ctx, ":", 1);
+			if (qop_auth == 1) {
+				SHA1_Update(&Sha1Ctx, qop_tmp, (unsigned int)strlen(qop_tmp));
+			}
+			SHA1_Update(&Sha1Ctx, &ha2_hex, SIPSAK_HASHHEXLEN_SHA1);
+			SHA1_Final(&resp[0], &Sha1Ctx);
+			cvt_hex(&resp[0], &resp_hex[0], SIPSAK_HASHLEN_SHA1);
+		}
+#endif
 
 		snprintf(insert, RESPONSE_STR_LEN+1, RESPONSE_STR);
 		insert+=RESPONSE_STR_LEN;
-		snprintf(insert, sizeof(resp_hex)+8,"\"%s\"\r\n", &resp_hex[0]);
+		snprintf(insert, sizeof(resp_hex) + 8,"\"%s\"\r\n", &resp_hex[0]);
 		insert+=strlen(insert);
 		/* the auth header is complete, reinsert the rest of the request */
 		strncpy(insert, backup, strlen(backup));

@@ -657,6 +657,9 @@ int main(int argc, char *argv[])
 				printf(", INTERNAL_MD5");
 # endif
 #endif
+#ifdef HAVE_OPENSSL_SHA1
+				printf(", OPENSSL_SHA1");
+#endif
 #ifdef HAVE_CARES_H
 				printf(", SRV_SUPPORT(ARES)");
 #else

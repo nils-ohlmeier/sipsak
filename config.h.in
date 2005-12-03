@@ -21,6 +21,9 @@
 /* The crypto lib has MD5 functions */
 #undef HAVE_CRYPTO_WITH_MD5
 
+/* The crpyto lib has SHA1 functions */
+#undef HAVE_CRYPTO_WITH_SHA1
+
 /* Define to 1 if you have the <ctype.h> header file. */
 #undef HAVE_CTYPE_H
 
@@ -102,6 +105,9 @@
 
 /* Define to 1 if you have the <openssl/md5.h> header file. */
 #undef HAVE_OPENSSL_MD5_H
+
+/* Define to 1 if you have the <openssl/sha.h> header file. */
+#undef HAVE_OPENSSL_SHA_H
 
 /* Define to 1 if you have the `regcomp' function. */
 #undef HAVE_REGCOMP

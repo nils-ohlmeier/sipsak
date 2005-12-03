@@ -60,12 +60,20 @@ AM_PATH_SIPSAK_LIBGNUTLS([1.0.0],
 )
 
 if test "X$LIBGNUTLS_LIBS" == "X";then
-  AC_CHECK_HEADERS([openssl/md5.h])
-  AC_CHECK_LIB(crypto, MD5_Init,
-	AC_DEFINE([HAVE_CRYPTO_WITH_MD5], [1], [The crypto lib has MD5 functions])
-    LIBS="$LIBS -lcrypto"
+  AC_CHECK_HEADERS([openssl/md5.h],
+    AC_CHECK_LIB(crypto, MD5_Init,
+	  AC_DEFINE([HAVE_CRYPTO_WITH_MD5], [1], [The crypto lib has MD5 functions])
+      LIBS="$LIBS -lcrypto"
+    )
   )
 fi
+
+AC_CHECK_HEADERS([openssl/sha.h],
+  AC_CHECK_LIB(crypto, SHA1_Init,
+    AC_DEFINE([HAVE_CRYPTO_WITH_SHA1], [1], [The crpyto lib has SHA1 functions])
+    LIBS="$LIBS -lcrypto"
+  )
+)
 
 CHECK_LIB_CARES
 if test "X$SIPSAK_HAVE_ARES" == "X"; then

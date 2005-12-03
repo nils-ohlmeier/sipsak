@@ -79,12 +79,15 @@ AC_DEFUN([CHECK_LIB_CARES],
 			AC_MSG_RESULT([not found])
 		else
 			AC_MSG_RESULT([found at $ares_libdir])
-			AC_DEFINE([HAVE_CARES_H], [1], [Has cares.h])
-			LIBS="$LIBS -L$ares_libdir -l$ares_libcall"
-			CFLAGS="$CFLAGS -I$ares_incdir"
-			SIPSAK_HAVE_ARES="1"
-			AC_SUBST(SIPSAK_HAVE_ARES)
 		fi
+
+		AC_CHECK_LIB(cares, ares_version,
+		  AC_DEFINE([HAVE_CARES_H], [1], [Has cares.h])
+		  LIBS="$LIBS -L$ares_libdir -l$ares_libcall"
+		  CFLAGS="$CFLAGS -I$ares_incdir"
+		  SIPSAK_HAVE_ARES="1"
+		  AC_SUBST(SIPSAK_HAVE_ARES)
+		)
 	fi
 ])
 
@@ -130,10 +133,13 @@ AC_DEFUN([CHECK_LIB_RULI],
 			AC_MSG_RESULT([not found])
 		else
 			AC_MSG_RESULT([found at $ruli_libdir])
-			AC_DEFINE([HAVE_RULI_H], [1], [Has ruli.h])
-			LIBS="$LIBS -L$ruli_libdir -lruli"
-			CFLAGS="$CFLAGS -I$ruli_incdir"
 		fi
+
+		AC_CHECK_LIB(ruli, ruli_sync_query,
+		  AC_DEFINE([HAVE_RULI_H], [1], [Has ruli.h])
+		  LIBS="$LIBS -L$ruli_libdir -lruli"
+		  CFLAGS="$CFLAGS -I$ruli_incdir"
+		)
 	fi
 ])
 
