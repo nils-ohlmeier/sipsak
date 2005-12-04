@@ -536,24 +536,26 @@ void get_fqdn(){
 #endif
 	}
 
-	he=gethostbyname(hname);
-	if (he) {
-		if (numeric == 1) {
-			snprintf(hlp, 15, "%s", inet_ntoa(*(struct in_addr *) he->h_addr_list[0]));
-			strncpy(fqdn, hlp, FQDN_SIZE);
-		}
-		else {
-			if ((strchr(he->h_name, '.'))!=NULL && (strchr(hname, '.'))==NULL) {
-				strncpy(fqdn, he->h_name, FQDN_SIZE);
+	if (!(numeric == 1 && is_ip(fqdn))) {
+		he=gethostbyname(hname);
+		if (he) {
+			if (numeric == 1) {
+				snprintf(hlp, 15, "%s", inet_ntoa(*(struct in_addr *) he->h_addr_list[0]));
+				strncpy(fqdn, hlp, FQDN_SIZE);
 			}
 			else {
-				strncpy(fqdn, hname, FQDN_SIZE);
+				if ((strchr(he->h_name, '.'))!=NULL && (strchr(hname, '.'))==NULL) {
+					strncpy(fqdn, he->h_name, FQDN_SIZE);
+				}
+				else {
+					strncpy(fqdn, hname, FQDN_SIZE);
+				}
 			}
 		}
-	}
-	else {
-		fprintf(stderr, "error: cannot resolve local hostname: %s\n", hname);
-		exit_code(2);
+		else {
+			fprintf(stderr, "error: cannot resolve local hostname: %s\n", hname);
+			exit_code(2);
+		}
 	}
 	if ((strchr(fqdn, '.'))==NULL) {
 		if (hostname) {
