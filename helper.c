@@ -259,7 +259,8 @@ static void cares_callback(void *arg, int status, unsigned char *abuf, int alen)
 	printf("cares_callback: status=%i, alen=%i\n", status, alen);
 #endif
 	if (status != ARES_SUCCESS) {
-		printf("ares failed: %s\n", ares_strerror(status));
+		if (verbose > 1)
+			printf("ares failed: %s\n", ares_strerror(status));
 		return;
 	}
 
