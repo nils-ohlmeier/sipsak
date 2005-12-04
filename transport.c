@@ -342,7 +342,8 @@ int complete_mes(char *mes, int size) {
 	printf("CL: %i\n", cl);
 #endif
 	if (cl < 0){
-		printf("missing CL header; waiting for more bytes...\n");
+		if (verbose > 0)
+			printf("missing CL header; waiting for more bytes...\n");
 		return 0;
 	}
 	tmp = get_body(mes);
@@ -355,11 +356,13 @@ int complete_mes(char *mes, int size) {
 #endif
 	len = headers + cl;
 	if (len == size) {
-		printf("message is complete\n");
+		if (verbose > 0)
+			printf("message is complete\n");
 		return 1;
 	}
 	else if (len > size) {
-		printf("waiting for more bytes...\n");
+		if (verbose > 0)
+			printf("waiting for more bytes...\n");
 		return 0;
 	}
 	else {
@@ -367,7 +370,8 @@ int complete_mes(char *mes, int size) {
 		 * for now we treat this as a complete message
 		 * FIXME: should we store the extra bytes in a buffer and
 		 *        truncate the message at the calculated length !? */
-		printf("received too much bytes...\n");
+		if (verbose > 0)
+			printf("received too much bytes...\n");
 		return 1;
 	}
 }
@@ -473,7 +477,8 @@ int recv_message(char *buf, int size, int inv_trans,
 	if (ret > 0) {
 		*(buf+ ret) = '\0';
 		if (transport != SIP_UDP_TRANSPORT) {
-			printf("\nchecking message for completness...\n");
+			if (verbose > 0)
+				printf("\nchecking message for completness...\n");
 			if (complete_mes(buf, ret) == 1) {
 				cd->buf_tmp = NULL;
 				ret += cd->buf_tmp_size;
