@@ -984,8 +984,11 @@ void shoot(char *buf, int buff_size)
 					}
 				else if (regexec(&(regexps.authexp), rec, 0, 0, 0) == REG_NOERROR) {
 					if (!username) {
-						fprintf(stderr, "%s\nerror: received 401 but cannot "
+						fprintf(stderr, "%s\nerror: received 40[17] but cannot "
 							"authentication without a username\n", rec);
+						if (timing)
+							printf("%.3f ms\n", 
+								deltaT(&(times.firstsendt), &(times.recvtime)));
 						exit_code(2);
 					}
 					/* prevents a strange error */
