@@ -177,7 +177,8 @@ void send_message(char* mes, struct sipsak_con_data *cd,
 		}
 		(void)gettimeofday(&(srt->sendtime), &tz);
 		if (ret==-1) {
-			printf("\n");
+			if (verbose)
+				printf("\n");
 			perror("send failure");
 			exit_code(2);
 		}
@@ -204,7 +205,8 @@ void check_socket_error(int socket, int size) {
 	if (ret==1) {
 		if (sockerr.revents && POLLERR) {
 			recvfrom(socket, recv, size, 0, NULL, 0);
-			printf("\n");
+			if (verbose)
+				printf("\n");
 			perror("send failure");
 			if (randtrash == 1) 
 				printf ("last message before send failure:\n%s\n", req);
