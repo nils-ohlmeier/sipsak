@@ -60,6 +60,7 @@ struct sipsak_counter {
 	int retrans_r_c;
 	int retrans_s_c;
 	int randretrys;
+	int run;
 };
 
 struct sipsak_delay {

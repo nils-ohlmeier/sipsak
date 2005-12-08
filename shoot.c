@@ -262,14 +262,22 @@ void handle_default()
 		else if (verbose>0) {
 			printf("%s\n", rec);
 		}
-		else if (timing) {
-			printf("%.3f ms\n", deltaT(&(times.firstsendt), &(times.recvtime)));
+		if (timing > 0) {
+			timing--;
+			counters.run++;
+			increase_cseq(req);
+			if (timing == 0) {
+				/* FIXME: print min, avg, max */
+				printf("%.3f ms\n", deltaT(&(times.firstsendt), &(times.recvtime)) / counters.run);
+			}
 		}
-		if (regexec(&(regexps.okexp), rec, 0, 0, 0) == REG_NOERROR) {
-			on_success(rec);
-		}
-		else {
-			exit_code(1);
+		if (timing == 0) {
+			if (regexec(&(regexps.okexp), rec, 0, 0, 0) == REG_NOERROR) {
+				on_success(rec);
+			}
+			else {
+				exit_code(1);
+			}
 		}
 	}
 }
@@ -792,7 +800,7 @@ void shoot(char *buf, int buff_size)
 
 	/* initalize local vars */
 	cdata.dontsend=cdata.dontrecv=counters.retrans_r_c=counters.retrans_s_c= 0;
-	delays.big_delay=counters.send_counter= 0;
+	delays.big_delay=counters.send_counter=counters.run= 0;
 	times.delaytime.tv_sec = 0;
 	times.delaytime.tv_usec = 0;
 	usern = NULL;

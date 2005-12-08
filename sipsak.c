@@ -142,7 +142,7 @@ void print_long_help() {
 		"  --disposition=STRING       Content-Disposition value\n"
 		"  --search=REGEXP            search for a RegExp in replies and return error\n"
 		"                             on failfure\n"
-		"  --timing                   print the timing informations at the end\n"
+		"  --timing=NUMBER            number of test runs and print just the timings\n"
 		"  --symmetric                send and received on the same port\n"
 		"  --from=SIPURI              use the given uri as From in MESSAGE\n"
 		"  --timeout-factor=NUMBER    timeout multiplier for INVITE transactions\n"
@@ -208,7 +208,7 @@ void print_help() {
 		"  -B STRING         send a message with string as body\n"
 		"  -O STRING         Content-Disposition value\n"
 		"  -P NUMBER         Number of processes to start\n"
-		"  -A                print timing informations\n"
+		"  -A NUMBER         number of test runs and print just timings\n"
 		"  -S                use same port for receiving and sending\n"
 		"  -c SIPURI         use the given uri as From in MESSAGE\n"
 		"  -D NUMBER         timeout multiplier for INVITE transactions\n"
@@ -271,7 +271,7 @@ int main(int argc, char *argv[])
 		{"processes", 1, 0, 'P'},
 		{"auth-username", 1, 0, 'u'},
 		{"no-crlf", 0, 0, 'L'},
-		{"timing", 0, 0, 'A'},
+		{"timing", 1, 0, 'A'},
 		{"symmetric", 0, 0, 'S'},
 		{"from", 1, 0, 'c'},
 		{"timeout-factor", 1, 0, 'D'},
@@ -304,9 +304,9 @@ int main(int argc, char *argv[])
 
 	/* lots of command line switches to handle*/
 #ifdef HAVE_GETOPT_LONG
-	while ((c=getopt_long(argc, argv, "a:Ab:B:c:C:dD:e:E:f:Fg:GhH:iIj:l:Lm:MnNo:O:p:P:q:r:Rs:St:Tu:UvVwW:x:Xz:", l_opts, &option_index)) != EOF){
+	while ((c=getopt_long(argc, argv, "a:A:b:B:c:C:dD:e:E:f:Fg:GhH:iIj:l:Lm:MnNo:O:p:P:q:r:Rs:St:Tu:UvVwW:x:Xz:", l_opts, &option_index)) != EOF){
 #else
-	while ((c=getopt(argc, argv, "a:Ab:B:c:C:dD:e:E:f:Fg:GhH:iIj:l:Lm:MnNo:O:p:P:q:r:Rs:St:Tu:UvVwW:x:z:")) != EOF){
+	while ((c=getopt(argc, argv, "a:A:b:B:c:C:dD:e:E:f:Fg:GhH:iIj:l:Lm:MnNo:O:p:P:q:r:Rs:St:Tu:UvVwW:x:z:")) != EOF){
 #endif
 		switch(c){
 			case 'a':
@@ -323,7 +323,7 @@ int main(int argc, char *argv[])
 				}
 				break;
 			case 'A':
-				timing=1;
+				timing=str_to_int(optarg);
 				break;
 			case 'b':
 				namebeg=str_to_int(optarg);
