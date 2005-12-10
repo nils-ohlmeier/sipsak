@@ -66,6 +66,8 @@ struct sipsak_counter {
 struct sipsak_delay {
 	int retryAfter;
 	double big_delay;
+	double small_delay;
+	double all_delay;
 };
 
 void create_sockets(struct sipsak_con_data *cd);

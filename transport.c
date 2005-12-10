@@ -504,8 +504,18 @@ int recv_message(char *buf, int size, int inv_trans,
 			tmp_delay = deltaT(&(srt->delaytime), &(srt->recvtime));
 			if (tmp_delay > sd->big_delay)
 				sd->big_delay = tmp_delay;
+			if ((sd->small_delay == 0) || (tmp_delay < sd->small_delay))
+				sd->small_delay = tmp_delay;
 			srt->delaytime.tv_sec = 0;
 			srt->delaytime.tv_usec = 0;
+		}
+		if (timing > 0) {
+			tmp_delay = deltaT(&(srt->sendtime), &(srt->recvtime));
+			if (tmp_delay > sd->big_delay)
+				sd->big_delay = tmp_delay;
+			if ((sd->small_delay == 0) || (tmp_delay < sd->small_delay))
+				sd->small_delay = tmp_delay;
+			sd->all_delay += tmp_delay;
 		}
 #ifdef HAVE_INET_NTOP
 		if ((verbose > 2) && (getpeername(sock, (struct sockaddr *)&peer_adr, &psize) == 0) && (inet_ntop(peer_adr.sin_family, &peer_adr.sin_addr, &source_dot[0], INET_ADDRSTRLEN) != NULL)) {
