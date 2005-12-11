@@ -287,16 +287,32 @@ int check_for_message(char *recv, int size, struct sipsak_con_data *cd,
 		}
 		senddiff = deltaT(&(srt->starttime), &(srt->recvtime));
 		if (senddiff > (float)64 * (float)SIP_T1) {
-			if (verbose>0)
-				printf("*** giving up, no final response after %.3f ms\n", senddiff);
-			exit_code(3);
-		}
-		/* set retry time according to RFC3261 */
-		if ((inv_trans) || (sd->retryAfter *2 < SIP_T2)) {
-			sd->retryAfter = sd->retryAfter * 2;
+			if (timing == 0) {
+				if (verbose>0)
+					printf("*** giving up, no final response after %.3f ms\n", senddiff);
+				exit_code(3);
+			}
+			else {
+				timing--;
+				count->run++;
+				sd->all_delay += senddiff;
+				sd->big_delay = senddiff;
+				new_transaction(req);
+				sd->retryAfter = SIP_T1;
+				if (timing == 0) {
+					printf("%.3f/%.3f/%.3f ms\n", sd->small_delay, sd->all_delay / count->run, sd->big_delay);
+					exit_code(3);
+				}
+			}
 		}
 		else {
-			sd->retryAfter = SIP_T2;
+			/* set retry time according to RFC3261 */
+			if ((inv_trans) || (sd->retryAfter *2 < SIP_T2)) {
+				sd->retryAfter = sd->retryAfter * 2;
+			}
+			else {
+				sd->retryAfter = SIP_T2;
+			}
 		}
 		(count->retrans_s_c)++;
 		if (srt->delaytime.tv_sec == 0)

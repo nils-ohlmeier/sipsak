@@ -268,7 +268,6 @@ void handle_default()
 			new_transaction(req);
 			delays.retryAfter = SIP_T1;
 			if (timing == 0) {
-				/* FIXME: print min, avg, max */
 				printf("%.3f/%.3f/%.3f ms\n", delays.small_delay, delays.all_delay / counters.run, delays.big_delay);
 			}
 		}
