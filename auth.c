@@ -120,11 +120,11 @@ void insert_auth(char *message, char *authreq)
 		}
 		if ((begin=STRCASESTR(auth, "algorithm="))!=NULL) {
 			begin+=10;
-			if ((STRNCASECMP(begin, "MD5", 3))==0 && (STRNCASECMP(begin, "\"MD5\"", 5))==0) {
+			if ((STRNCASECMP(begin, "MD5", 3))==0 || (STRNCASECMP(begin, "\"MD5\"", 5))==0) {
 				algo = SIPSAK_ALGO_MD5;
 			}
 #ifdef HAVE_OPENSSL_SHA1
-			else if ((STRNCASECMP(begin, "SHA1", 3))==0 && (STRNCASECMP(begin, "\"SHA1\"", 5))==0) {
+			else if ((STRNCASECMP(begin, "SHA1", 3))==0 || (STRNCASECMP(begin, "\"SHA1\"", 5))==0) {
 				algo = SIPSAK_ALGO_SHA1;
 			}
 #endif
