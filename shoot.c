@@ -264,11 +264,13 @@ void handle_default()
 		}
 		if (timing > 0) {
 			timing--;
-			counters.run++;
-			new_transaction(req);
-			delays.retryAfter = SIP_T1;
 			if (timing == 0) {
 				printf("%.3f/%.3f/%.3f ms\n", delays.small_delay, delays.all_delay / counters.run, delays.big_delay);
+			}
+			else {
+				counters.run++;
+				new_transaction(req);
+				delays.retryAfter = SIP_T1;
 			}
 		}
 		if (timing == 0) {
@@ -992,11 +994,19 @@ void shoot(char *buf, int buff_size)
 					}
 				else if (regexec(&(regexps.authexp), rec, 0, 0, 0) == REG_NOERROR) {
 					if (!username) {
+						if (timing > 0) {
+							timing--;
+							if (timing == 0) {
+								printf("%.3f/%.3f/%.3f ms\n", delays.small_delay, delays.all_delay / counters.run, delays.big_delay);
+								exit_code(0);
+							}
+							counters.run++;
+							new_transaction(req);
+							delays.retryAfter = SIP_T1;
+							continue;
+						}
 						fprintf(stderr, "%s\nerror: received 40[17] but cannot "
 							"authentication without a username\n", rec);
-						if (timing)
-							printf("%.3f ms\n", 
-								deltaT(&(times.firstsendt), &(times.recvtime)));
 						exit_code(2);
 					}
 					/* prevents a strange error */
