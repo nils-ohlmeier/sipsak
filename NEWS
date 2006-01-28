@@ -1,3 +1,7 @@
+* version 0.9.6
+  - added new option -j to add a header
+  - added support for multiple variable replacement (option -g)
+  - added support for SHA1 as digest algorithm for authentication
 * version 0.9.5
   - renamed --invite-timeout to --timeout-factor
   - new option -E specifies the transport (UDP or TCP)

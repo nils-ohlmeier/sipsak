@@ -1,3 +1,12 @@
+* version 0.9.6
+  - added new option -j to add a header
+  - added support for multiple variable replacement (option -g)
+  - added support for reading password from stdin
+  - added support for SHA1 as digest algorithm for authentication
+  - added supoprt for multiple test runs to calculate avarage timming values
+  - fixed support for cygwin
+  - fixed using wrong interface and symmetric signaling when running as root
+  - fixed mem leak when using ares
 * version 0.9.5
   - added support for TCP transport
   - added new option -E to specify the transport
