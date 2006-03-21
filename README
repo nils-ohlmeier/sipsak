@@ -8,7 +8,7 @@
  - Have 
      GnuTLS (http://www.gnutls.org/)
    or 
-	 OpenSSL (http://www.openssl.org/)
+     OpenSSL (http://www.openssl.org/)
    installed on your system to use their MD5 implementations
    instead of sipsak own version.
  - Have 

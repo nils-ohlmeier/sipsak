@@ -106,9 +106,11 @@ Stress mode for SIP servers.
 keeps sending requests to a SIP server at high pace.
 
 .PP
-If libruli (http://www.nongnu.org/ruli/) support is compiled into the
+If libruli (http://www.nongnu.org/ruli/) or c-ares 
+(http://daniel.haxx.se/projects/c-ares/) support is compiled into the
 .B sipsak
-binary, then first a SRV lookup for _sip._udp.hostname is made. And if this
+binary, then first a SRV lookup for _sip._tcp.hostname is made. If that
+fails a SRV llokup for _sip._udp.hostname is made. And if this
 lookup fails a normal A lookup is made. If a port was given in the target
 URI the SRV lookup is omitted. Failover, load distribution and other 
 transports are not supported yet.
