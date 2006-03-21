@@ -596,7 +596,7 @@ int main(int argc, char *argv[])
 				else {
 					if (!rport && !address) {
 						address = getsrvadr(domainname, &rport, &tsp);
-						if (tsp != 0)
+						if (tsp != 0 && transport == 0)
 							transport = tsp;
 					}
 					if (!address) {
