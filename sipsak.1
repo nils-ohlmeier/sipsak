@@ -25,6 +25,10 @@ sipsak \- a utility for various tests on sip servers and user agents
 .I STRING
 .B ] [-H
 .I HOSTNAME
+.B ] [-j
+.I STRING
+.B ] [-J
+.I STRING
 .B ] [-l 
 .I PORT
 .B ] [-m 
@@ -298,6 +302,16 @@ The
 will be added as one or more additional headers to the request. The string
 "\\n" (note: two characters) will be replaced with CRLF and thus result
 in two  seperate headers. That way more then one header can be added.
+
+.IP "-J, --autohash STRING"
+The
+.BR string
+will be used as the H(A1) input to the digest authentication response
+calculation. Thus no password from the 
+.BR -a
+option is required if this option is provided. The given
+.BR string
+is expected to be a hex string with the length of the used hash function.
 
 .IP "-l, --local-port PORT"
 The receiving UDP socket will use the local network 

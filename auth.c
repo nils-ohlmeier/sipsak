@@ -264,14 +264,19 @@ void insert_auth(char *message, char *authreq)
 			password = EMPTY_STR;
 
 		if (algo == SIPSAK_ALGO_MD5) {
-			MD5Init(&Md5Ctx);
-			MD5Update(&Md5Ctx, usern, (unsigned int)strlen(usern));
-			MD5Update(&Md5Ctx, ":", 1);
-			MD5Update(&Md5Ctx, realm, (unsigned int)strlen(realm));
-			MD5Update(&Md5Ctx, ":", 1);
-			MD5Update(&Md5Ctx, password, (unsigned int)strlen(password));
-			MD5Final(&ha1[0], &Md5Ctx);
-			cvt_hex(&ha1[0], &ha1_hex[0], SIPSAK_HASHLEN_MD5);
+			if (authhash) {
+				strncpy(ha1_hex, authhash, SIPSAK_HASHHEXLEN_MD5);
+			}
+			else {
+				MD5Init(&Md5Ctx);
+				MD5Update(&Md5Ctx, usern, (unsigned int)strlen(usern));
+				MD5Update(&Md5Ctx, ":", 1);
+				MD5Update(&Md5Ctx, realm, (unsigned int)strlen(realm));
+				MD5Update(&Md5Ctx, ":", 1);
+				MD5Update(&Md5Ctx, password, (unsigned int)strlen(password));
+				MD5Final(&ha1[0], &Md5Ctx);
+				cvt_hex(&ha1[0], &ha1_hex[0], SIPSAK_HASHLEN_MD5);
+			}
 
 			MD5Init(&Md5Ctx);
 			MD5Update(&Md5Ctx, method, (unsigned int)strlen(method));
@@ -294,14 +299,19 @@ void insert_auth(char *message, char *authreq)
 		}
 #ifdef HAVE_OPENSSL_SHA1
 		else if (algo == SIPSAK_ALGO_SHA1) {
-			SHA1_Init(&Sha1Ctx);
-			SHA1_Update(&Sha1Ctx, usern, (unsigned int)strlen(usern));
-			SHA1_Update(&Sha1Ctx, ":", 1);
-			SHA1_Update(&Sha1Ctx, realm, (unsigned int)strlen(realm));
-			SHA1_Update(&Sha1Ctx, ":", 1);
-			SHA1_Update(&Sha1Ctx, password, (unsigned int)strlen(password));
-			SHA1_Final(&ha1[0], &Sha1Ctx);
-			cvt_hex(&ha1[0], &ha1_hex[0], SIPSAK_HASHLEN_SHA1);
+			if (authhash) {
+				strncopy(ha1_hex, authhash, SIPSAK_HASHHEXLEN_SHA1);
+			}
+			else {
+				SHA1_Init(&Sha1Ctx);
+				SHA1_Update(&Sha1Ctx, usern, (unsigned int)strlen(usern));
+				SHA1_Update(&Sha1Ctx, ":", 1);
+				SHA1_Update(&Sha1Ctx, realm, (unsigned int)strlen(realm));
+				SHA1_Update(&Sha1Ctx, ":", 1);
+				SHA1_Update(&Sha1Ctx, password, (unsigned int)strlen(password));
+				SHA1_Final(&ha1[0], &Sha1Ctx);
+				cvt_hex(&ha1[0], &ha1_hex[0], SIPSAK_HASHLEN_SHA1);
+			}
 
 			SHA1_Init(&Sha1Ctx);
 			SHA1_Update(&Sha1Ctx, method, (unsigned int)strlen(method));

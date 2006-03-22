@@ -993,7 +993,7 @@ void shoot(char *buf, int buff_size)
 					continue;
 					}
 				else if (regexec(&(regexps.authexp), rec, 0, 0, 0) == REG_NOERROR) {
-					if (!username) {
+					if (!username && !auth_username) {
 						if (timing > 0) {
 							timing--;
 							if (timing == 0) {
@@ -1006,7 +1006,7 @@ void shoot(char *buf, int buff_size)
 							continue;
 						}
 						fprintf(stderr, "%s\nerror: received 40[17] but cannot "
-							"authentication without a username\n", rec);
+							"authentication without a username or auth username\n", rec);
 						exit_code(2);
 					}
 					/* prevents a strange error */

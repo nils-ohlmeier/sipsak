@@ -149,6 +149,7 @@ void print_long_help() {
 		"                             and reliable transports (default: 64)\n"
 		"  --transport=STRING         specify transport to be used\n"
 		"  --headers=STRING           adds additional headers to the request\n"
+		"  --authhash=STRING          ha1 hash for authentication instead of password\n"
 		);
 	exit_code(0);
 }
@@ -215,6 +216,7 @@ void print_help() {
 		"                    and reliable transports (default: 64)\n"
 		"  -E STRING         specify transport to be used\n"
 		"  -j STRING         adds additional headers to the request\n"
+		"  -J STRING         ha1 hash for authentication instead of password\n"
 		);
 		exit_code(0);
 }
@@ -277,6 +279,7 @@ int main(int argc, char *argv[])
 		{"timeout-factor", 1, 0, 'D'},
 		{"transport", 1, 0, 'E'},
 		{"headers", 1, 0, 'j'},
+		{"authhash", 1, 0, 'J'},
 		{0, 0, 0, 0}
 	};
 #endif
@@ -287,7 +290,7 @@ int main(int argc, char *argv[])
 	namebeg=nameend=maxforw= -1;
 	numeric=via_ins=redirects=fix_crlf=processes = 1;
 	username=password=replace_str=hostname=contact_uri=mes_body = NULL;
-	con_dis=auth_username=from_uri=headers = NULL;
+	con_dis=auth_username=from_uri=headers=authhash = NULL;
 	scheme = user = host = backup = req = rep = rec = NULL;
 	re = NULL;
 	address= 0;
@@ -304,9 +307,9 @@ int main(int argc, char *argv[])
 
 	/* lots of command line switches to handle*/
 #ifdef HAVE_GETOPT_LONG
-	while ((c=getopt_long(argc, argv, "a:A:b:B:c:C:dD:e:E:f:Fg:GhH:iIj:l:Lm:MnNo:O:p:P:q:r:Rs:St:Tu:UvVwW:x:Xz:", l_opts, &option_index)) != EOF){
+	while ((c=getopt_long(argc, argv, "a:A:b:B:c:C:dD:e:E:f:Fg:GhH:iIj:J:l:Lm:MnNo:O:p:P:q:r:Rs:St:Tu:UvVwW:x:Xz:", l_opts, &option_index)) != EOF){
 #else
-	while ((c=getopt(argc, argv, "a:A:b:B:c:C:dD:e:E:f:Fg:GhH:iIj:l:Lm:MnNo:O:p:P:q:r:Rs:St:Tu:UvVwW:x:z:")) != EOF){
+	while ((c=getopt(argc, argv, "a:A:b:B:c:C:dD:e:E:f:Fg:GhH:iIj:J:l:Lm:MnNo:O:p:P:q:r:Rs:St:Tu:UvVwW:x:z:")) != EOF){
 #endif
 		switch(c){
 			case 'a':
@@ -372,10 +375,10 @@ int main(int argc, char *argv[])
 						   "sip:, sips:, *, or is not empty\n");
 				    	exit_code(2);
 					}
-					else if (user == NULL) {
+					/*else if (user == NULL) {
 						fprintf(stderr, "error: missing username in Contact uri\n");
 						exit_code(2);
-					}
+					}*/
 					else if (host == NULL) {
 						fprintf(stderr, "error: missing host in Contact uri\n");
 						exit_code(2);
@@ -468,6 +471,13 @@ int main(int argc, char *argv[])
 				break;
 			case 'j':
 				headers=optarg;
+				break;
+			case 'J':
+				if (strlen(optarg) < SIPSAK_HASHHEXLEN_MD5) {
+					fprintf(stderr, "error: authhash string is too short\n");
+					exit_code(2);
+				}
+				authhash=optarg;
 				break;
 			case 'l':
 				lport=str_to_int(optarg);
