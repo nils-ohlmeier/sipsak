@@ -300,7 +300,7 @@ void insert_auth(char *message, char *authreq)
 #ifdef HAVE_OPENSSL_SHA1
 		else if (algo == SIPSAK_ALGO_SHA1) {
 			if (authhash) {
-				strncopy(ha1_hex, authhash, SIPSAK_HASHHEXLEN_SHA1);
+				strncpy(ha1_hex, authhash, SIPSAK_HASHHEXLEN_SHA1);
 			}
 			else {
 				SHA1_Init(&Sha1Ctx);
