@@ -265,7 +265,7 @@ void insert_auth(char *message, char *authreq)
 
 		if (algo == SIPSAK_ALGO_MD5) {
 			if (authhash) {
-				strncpy(ha1_hex, authhash, SIPSAK_HASHHEXLEN_MD5);
+				strncpy((char*)&ha1_hex[0], authhash, SIPSAK_HASHHEXLEN_MD5);
 			}
 			else {
 				MD5Init(&Md5Ctx);
@@ -300,7 +300,7 @@ void insert_auth(char *message, char *authreq)
 #ifdef HAVE_OPENSSL_SHA1
 		else if (algo == SIPSAK_ALGO_SHA1) {
 			if (authhash) {
-				strncpy(ha1_hex, authhash, SIPSAK_HASHHEXLEN_SHA1);
+				strncpy((char*)&ha1_hex[0], authhash, SIPSAK_HASHHEXLEN_SHA1);
 			}
 			else {
 				SHA1_Init(&Sha1Ctx);
