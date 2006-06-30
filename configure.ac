@@ -2,7 +2,7 @@
 # Process this file with autoconf to produce a configure script.
 
 AC_PREREQ(2.59)
-AC_INIT([sipsak],[0.9.6],[nils@sipsak.org])
+AC_INIT([sipsak],[0.9.7pre],[nils@sipsak.org])
 AM_INIT_AUTOMAKE
 AM_MAINTAINER_MODE
 AC_CONFIG_SRCDIR([sipsak.c])
