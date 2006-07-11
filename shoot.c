@@ -1035,6 +1035,9 @@ void shoot(char *buf, int buff_size)
 				} /* redirect, auth, and modes */
 			} /* ret > 0 */
 			else if (ret == -1) { // we did not got anything back, send again
+				if (transport != SIP_UDP_TRANSPORT) {
+					cdata.dontsend = 1;
+				}
 				continue;
 			}
 			else if (ret == -2) { // we received non-matching ICMP
