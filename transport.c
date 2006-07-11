@@ -261,14 +261,17 @@ int check_for_message(char *recv, int size, struct sipsak_con_data *cd,
 		else
 			check_socket_error(cd->csock, size);
 		/* printout that we did not received anything */
-		if (trace == 1) {
-			printf("%i: timeout after %i ms\n", namebeg, sd->retryAfter);
+		if (verbose > 0) {
+			if (trace == 1) {
+				printf("%i: timeout after %i ms\n", namebeg, sd->retryAfter);
+			}
+			else if (usrloc == 1||invite == 1||message == 1) {
+				printf("timeout after %i ms\n", sd->retryAfter);
+			}
+			else {
+				printf("** timeout after %i ms**\n", sd->retryAfter);
+			}
 		}
-		else if (usrloc == 1||invite == 1||message == 1) {
-			printf("timeout after %i ms\n", sd->retryAfter);
-		}
-		else if (verbose>0) 
-			printf("** timeout after %i ms**\n", sd->retryAfter);
 		if (randtrash == 1) {
 			printf("did not get a response on this request:\n%s\n", req);
 			if (cseq_counter < nameend) {
