@@ -283,7 +283,7 @@ int main(int argc, char *argv[])
 		{0, 0, 0, 0}
 	};
 #endif
-	/* some initialisation to be shure */
+	/* some initialisation to be safe */
 	file_b=uri_b=trace=lport=usrloc=flood=verbose=randtrash=trashchar = 0;
 	warning_ext=rand_rem=nonce_count=replace_b=invite=message = 0;
 	sleep_ms=empty_contact=nagios_warn=timing=outbound_proxy=symmetric = 0;
@@ -511,7 +511,7 @@ int main(int argc, char *argv[])
 				strncpy(con_dis, optarg, strlen(optarg));
 				break;
 			case 'p':
-				parse_uri(optarg, &scheme, &user, &host, &rport);
+				parse_uri(optarg, &scheme, &user, &host, &port);
 				if (host == NULL) {
 					fprintf(stderr, "error: missing in host in outbound proxy\n");
 					exit_code(2);
@@ -522,7 +522,7 @@ int main(int argc, char *argv[])
 						transport = SIP_UDP_TRANSPORT;
 				}
 				else {
-					if (!rport) {
+					if (!port) {
 						address = getsrvadr(host, &rport, &tsp);
 						if (tsp != 0)
 							transport = tsp;
@@ -537,6 +537,9 @@ int main(int argc, char *argv[])
 							"address\n");
 						exit_code(2);
 					}
+				}
+				if (port && !rport) {
+					rport = port;
 				}
 				outbound_proxy=1;
 				break;
