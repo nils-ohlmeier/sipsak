@@ -49,8 +49,6 @@
 # include <signal.h>
 #endif
 
-#include <openssl/ssl.h>
-
 #ifdef HAVE_LIMITS_H
 # include <limits.h>
 #endif
@@ -295,15 +293,6 @@
 # define SIPSAK_HASHLEN SIPSAK_HASHLEN_MD5 
 #endif
 #define SIPSAK_HASHHEXLEN 2 * SIPSAK_HASHLEN
-
-// FIXME: this has to replaced with a real evaluation
-#define WITH_TLS_TRANSP 1
-
-#ifdef WITH_TLS_TRANSP
-SSL_CTX* ctx;
-SSL* ssl;
-char *cert_file, *ca_file;
-#endif
 
 /* lots of global variables. ugly but makes life easier. */
 unsigned long address;

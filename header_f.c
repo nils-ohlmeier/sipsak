@@ -71,7 +71,7 @@ void add_via(char *mes)
 			strlen(fqdn)+15+30+1);
 	snprintf(via_line,
 					VIA_SIP_STR_LEN+TRANSPORT_STR_LEN+1+strlen(fqdn)+15+30, 
-					"%s%s %s:%i;branch=z9hG4bK.%08x\r\n", 
+					"%s%s %s:%i;branch=z9hG4bK.%08x;rport;alias\r\n", 
 					VIA_SIP_STR, transport_str, fqdn, lport, rand());
 	if (verbose > 2)
 		printf("our Via-Line: %s\n", via_line);

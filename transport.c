@@ -62,27 +62,6 @@
 # endif
 #endif /* RAW_SUPPORT */
 
-#ifdef WITH_TLS_TRANSP
-#define _BSD_SOURCE 1
-#include <assert.h>
-#include <errno.h>
-#include <limits.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <time.h>
-#include <ctype.h>
-# include <openssl/bio.h>
-# include <openssl/crypto.h>
-# include <openssl/evp.h>
-# include <openssl/x509.h>
-# include <openssl/x509v3.h>
-# include <openssl/ssl.h>
-# include <openssl/engine.h>
-# include <openssl/err.h>
-# include <openssl/rand.h>
-#endif /* WITH_TLS_TRANSP */
-
 #include "exit_code.h"
 #include "helper.h"
 #include "header_f.h"
@@ -90,49 +69,6 @@
 #ifdef RAW_SUPPORT
 int rawsock;
 #endif
-
-#ifdef WITH_TLS_TRANSP
-void set_tls_options() {
-#if OPENSSL_VERSION_NUMBER >= 0x0009070000 /* 0.9.7 */
-	SSL_CTX_set_options(ctx, SSL_OP_ALL |
-							SSL_OP_NO_SESSION_RESUMPTION_ON_RENEGOTIATION |
-							SSL_OP_CIPHER_SERVER_PREFERENCE);
-#else
-	SSL_CTX_set_options(ctx, SSL_OP_ALL);
-#endif
-}
-
-void create_tls_ctx() {
-	SSL_METHOD *method = NULL;
-
-	method = TLSv1_method();
-	ctx = SSL_CTX_new(method);
-	if (ctx == NULL) {
-		ERR_print_errors_fp(stderr);
-		perror("create_tls_ctx: failed to create TLS ctx");
-		exit_code(2);
-	}
-	/*if (!SSL_CTX_use_certificate_chain_file(ctx, cert_file)) {
-		perror("create_tls_ctx: failed to load certificate file");
-		exit_code(2);
-	}
-	if (SSL_CTX_load_verify_locations(ctx, ca_file, 0) != 1) {
-		perror("create_tls_ctx: failed to load CA cert");
-		exit_code(2);
-	}
-	SSL_CTX_set_client_CA_list(ctx, SSL_load_client_CA_file(ca_file));
-	if (SSL_CTX_get_client_CA_list(ctx) == 0) {
-		perror("create_tls_ctx: failed to set client CA list");
-		exit_code(2);
-	}*/
-	SSL_CTX_set_cipher_list(ctx, 0);
-	SSL_CTX_set_verify(ctx, SSL_VERIFY_PEER | SSL_VERIFY_FAIL_IF_NO_PEER_CERT, 0);
-	SSL_CTX_set_verify_depth(ctx, 5);
-	set_tls_options();
-	SSL_CTX_set_session_cache_mode(ctx, SSL_SESS_CACHE_OFF);
-	SSL_CTX_set_session_id_context(ctx, 0, 0);
-}
-#endif /* WITH_TLS_TRANSP */
 
 void create_sockets(struct sipsak_con_data *cd) {
 	socklen_t slen;
@@ -203,20 +139,6 @@ void create_sockets(struct sipsak_con_data *cd) {
 			perror("TCP socket binding failed");
 			exit_code(2);
 		}
-#ifdef WITH_TLS_TRANSP
-		if (transport == SIP_TLS_TRANSPORT) {
-			create_tls_ctx();
-			ssl = SSL_new(ctx);
-			if (ssl == NULL) {
-				perror("TLS failed to create SSL object");
-				exit_code(2);
-			}
-			if (SSL_set_fd(ssl, cd->csock) != 1) {
-				perror("TLS failed to add socket to SSL object");
-				exit_code(2);
-			}
-		}
-#endif /* WITH_TLS_TRANSP */
 	}
 
 	/* for the via line we need our listening port number */
@@ -637,28 +559,9 @@ int recv_message(char *buf, int size, int inv_trans,
 	return ret;
 }
 
-#ifdef WITH_TLS_TRANSP
-void tls_dump_cert_info(char* s, X509* cert) {
-	char *subj, *issuer;
-
-	subj = X509_NAME_oneline(X509_get_subject_name(cert), 0, 0);
-	issuer = X509_NAME_oneline(X509_get_issuer_name(cert), 0, 0);
-
-	printf("%s subject: '%s'\n", s ? s: "", subj);
-	printf("%s issuer: '%s'\n", s ? s : "", issuer);
-	OPENSSL_free(subj);
-	OPENSSL_free(issuer);
-}
-#endif /*WITH_TLS_TRANSP*/
-
 /* clears the given sockaddr, fills it with the given data and if a
  * socket is given connects the socket to the new target */
 int set_target(struct sockaddr_in *adr, unsigned long target, int port, int socket, int connected) {
-#ifdef WITH_TLS_TRANSP
-	int ret, err;
-	X509* cert;
-#endif /* WITH_TLS_TRANSP */
-
 	if (socket != -1 && transport != SIP_UDP_TRANSPORT && connected) {
 		if (shutdown(socket, SHUT_RDWR) != 0) {
 			perror("error while shutting down socket");
@@ -675,77 +578,10 @@ int set_target(struct sockaddr_in *adr, unsigned long target, int port, int sock
 #endif
 
 	if (socket != -1) {
-#ifdef WITH_TLS_TRANSP
-		if (transport == SIP_TLS_TRANSPORT) {
-			ret = SSL_connect(ssl);
-			if (ret == 1) {
-				printf("TLS connect successful\n");
-				printf("TLS connect: new connection using %s %s %d\n",
-					SSL_get_cipher_version(ssl), SSL_get_cipher_name(ssl),
-					SSL_get_cipher_bits(ssl, 0));
-				cert = SSL_get_peer_certificate(ssl);
-				if (cert != 0) {
-					tls_dump_cert_info("TLS connect: server certificate", cert);
-					if (SSL_get_verify_result(ssl) != X509_V_OK) {
-						perror("TLS connect: server certifcate verification failed!!!\n");
-						exit_code(3);
-					}
-					X509_free(cert);
-				}
-				else {
-					perror("TLS connect: server did not present a certificate\n");
-					exit_code(3);
-				}
-			}
-			else {
-				err = SSL_get_error(ssl, ret);
-				switch (err) {
-					case SSL_ERROR_ZERO_RETURN:
-						perror("TLS handshakre failed cleanly'n");
-						break;
-					case SSL_ERROR_WANT_READ:
-						perror("Need to get more data to finish TLS connect\n");
-						break;
-					case SSL_ERROR_WANT_WRITE:
-						perror("Need to send more data to finish TLS connect\n");
-						break;
-#if OPENSSL_VERSION_NUMBER >= 0x00907000L /* 0.9.7 */
-					case SSL_ERROR_WANT_CONNECT:
-						perror("Need to retry connect\n");
-						break;
-					case SSL_ERROR_WANT_ACCEPT:
-						perror("Need to retry accept'n");
-						break;
-#endif /* 0.9.7 */
-					case SSL_ERROR_WANT_X509_LOOKUP:
-						perror("Application callback asked to be called again\n");
-						break;
-					case SSL_ERROR_SYSCALL:
-						printf("TLS connect: %d\n", err);
-						if (!err) {
-							if (ret == 0) {
-								perror("Unexpected EOF occured while performing TLS connect\n");
-							}
-							else {
-								printf("IO error: (%d) %s\n", errno, strerror(errno));
-							}
-						}
-						break;
-					default:
-						printf("TLS error: %d\n", err);
-				}
-				exit_code(2);
-			}
+		if (connect(socket, (struct sockaddr *)adr, sizeof(struct sockaddr_in)) == -1) {
+			perror("connecting socket failed");
+			exit_code(2);
 		}
-		else {
-#endif /* WITH_TLS_TRANSP */
-			if (connect(socket, (struct sockaddr *)adr, sizeof(struct sockaddr_in)) == -1) {
-				perror("connecting socket failed");
-				exit_code(2);
-			}
-#ifdef WITH_TLS_TRANSP
-		}
-#endif
 	}
 	return 1;
 }
