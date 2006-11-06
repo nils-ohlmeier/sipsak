@@ -35,6 +35,19 @@ AC_DEFUN([SIPSAK_TIMER],
 	AC_DEFINE_UNQUOTED(DEFAULT_TIMEOUT, $def_timeout, [Default maximum timeout on waiting for response.])
 ])
 
+AC_DEFUN([SIPSAK_OLD_FQDN],
+[
+    AC_MSG_CHECKING([oldstyle numeric])
+    AC_ARG_ENABLE([ips],
+       AC_HELP_STRING([--disbale-ips], [compile with oldstyle --numeric behavior]),
+       [
+        AC_MSG_RESULT([yes])
+        AC_DEFINE([OLDSTYLE_FQDN], [1], [Oldstyle FQDN behavior])
+       ],
+       [ AC_MSG_RESULT([not requested])
+       ])
+])
+
 AC_DEFUN([CHECK_LIB_CARES],
 [
 	AC_MSG_CHECKING([for ares_version.h])

@@ -1291,6 +1291,7 @@ Optional Features:
   --enable-distcc         compile in parallel with distcc
   --disable-gnutls        compile without gnutls
   --enable-timeout=SEC    SIP timer T1 in SEC milliseconds (default 500)
+  --disbale-ips           compile with oldstyle --numeric behavior
 
 Optional Packages:
   --with-PACKAGE[=ARG]    use PACKAGE [ARG=yes]
@@ -7490,6 +7491,27 @@ fi
 cat >>confdefs.h <<_ACEOF
 #define DEFAULT_TIMEOUT $def_timeout
 _ACEOF
+
+
+
+    { echo "$as_me:$LINENO: checking oldstyle numeric" >&5
+echo $ECHO_N "checking oldstyle numeric... $ECHO_C" >&6; }
+    # Check whether --enable-ips was given.
+if test "${enable_ips+set}" = set; then
+  enableval=$enable_ips;
+        { echo "$as_me:$LINENO: result: yes" >&5
+echo "${ECHO_T}yes" >&6; }
+
+cat >>confdefs.h <<\_ACEOF
+#define OLDSTYLE_FQDN 1
+_ACEOF
+
+
+else
+   { echo "$as_me:$LINENO: result: not requested" >&5
+echo "${ECHO_T}not requested" >&6; }
+
+fi
 
 
 

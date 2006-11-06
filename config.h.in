@@ -193,6 +193,9 @@
 /* Define to 1 if you have the <unistd.h> header file. */
 #undef HAVE_UNISTD_H
 
+/* Oldstyle FQDN behavior */
+#undef OLDSTYLE_FQDN
+
 /* Name of package */
 #undef PACKAGE
 

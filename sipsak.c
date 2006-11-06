@@ -123,7 +123,12 @@ void print_long_help() {
 		"  --outbound-proxy=HOSTNAME  request target (outbound proxy)\n"
 		"  --hostname=HOSTNAME        overwrites the local hostname in all headers\n"
 		"  --max-forwards=NUMBER      the value for the max-forwards header field\n"
-		"  --numeric                  use FQDN instead of IPs in the Via-Line\n");
+#ifdef OLDSTYLE_FQDN
+		"  --numeric                  use IP instead of FQDN in the Via-Line\n"
+#else
+		"  --numeric                  use FQDN instead of IP in the Via-Line\n"
+#endif
+);
 	printf("  --processes=NUMBER         Divide the workflow among the number of processes\n"
 		"  --auth-username=STRING     username for authentication\n"
 		);
@@ -190,7 +195,11 @@ void print_help() {
 	printf(
 		"  -H HOSTNAME       overwrites the local hostname in all headers\n"
 		"  -m NUMBER         the value for the max-forwards header field\n"
-		"  -n                use FQDN instead of IPs in the Via-Line\n"
+#ifdef OLDSTYLE_FQDN
+		"  -n                use IP instead of FQDN in the Via-Line\n"
+#else
+		"  -n                use FQDN instead of IP in the Via-Line\n"
+#endif
 		"  -i                deactivate the insertion of a Via-Line\n"
 		"  -a PASSWORD       password for authentication\n"
 		"                      (if omitted password=\"\")\n"
@@ -288,7 +297,12 @@ int main(int argc, char *argv[])
 	warning_ext=rand_rem=nonce_count=replace_b=invite=message = 0;
 	sleep_ms=empty_contact=nagios_warn=timing=outbound_proxy=symmetric = 0;
 	namebeg=nameend=maxforw= -1;
-	numeric=via_ins=redirects=fix_crlf=processes = 1;
+#ifdef OLDSTYLE_FQDN
+	numeric = 0;
+#else
+	numeric = 1;
+#endif
+	via_ins=redirects=fix_crlf=processes = 1;
 	username=password=replace_str=hostname=contact_uri=mes_body = NULL;
 	con_dis=auth_username=from_uri=headers=authhash = NULL;
 	scheme = user = host = backup = req = rep = rec = NULL;
