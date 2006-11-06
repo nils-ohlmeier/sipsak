@@ -62,7 +62,7 @@ enum usteps usrlocstep;
 
 struct sipsak_regexp regexps;
 
-struct sipsak_sr_time times;
+struct sipsak_sr_time timers;
 struct sipsak_con_data cdata;
 struct sipsak_counter counters;
 struct sipsak_delay delays;
@@ -158,11 +158,11 @@ void trace_reply()
 		printf("%i: ", namebeg);
 		if (verbose > 2) {
 			printf("(%.3f ms)\n%s\n", 
-				deltaT(&(times.sendtime), &(times.recvtime)), rec);
+				deltaT(&(timers.sendtime), &(timers.recvtime)), rec);
 		}
 		else {
 			warning_extract(rec);
-			printf("(%.3f ms) ", deltaT(&(times.sendtime), &(times.recvtime)));
+			printf("(%.3f ms) ", deltaT(&(timers.sendtime), &(timers.recvtime)));
 			print_message_line(rec);
 		}
 		namebeg++;
@@ -176,11 +176,11 @@ void trace_reply()
 		printf("%i: ", namebeg);
 		if (verbose > 2) {
 			printf("(%.3f ms)\n%s\n", 
-				deltaT(&(times.sendtime), &(times.recvtime)), rec);
+				deltaT(&(timers.sendtime), &(timers.recvtime)), rec);
 		}
 		else {
 			warning_extract(rec);
-			printf("(%.3f ms) ", deltaT(&(times.sendtime), &(times.recvtime)));
+			printf("(%.3f ms) ", deltaT(&(timers.sendtime), &(timers.recvtime)));
 			print_message_line(rec);
 		}
 		delays.retryAfter = SIP_T2;
@@ -192,7 +192,7 @@ void trace_reply()
 		   be treated as final */
 		printf("%i: ", namebeg);
 		warning_extract(rec);
-		printf("(%.3f ms) ", deltaT(&(times.sendtime), &(times.recvtime)));
+		printf("(%.3f ms) ", deltaT(&(timers.sendtime), &(timers.recvtime)));
 		print_message_line(rec);
 		if ((contact = STRCASESTR(rec, CONT_STR)) != NULL ||
 				(contact = STRCASESTR(rec, CONT_SHORT_STR)) != NULL) {
@@ -222,12 +222,12 @@ void handle_default()
 			printf("%s\n\n", rec);
 			printf("** reply received ");
 			if ((counters.send_counter == 1) || (STRNCASECMP(req, ACK_STR, ACK_STR_LEN) == 0)) {
-				printf("after %.3f ms **\n", deltaT(&(times.firstsendt), &(times.recvtime)));
+				printf("after %.3f ms **\n", deltaT(&(timers.firstsendt), &(timers.recvtime)));
 			}
 			else {
 				printf("%.3f ms after first send\n   and "
-						"%.3f ms after last send **\n", deltaT(&(times.firstsendt), &(times.recvtime)), 
-						deltaT(&(times.sendtime), &(times.recvtime)));
+						"%.3f ms after last send **\n", deltaT(&(timers.firstsendt), &(timers.recvtime)), 
+						deltaT(&(timers.sendtime), &(timers.recvtime)));
 			}
 			printf("   ");
 			print_message_line(rec);
@@ -248,12 +248,12 @@ void handle_default()
 			printf("%s\n\n", rec);
 			printf("** reply received ");
 			if ((counters.send_counter == 1) || (STRNCASECMP(req, ACK_STR, ACK_STR_LEN) == 0)){
-				printf("after %.3f ms **\n", deltaT(&(times.firstsendt), &(times.recvtime)));
+				printf("after %.3f ms **\n", deltaT(&(timers.firstsendt), &(timers.recvtime)));
 			}
 			else {
 				printf("%.3f ms after first send\n   and "
-						"%.3f ms after last send **\n", deltaT(&(times.firstsendt), &(times.recvtime)), 
-						deltaT(&(times.sendtime), &(times.recvtime)));
+						"%.3f ms after last send **\n", deltaT(&(timers.firstsendt), &(timers.recvtime)), 
+						deltaT(&(timers.sendtime), &(timers.recvtime)));
 			}
 			printf("   ");
 			print_message_line(rec);
@@ -370,7 +370,7 @@ void handle_usrloc()
 										" completed successful.\nreceived"
 										" last message %.3f ms after first"
 										" request (test duration).\n", 
-										deltaT(&(times.firstsendt), &(times.recvtime)));
+										deltaT(&(timers.firstsendt), &(timers.recvtime)));
 						}
 						if (delays.big_delay>0 && verbose>0) {
 							printf("biggest delay between "
@@ -392,7 +392,7 @@ void handle_usrloc()
 						}
 						if (timing) {
 							printf("%.3f ms\n",
-										deltaT(&(times.firstsendt), &(times.recvtime)));
+										deltaT(&(timers.firstsendt), &(timers.recvtime)));
 						}
 						on_success(rec);
 					} /* namebeg == nameend */
@@ -508,7 +508,7 @@ void handle_usrloc()
 							printf("\nAll usrloc tests completed "
 										"successful.\nreceived last message"
 										" %.3f ms after first request (test"
-										" duration).\n", deltaT(&(times.firstsendt), &(times.recvtime)));
+										" duration).\n", deltaT(&(timers.firstsendt), &(timers.recvtime)));
 						}
 						if (delays.big_delay>0) {
 							printf("biggest delay between "
@@ -617,7 +617,7 @@ void handle_usrloc()
 							printf("\nAll usrloc tests completed "
 										"successful.\nreceived last message"
 										" %.3f ms after first request (test"
-										" duration).\n", deltaT(&(times.firstsendt), &(times.recvtime)));
+										" duration).\n", deltaT(&(timers.firstsendt), &(timers.recvtime)));
 						}
 						if (delays.big_delay>0) {
 							printf("biggest delay between "
@@ -803,8 +803,8 @@ void shoot(char *buf, int buff_size)
 	/* initalize local vars */
 	cdata.dontsend=cdata.dontrecv=counters.retrans_r_c=counters.retrans_s_c= 0;
 	delays.big_delay=counters.send_counter=counters.run= 0;
-	times.delaytime.tv_sec = 0;
-	times.delaytime.tv_usec = 0;
+	timers.delaytime.tv_sec = 0;
+	timers.delaytime.tv_usec = 0;
 	usern = NULL;
 	/* initialize local arrays */
 	memset(buf2, 0, BUFSIZE);
@@ -816,11 +816,11 @@ void shoot(char *buf, int buff_size)
 	cdata.buf_tmp = NULL;
 	cdata.buf_tmp_size = 0;
 
-	memset(&(times.sendtime), 0, sizeof(times.sendtime));
-	memset(&(times.recvtime), 0, sizeof(times.recvtime));
-	memset(&(times.firstsendt), 0, sizeof(times.firstsendt));
-	memset(&(times.starttime), 0, sizeof(times.starttime));
-	memset(&(times.delaytime), 0, sizeof(times.delaytime));
+	memset(&(timers.sendtime), 0, sizeof(timers.sendtime));
+	memset(&(timers.recvtime), 0, sizeof(timers.recvtime));
+	memset(&(timers.firstsendt), 0, sizeof(timers.firstsendt));
+	memset(&(timers.starttime), 0, sizeof(timers.starttime));
+	memset(&(timers.delaytime), 0, sizeof(timers.delaytime));
 
 	req = buf;
 	rep = buf2;
@@ -960,11 +960,11 @@ void shoot(char *buf, int buff_size)
 			nanosleep(&sleep_ms_s, &sleep_rem);
 		}
 
-		send_message(req, &cdata, &counters, &times);
+		send_message(req, &cdata, &counters, &timers);
 
 		/* in flood we are only interested in sending so skip the rest */
 		if (flood == 0) {
-			ret = recv_message(rec, BUFSIZE, inv_trans, &delays, &times,
+			ret = recv_message(rec, BUFSIZE, inv_trans, &delays, &timers,
 						&counters, &cdata, &regexps);
 			if(ret > 0)
 			{
@@ -979,7 +979,7 @@ void shoot(char *buf, int buff_size)
 					cdata.dontsend = 0;
 					inv_trans = 0;
 					/* lets fire the ACK to the server */
-					send_message(rep, &cdata, &counters, &times);
+					send_message(rep, &cdata, &counters, &timers);
 					inv_trans = 1;
 				}
 				/* check for old CSeq => ignore retransmission */
@@ -1054,14 +1054,14 @@ void shoot(char *buf, int buff_size)
 		} /* !flood */
 		else {
 			if (counters.send_counter == 1) {
-					memcpy(&(times.firstsendt), &(times.sendtime), sizeof(struct timeval));
+					memcpy(&(timers.firstsendt), &(timers.sendtime), sizeof(struct timeval));
 			}
 			if (namebeg==nameend) {
 				printf("flood end reached\n");
 				printf("it took %.3f ms seconds to send %i request.\n", 
-						deltaT(&(times.firstsendt), &(times.sendtime)), namebeg);
+						deltaT(&(timers.firstsendt), &(timers.sendtime)), namebeg);
 				printf("we sent %f requests per second.\n", 
-						(namebeg/(deltaT(&(times.firstsendt), &(times.sendtime)))*1000));
+						(namebeg/(deltaT(&(timers.firstsendt), &(timers.sendtime)))*1000));
 				exit_code(0);
 			}
 			namebeg++;
