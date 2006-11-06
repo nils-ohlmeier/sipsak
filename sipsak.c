@@ -902,7 +902,7 @@ int main(int argc, char *argv[])
 	
 	/* this is not a cryptographic random number generator,
 	   but hey this is only a test-tool => should be satisfying*/
-	srand(time(0) ^ getpid());
+	srand(time(0) ^ (getpid() + (getpid() << 15)));
 	
 	if (processes > 1) {
 		if (signal(SIGCHLD , sigchld_handler)  == SIG_ERR ) {
