@@ -62,6 +62,46 @@
 # endif
 #endif /* RAW_SUPPORT */
 
+#ifdef WITH_TLS_TRANSP
+# ifdef USE_GNUTLS
+#  include <stdio.h>
+#  include <stdlib.h>
+#  include <string.h>
+#  include <sys/types.h>
+#  include <sys/socket.h>
+#  include <netinet/in.h>
+#  include <arpa/inet.h>
+#  include <unistd.h>
+#  include <gnutls/gnutls.h>
+#  include <gnutls/x509.h>
+
+   // needed for anonymous auth
+   //const int kx_prio[] = { GNUTLS_KX_ANON_DH, 0 };
+   const int cert_type_priority[2] = { GNUTLS_CRT_X509, 0 };
+# else
+#  ifdef USE_OPENSSL
+#   define _BSD_SOURCE 1
+#   include <assert.h>
+#   include <errno.h>
+#   include <limits.h>
+#   include <stdio.h>
+#   include <stdlib.h>
+#   include <string.h>
+#   include <time.h>
+#   include <ctype.h>
+#   include <openssl/bio.h>
+#   include <openssl/crypto.h>
+#   include <openssl/evp.h>
+#   include <openssl/x509.h>
+#   include <openssl/x509v3.h>
+#   include <openssl/ssl.h>
+#   include <openssl/engine.h>
+#   include <openssl/err.h>
+#   include <openssl/rand.h>
+#  endif
+# endif
+#endif /* WITH_TLS_TRANSP */
+
 #include "exit_code.h"
 #include "helper.h"
 #include "header_f.h"
@@ -69,6 +109,122 @@
 #ifdef RAW_SUPPORT
 int rawsock;
 #endif
+
+#ifdef WITH_TLS_TRANSP
+# ifdef USE_GNUTLS
+extern void print_x509_certificate_info(session);
+
+void gnutls_session_info(gnutls_session_t session) {
+	const char *tmp;
+	gnutls_credentials_type_t cred;
+	gnutls_kx_algorithm_t kx;
+
+	// print the key exchange algorithm name
+	kx = gnutls_kx_get(session);
+	tmp = gnutls_kx_get_name(kx);
+	printf("Key Echange: %s\n", tmp);
+
+	// check the authentication type
+	cred = gnutls_auth_get_type(session);
+	switch(cred) {
+		case GNUTLS_CRD_SRP:
+			printf("SRP session with username %s\n",
+				gnutls_srp_server_get_username(session));
+			break;
+		case GNUTLS_CRD_ANON:
+			printf("Anonymous DH using prime of %d bits\n", 
+				gnutls_dh_get_prime_bits(session));
+			break;
+		case GNUTLS_CRD_CERTIFICATE:
+			// check if we have been using ephemeral DH
+			if (kx == GNUTLS_KX_DHE_RSA || kx == GNUTLS_KX_DHE_DSS) {
+				printf("Emphemeral DH using prime of %d bits\n",
+					gnutls_dh_get_prime_bits(session));
+			}
+			// print certificate informations if available
+			print_x509_certificate_info(session);
+			break;
+		default:
+			printf("UNKNOWN GNUTLS authentication type!!!\n");
+	}
+
+	// print protocols name
+	tmp = gnutls_protocol_get_name(gnutls_protocol_get_version(session));
+	printf("Protocol: %s\n", tmp);
+
+	// print certificate type
+	tmp = gnutls_certificate_type_get_name(gnutls_certificate_type_get(session));
+	printf("Certificate Type: %s\n", tmp);
+
+	// print the compression algorithm
+	tmp = gnutls_compression_get_name(gnutls_compression_get(session));
+	printf("Compression: %s\n", tmp);
+
+	// print name of the cipher
+	tmp = gnutls_cipher_get_name(gnutls_cipher_get(session));
+	printf("Cipher: %s\n", tmp);
+
+	// print the MAC algorithm
+	tmp = gnutls_mac_get_name(gnutls_mac_get(session));
+	printf("MAC: %s\n", tmp);
+}
+# else
+#  ifdef USE_OPENSSL
+void set_tls_options() {
+#if OPENSSL_VERSION_NUMBER >= 0x0009070000 /* 0.9.7 */
+	SSL_CTX_set_options(ctx, SSL_OP_ALL |
+							SSL_OP_NO_SESSION_RESUMPTION_ON_RENEGOTIATION |
+							SSL_OP_CIPHER_SERVER_PREFERENCE);
+#else
+	SSL_CTX_set_options(ctx, SSL_OP_ALL);
+#endif
+}
+
+void create_tls_ctx() {
+	SSL_METHOD *method = NULL;
+
+	method = TLSv1_method();
+	ctx = SSL_CTX_new(method);
+	if (ctx == NULL) {
+		ERR_print_errors_fp(stderr);
+		perror("create_tls_ctx: failed to create TLS ctx");
+		exit_code(2);
+	}
+	/*if (!SSL_CTX_use_certificate_chain_file(ctx, cert_file)) {
+		perror("create_tls_ctx: failed to load certificate file");
+		exit_code(2);
+	}
+	if (SSL_CTX_load_verify_locations(ctx, ca_file, 0) != 1) {
+		perror("create_tls_ctx: failed to load CA cert");
+		exit_code(2);
+	}
+	SSL_CTX_set_client_CA_list(ctx, SSL_load_client_CA_file(ca_file));
+	if (SSL_CTX_get_client_CA_list(ctx) == 0) {
+		perror("create_tls_ctx: failed to set client CA list");
+		exit_code(2);
+	}*/
+	SSL_CTX_set_cipher_list(ctx, 0);
+	SSL_CTX_set_verify(ctx, SSL_VERIFY_PEER | SSL_VERIFY_FAIL_IF_NO_PEER_CERT, 0);
+	SSL_CTX_set_verify_depth(ctx, 5);
+	set_tls_options();
+	SSL_CTX_set_session_cache_mode(ctx, SSL_SESS_CACHE_OFF);
+	SSL_CTX_set_session_id_context(ctx, 0, 0);
+}
+
+void tls_dump_cert_info(char* s, X509* cert) {
+	char *subj, *issuer;
+
+	subj = X509_NAME_oneline(X509_get_subject_name(cert), 0, 0);
+	issuer = X509_NAME_oneline(X509_get_issuer_name(cert), 0, 0);
+
+	printf("%s subject: '%s'\n", s ? s: "", subj);
+	printf("%s issuer: '%s'\n", s ? s : "", issuer);
+	OPENSSL_free(subj);
+	OPENSSL_free(issuer);
+}
+#  endif /* USE_OPENSSL */
+# endif /* USE_GNUTLS */
+#endif /* WITH_TLS_TRANSP */
 
 void create_sockets(struct sipsak_con_data *cd) {
 	socklen_t slen;
@@ -139,6 +295,37 @@ void create_sockets(struct sipsak_con_data *cd) {
 			perror("TCP socket binding failed");
 			exit_code(2);
 		}
+#ifdef WITH_TLS_TRANSP
+		if (transport == SIP_TLS_TRANSPORT) {
+#ifdef USE_GNUTLS
+			// initialixe the TLS session
+			gnutls_init(&tls_session, GNUTLS_CLIENT);
+			//gnutls_kx_set_priority(tls_session, kx_prio);
+			//gnutls_credentials_set(tls_session, GNUTLS_CRD_ANON, anoncred);
+			// use default priorities
+			gnutls_set_default_priority(tls_session);
+			gnutls_certificate_type_set_priority(tls_session, cert_type_priority);
+			// put the X509 credentials to the session
+			gnutls_credentials_set(tls_session, GNUTLS_CRD_CERTIFICATE, xcred);
+			// add the FD to the session
+			gnutls_transport_set_ptr(tls_session, (gnutls_transport_ptr_t) cd->csock);
+#else /* USE_GNUTLS */
+# ifdef USE_OPENSSL
+			create_tls_ctx();
+			ssl = SSL_new(ctx);
+			if (ssl == NULL) {
+				perror("TLS failed to create SSL object");
+				exit_code(2);
+			}
+			if (SSL_set_fd(ssl, cd->csock) != 1) {
+				perror("TLS failed to add socket to SSL object");
+				exit_code(2);
+			}
+# endif /* USE_OPENSSL */
+#endif /* USE_GNUTLS */
+			printf("initialized tls socket %i\n", cd->csock);
+		}
+#endif /* WITH_TLS_TRANSP */
 	}
 
 	/* for the via line we need our listening port number */
@@ -562,6 +749,14 @@ int recv_message(char *buf, int size, int inv_trans,
 /* clears the given sockaddr, fills it with the given data and if a
  * socket is given connects the socket to the new target */
 int set_target(struct sockaddr_in *adr, unsigned long target, int port, int socket, int connected) {
+#ifdef WITH_TLS_TRANSP
+	int ret;
+# ifdef USE_OPENSSL
+	int err;
+	X509* cert;
+# endif /* USE_OPENSSL */
+#endif /* WITH_TLS_TRANSP */
+
 	if (socket != -1 && transport != SIP_UDP_TRANSPORT && connected) {
 		if (shutdown(socket, SHUT_RDWR) != 0) {
 			perror("error while shutting down socket");
@@ -582,7 +777,82 @@ int set_target(struct sockaddr_in *adr, unsigned long target, int port, int sock
 			perror("connecting socket failed");
 			exit_code(2);
 		}
+#ifdef WITH_TLS_TRANSP
+		if (transport == SIP_TLS_TRANSPORT) {
+# ifdef USE_GNUTLS
+			ret = gnutls_handshake(tls_session);
+			if (ret < 0) {
+				printf("*** Handshake FAILED!!!\n");
+				gnutls_perror(ret);
+				exit_code(3);
+			} else {
+				printf("*** Handshake was completed!\n");
+			}
+# else /* USE_GNUTLS */
+#  ifdef USE_OPENSSL
+			ret = SSL_connect(ssl);
+			if (ret == 1) {
+				printf("TLS connect successful\n");
+				printf("TLS connect: new connection using %s %s %d\n",
+					SSL_get_cipher_version(ssl), SSL_get_cipher_name(ssl),
+					SSL_get_cipher_bits(ssl, 0));
+				cert = SSL_get_peer_certificate(ssl);
+				if (cert != 0) {
+					tls_dump_cert_info("TLS connect: server certificate", cert);
+					if (SSL_get_verify_result(ssl) != X509_V_OK) {
+						perror("TLS connect: server certifcate verification failed!!!\n");
+						exit_code(3);
+					}
+					X509_free(cert);
+				}
+				else {
+					perror("TLS connect: server did not present a certificate\n");
+					exit_code(3);
+				}
+			}
+			else {
+				err = SSL_get_error(ssl, ret);
+				switch (err) {
+					case SSL_ERROR_ZERO_RETURN:
+						perror("TLS handshakre failed cleanly'n");
+						break;
+					case SSL_ERROR_WANT_READ:
+						perror("Need to get more data to finish TLS connect\n");
+						break;
+					case SSL_ERROR_WANT_WRITE:
+						perror("Need to send more data to finish TLS connect\n");
+						break;
+#if OPENSSL_VERSION_NUMBER >= 0x00907000L /* 0.9.7 */
+					case SSL_ERROR_WANT_CONNECT:
+						perror("Need to retry connect\n");
+						break;
+					case SSL_ERROR_WANT_ACCEPT:
+						perror("Need to retry accept'n");
+						break;
+#endif /* 0.9.7 */
+					case SSL_ERROR_WANT_X509_LOOKUP:
+						perror("Application callback asked to be called again\n");
+						break;
+					case SSL_ERROR_SYSCALL:
+						printf("TLS connect: %d\n", err);
+						if (!err) {
+							if (ret == 0) {
+								perror("Unexpected EOF occured while performing TLS connect\n");
+							}
+							else {
+								printf("IO error: (%d) %s\n", errno, strerror(errno));
+							}
+						}
+						break;
+					default:
+						printf("TLS error: %d\n", err);
+				}
+				exit_code(2);
+			}
+#  endif /* USE_OPENSSL */
+# endif /* USE_GNUTLS */
+		}
+#endif /* WITH_TLS_TRANSP */
 	}
 	return 1;
 }
-

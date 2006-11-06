@@ -82,6 +82,9 @@ else
   AC_CHECK_HEADERS([arpa/nameser.h])
 fi
 
+# FIXME: this has to replaced with a real check
+# LIBS="$LIBS -lssl"
+
 SIPSAK_TIMER
 SIPSAK_OLD_FQDN
 

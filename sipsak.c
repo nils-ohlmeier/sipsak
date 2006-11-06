@@ -314,6 +314,13 @@ int main(int argc, char *argv[])
 	inv_final = 64 * SIP_T1;
 	memset(buff, 0, BUFSIZE);
 	memset(fqdn, 0, FQDN_SIZE);
+#ifdef WITH_TLS_TRANSP
+# ifdef USE_OPENSSL
+	ctx = NULL;
+	ssl = NULL;
+	cert_file = ca_file = NULL;
+# endif
+#endif /* WITH_TLS_TRANSP */
 
 	if (argc==1) {
 		print_help();
@@ -422,12 +429,12 @@ int main(int argc, char *argv[])
 						STRNCASECMP(optarg, "tcp", 3) == 0) {
 					transport = SIP_TCP_TRANSPORT;
 				}
+#ifdef WITH_TLS_TRANSP
 				else if (strlen(optarg) == 3 &&
 						STRNCASECMP(optarg, "tls", 3) == 0) {
-					fprintf(stderr, "error: TLS is not supported yet, supported values: udp, tcp\n");
-					exit_code(2);
 					transport = SIP_TLS_TRANSPORT;
 				}
+#endif
 				else {
 					fprintf(stderr, "error: unsupported transport '%s', supported values: udp, tcp\n", optarg);
 					exit_code(2);
@@ -687,6 +694,15 @@ int main(int argc, char *argv[])
 #ifdef HAVE_OPENSSL_SHA1
 				printf(", OPENSSL_SHA1");
 #endif
+#ifdef WITH_TLS_TRANSP
+# ifdef USE_GNUTLS
+				printf(", TLS_SUPPORT(GNUTLS)");
+# else
+#  ifdef USE_OPENSSL
+				printf(", TLS_SUPPORT(OPENSSL)");
+#  endif
+# endif
+#endif
 #ifdef HAVE_CARES_H
 				printf(", SRV_SUPPORT(ARES)");
 #else
@@ -897,9 +913,11 @@ int main(int argc, char *argv[])
 	}
 
 	switch (transport) {
+#ifdef WITH_TLS_TRANSP
 		case SIP_TLS_TRANSPORT:
 			transport_str = TRANSPORT_TLS_STR;
 			break;
+#endif /* WITH_TLS_TRANSP */
 		case SIP_TCP_TRANSPORT:
 			transport_str = TRANSPORT_TCP_STR;
 			break;
@@ -910,6 +928,23 @@ int main(int argc, char *argv[])
 			fprintf(stderr, "unknown transport: %i\n", transport);
 			exit_code(2);
 	}
+
+#ifdef WITH_TLS_TRANSP
+	if (transport == SIP_TLS_TRANSPORT) {
+# ifdef USE_GNUTLS
+		gnutls_global_init();
+		//gnutls_anon_allocate_client_credentials(&anoncred);
+		gnutls_certificate_allocate_credentials(&xcred);
+		// set the trusted CA file
+		gnutls_certificate_set_x509_trust_file(xcred, "ca.pem", GNUTLS_X509_FMT_PEM);
+# else
+#  ifdef USE_OPENSSL
+		SSL_library_init();
+		SSL_load_error_strings();
+#  endif
+# endif
+	}
+#endif /* WITH_TLS_TRANSP */
 
 	/* determine our hostname */
 	get_fqdn();

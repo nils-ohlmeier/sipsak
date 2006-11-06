@@ -73,11 +73,15 @@
 
 #ifdef HAVE_GNUTLS
 # define HAVE_EXTERNAL_MD5
+# define USE_GNUTLS
+# include <gnutls/gnutls.h>
 #else
 # ifdef HAVE_OPENSSL_MD5_H
 #  ifdef HAVE_CRYPTO_WITH_MD5
 #   define HAVE_FULL_OPENSSL
 #   define HAVE_EXTERNAL_MD5
+#   define USE_OPENSSL
+#   include <openssl/ssl.h>
 #  endif
 # endif
 #endif
@@ -293,6 +297,23 @@
 # define SIPSAK_HASHLEN SIPSAK_HASHLEN_MD5 
 #endif
 #define SIPSAK_HASHHEXLEN 2 * SIPSAK_HASHLEN
+
+// FIXME: this has to replaced with a real evaluation
+// #define WITH_TLS_TRANSP 1
+
+#ifdef WITH_TLS_TRANSP
+# ifdef USE_GNUTLS
+gnutls_session_t tls_session;
+//gnutls_anon_client_credentials_t anoncred;
+gnutls_certificate_credentials_t xcred;
+# else
+#  ifdef USE_OPENSSL
+SSL_CTX* ctx;
+SSL* ssl;
+char *cert_file, *ca_file;
+#  endif
+# endif
+#endif
 
 /* lots of global variables. ugly but makes life easier. */
 unsigned long address;

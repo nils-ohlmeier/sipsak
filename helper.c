@@ -462,8 +462,6 @@ unsigned long getsrvadr(char *host, int *port, unsigned int *transport) {
 		*transport = SIP_TLS_TRANSPORT;
 		if (verbose > 1)
 			printf("using SRV record: %s.%s:%i\n", SRV_SIP_TLS, host, srvport);
-		printf("TLS transport not yet supported\n");
-		exit_code(2);
 	}
 	else {
 #endif
