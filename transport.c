@@ -112,7 +112,7 @@ int rawsock;
 
 #ifdef WITH_TLS_TRANSP
 # ifdef USE_GNUTLS
-extern void print_x509_certificate_info(session);
+//extern void print_x509_certificate_info(session);
 
 void gnutls_session_info(gnutls_session_t session) {
 	const char *tmp;
@@ -142,7 +142,7 @@ void gnutls_session_info(gnutls_session_t session) {
 					gnutls_dh_get_prime_bits(session));
 			}
 			// print certificate informations if available
-			print_x509_certificate_info(session);
+			//print_x509_certificate_info(session);
 			break;
 		default:
 			printf("UNKNOWN GNUTLS authentication type!!!\n");
@@ -323,7 +323,9 @@ void create_sockets(struct sipsak_con_data *cd) {
 			}
 # endif /* USE_OPENSSL */
 #endif /* USE_GNUTLS */
+#ifdef DEBUG
 			printf("initialized tls socket %i\n", cd->csock);
+#endif
 		}
 #endif /* WITH_TLS_TRANSP */
 	}
@@ -360,7 +362,21 @@ void send_message(char* mes, struct sipsak_con_data *cd,
 #ifdef DEBUG
 			printf("\nusing connected socket for sending\n");
 #endif
-			ret = send(cd->csock, mes, strlen(mes), 0);
+#ifdef WITH_TLS_TRANSP
+			if (transport == SIP_TLS_TRANSPORT) {
+# ifdef USE_GNUTLS
+				ret = gnutls_record_send(tls_session, mes, strlen(mes));
+# else /* USE_GNUTLS */
+#  ifdef USE_OPENSSL
+#  endif /* USE_OPENSSL */
+# endif /* USE_GNUTLS */
+			}
+			else {
+#endif /* TLS_TRANSP */
+				ret = send(cd->csock, mes, strlen(mes), 0);
+#ifdef WITH_TLS_TRANSP
+			}
+#endif /* TLS_TRANSP */
 		}
 		(void)gettimeofday(&(srt->sendtime), &tz);
 		if (ret==-1) {
@@ -619,7 +635,21 @@ int recv_message(char *buf, int size, int inv_trans,
 	else {
 #endif
 		check_socket_error(sock, size);
-		ret = recvfrom(sock, buf, size, 0, NULL, 0);
+#ifdef WITH_TLS_TRANSP
+		if (transport == SIP_TLS_TRANSPORT) {
+# ifdef USE_GNUTLS
+			ret = gnutls_record_recv(tls_session, buf, size);
+# else /* USE_GNUTLS */
+#  ifdef USE_OPENSSL
+#  endif /* USE_OPENSSL */
+# endif /* USE_GNUTLS */
+		}
+		else {
+#endif /* TLS_TRANSP */
+			ret = recvfrom(sock, buf, size, 0, NULL, 0);
+#ifdef WITH_TLS_TRANSP
+		}
+#endif /* TLS_TRANSP */
 	}
 #ifdef RAW_SUPPORT
 	else {
@@ -782,20 +812,27 @@ int set_target(struct sockaddr_in *adr, unsigned long target, int port, int sock
 # ifdef USE_GNUTLS
 			ret = gnutls_handshake(tls_session);
 			if (ret < 0) {
-				printf("*** Handshake FAILED!!!\n");
+#ifdef DEBUG
+				printf("*** TLS Handshake FAILED!!!\n");
+#endif
 				gnutls_perror(ret);
 				exit_code(3);
-			} else {
-				printf("*** Handshake was completed!\n");
 			}
+#ifdef DEBUG
+			else {
+				printf("*** TLS Handshake was completed!\n");
+			}
+#endif
 # else /* USE_GNUTLS */
 #  ifdef USE_OPENSSL
 			ret = SSL_connect(ssl);
 			if (ret == 1) {
+#ifdef DEBUG
 				printf("TLS connect successful\n");
 				printf("TLS connect: new connection using %s %s %d\n",
 					SSL_get_cipher_version(ssl), SSL_get_cipher_name(ssl),
 					SSL_get_cipher_bits(ssl, 0));
+#endif
 				cert = SSL_get_peer_certificate(ssl);
 				if (cert != 0) {
 					tls_dump_cert_info("TLS connect: server certificate", cert);
