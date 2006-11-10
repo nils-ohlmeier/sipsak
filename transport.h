@@ -72,6 +72,8 @@ struct sipsak_delay {
 
 void create_sockets(struct sipsak_con_data *cd);
 
+void close_sockets(struct sipsak_con_data *cd);
+
 void send_message(char* mes, struct sipsak_con_data *cd,
 			struct sipsak_counter *sc, struct sipsak_sr_time *srt);
 

@@ -112,7 +112,82 @@ int rawsock;
 
 #ifdef WITH_TLS_TRANSP
 # ifdef USE_GNUTLS
-//extern void print_x509_certificate_info(session);
+void check_alert(gnutls_session_t session, int ret) {
+	int last_alert;
+
+	if (ret == GNUTLS_E_WARNING_ALERT_RECEIVED ||
+			ret == GNUTLS_E_FATAL_ALERT_RECEIVED) {
+		last_alert = gnutls_alert_get(session);
+		printf("Received TLS alert: '%d': %s\n", last_alert,
+			gnutls_alert_get_name(last_alert));
+	}
+}
+
+static const char *bin2hex(const void *bin, size_t bin_size) {
+	static char printable[110];
+	const unsigned char *_bin = bin;
+	char *print;
+	size_t i;
+
+	if (bin_size > 50) {
+		bin_size = 50;
+	}
+
+	print = printable;
+	for (i=0; i < bin_size; i++) {
+		sprintf(print, "%.2x ", _bin[i]);
+		print += 2;
+	}
+
+	return printable;
+}
+
+void print_x509_certificate_info(gnutls_session_t session) {
+	char serial[40];
+	char dn[128];
+	size_t size;
+	unsigned int algo, bits;
+	time_t expiration_time, activation_time;
+	const gnutls_datum_t *cert_list;
+	int cert_list_size = 0;
+	gnutls_x509_crt_t cert;
+
+	// check if we got a X.509 cert
+	if (gnutls_certificate_type_get(session) != GNUTLS_CRT_X509) {
+		printf("TLS session did not received a X.509 certificate\n");
+		return;
+	}
+
+	cert_list = gnutls_certificate_get_peers(session, &cert_list_size);
+	printf("Peer provided %d certificate(s)\n", cert_list_size);
+
+	if (cert_list_size > 0) {
+		// print only informations about the first cert
+		gnutls_x509_crt_init(&cert);
+		gnutls_x509_crt_import(cert, &cert_list[0], GNUTLS_X509_FMT_DER);
+		printf("Certificate info:\n");
+		expiration_time = gnutls_x509_crt_get_expiration_time(cert);
+		activation_time = gnutls_x509_crt_get_activation_time(cert);
+		printf("\tCertificate is valid since: %s", ctime(&activation_time));
+		printf("\tCertificate expires: %s", ctime(&expiration_time));
+		// print the serial number of the certificate
+		size = sizeof(serial);
+		gnutls_x509_crt_get_serial(cert, serial, &size);
+		printf("\tCertificate serail number: %s\n", bin2hex(serial, size));
+		// extract public key algorithm
+		algo = gnutls_x509_crt_get_pk_algorithm(cert, &bits);
+		printf("\tCertificate public key: %s\n", gnutls_pk_algorithm_get_name(algo));
+		// print version of x509 cert
+		printf("\tCertificate version: #%d\n", gnutls_x509_crt_get_version(cert));
+		size = sizeof(dn);
+		gnutls_x509_crt_get_dn(cert, dn, &size);
+		printf("\tDN: %s\n", dn);
+		size = sizeof(dn);
+		gnutls_x509_crt_get_issuer_dn(cert, dn, &size);
+		printf("\tIssuer's DN: %s\n", dn);
+		gnutls_x509_crt_deinit(cert);
+	}
+}
 
 void gnutls_session_info(gnutls_session_t session) {
 	const char *tmp;
@@ -142,7 +217,7 @@ void gnutls_session_info(gnutls_session_t session) {
 					gnutls_dh_get_prime_bits(session));
 			}
 			// print certificate informations if available
-			//print_x509_certificate_info(session);
+			print_x509_certificate_info(session);
 			break;
 		default:
 			printf("UNKNOWN GNUTLS authentication type!!!\n");
@@ -340,6 +415,27 @@ void create_sockets(struct sipsak_con_data *cd) {
 			getsockname(cd->usock, (struct sockaddr *) &(cd->adr), &slen);
 		lport=ntohs(cd->adr.sin_port);
 	}
+}
+
+void close_sockets(struct sipsak_con_data *cd) {
+	if (transport == SIP_UDP_TRANSPORT) {
+	}
+	else {
+#ifdef WITH_TLS_TRANSP
+		if (transport == SIP_TLS_TRANSPORT) {
+# ifdef USE_GNUTLS
+			gnutls_bye(tls_session, GNUTLS_SHUT_RDWR);
+# else /* USE_GNUTLS */
+#  ifdef USE_OPENSSL
+#  endif /* USE_OPENSSL */
+# endif /* USE_GNUTLS */
+		}
+#endif /* WITH_TLS_TRANSP */
+		shutdown(cd->csock, SHUT_RDWR);
+	}
+#ifdef DEBUG
+	printf("sockets closed\n");
+#endif
 }
 
 void send_message(char* mes, struct sipsak_con_data *cd,
@@ -821,6 +917,9 @@ int set_target(struct sockaddr_in *adr, unsigned long target, int port, int sock
 #ifdef DEBUG
 			else {
 				printf("*** TLS Handshake was completed!\n");
+#ifdef DEBUG
+				gnutls_session_info(tls_session);
+#endif
 			}
 #endif
 # else /* USE_GNUTLS */
