@@ -510,6 +510,7 @@ int main(int argc, char *argv[])
 				}
 				authhash=optarg;
 				break;
+#ifdef WITH_TLS_TRANSP
 			case 'k':
 				pf = fopen(optarg, "rb");
 				if (!pf){
@@ -519,6 +520,7 @@ int main(int argc, char *argv[])
 				fclose(pf);
 				ca_file=optarg;
 				break;
+#endif
 			case 'l':
 				lport=str_to_int(optarg);
 				break;
