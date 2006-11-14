@@ -1091,7 +1091,7 @@ int recv_message(char *buf, int size, int inv_trans,
 	}
 	else {
 		check_socket_error(sock, size);
-		printf("nothing received, select returned error\n");
+		printf("\nnothing received, select returned error\n");
 		exit_code(2);
 	}
 	return ret;
