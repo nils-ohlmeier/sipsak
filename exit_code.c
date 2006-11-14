@@ -17,6 +17,8 @@
  * GNU General Public License for more details.
  */
 
+#include "sipsak.h"
+
 #if HAVE_CONFIG_H
 # include "config.h"
 #endif
@@ -34,6 +36,22 @@ enum exit_modes exit_mode = EM_DEFAULT;
 
 void exit_code(int code)
 {
+#ifdef WITH_TLS_TRANSP
+	if (transport == SIP_TLS_TRANSPORT) {
+# ifdef USE_GNUTLS
+		if (tls_session) {
+			gnutls_deinit(tls_session);
+		}
+		if (xcred) {
+			gnutls_certificate_free_credentials(xcred);
+		}
+		gnutls_global_deinit();
+# else /* USE_GNUTLS */
+#  ifdef USE_OPENSSL
+#  endif /* USE_OPENSSL */
+# endif /* USE_GNUTLS */
+	}
+#endif /* WITH_TLS_TRANSP */
 
 	switch(exit_mode) {
 		case EM_DEFAULT:	

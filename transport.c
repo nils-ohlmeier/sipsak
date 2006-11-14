@@ -123,6 +123,231 @@ void check_alert(gnutls_session_t session, int ret) {
 	}
 }
 
+/* all the available CRLs */
+gnutls_x509_crl_t *crl_list;
+int crl_list_size;
+
+/* all the available  trusted CAs */
+gnutls_x509_crt_t *ca_list;
+int ca_list_size;
+
+/* verifies a certificate against an other certificate which is supposed to 
+ * be it's issuer. Also checks the crl_list of the certificate is revoked.
+ */
+static void verify_cert2(gnutls_x509_crt_t crt, gnutls_x509_crt_t issuer,
+			gnutls_x509_crl_t *crl_list, int crl_list_size) {
+	unsigned int output;
+	time_t now = time(0);
+	size_t name_size;
+	char name[64];
+
+	/* print information about the certificates to be checked */
+	name_size = sizeof(name);
+	gnutls_x509_crt_get_dn(crt, name, &name_size);
+
+	printf("Certificate: %s\n", name);
+
+	name_size = sizeof(name);
+	gnutls_x509_crt_get_issuer_dn(crt, name, &name_size);
+
+	printf("Issued by: %s\n", name);
+
+	/* Get the DN of the issuer cert. */
+	name_size = sizeof(name);
+	gnutls_x509_crt_get_dn(issuer, name, &name_size);
+
+	printf("Checking against: %s\n", name);
+
+	/* Do the actual verification */
+	gnutls_x509_crt_verify(crt, &issuer, 1, 0, &output);
+
+	if (output & GNUTLS_CERT_INVALID) {
+		printf("Certificate not trusted!!!");
+		if (output & GNUTLS_CERT_SIGNER_NOT_FOUND) {
+			printf(": no issuer was found\n");
+		}
+		if (output & GNUTLS_CERT_SIGNER_NOT_CA) {
+			printf(": issuer is not a CA\n");
+		}
+	}
+	else {
+		printf("Certificate trusted'n");
+	}
+
+	/* Now check the expiration dates */
+	if (gnutls_x509_crt_get_activation_time(crt) > now) {
+		printf("Certificate not yet activated!\n");
+	}
+	if (gnutls_x509_crt_get_expiration_time(crt) < now) {
+		printf("Certificate expired!\n");
+	}
+	/* Check if the certificate is revoked */
+	if (gnutls_x509_crt_check_revocation(crt, crl_list, crl_list_size) == 1) {
+		printf("Certificate is revoked!\n");
+	}
+}
+
+/* Verifies a certificate against our trusted CA list. Also checks the crl_list
+ * if the certificate is revoked
+ */
+static void verify_last_cert(gnutls_x509_crt_t crt, gnutls_x509_crt_t *ca_list,
+			int ca_list_size, gnutls_x509_crl_t *crl_list, int crl_list_size) {
+	unsigned int output;
+	time_t now = time(0);
+	size_t name_size;
+	char name[64];
+
+	/* Print information about the certificates to be checked */
+	name_size = sizeof(name);
+	gnutls_x509_crt_get_dn(crt, name, &name_size);
+	printf("Certificate: %s\n", name);
+
+	name_size = sizeof(name);
+	gnutls_x509_crt_get_issuer_dn(crt, name, &name_size);
+	printf("Issued by: %s\n", name);
+
+	/* Do the actual verification */
+	gnutls_x509_crt_verify(crt, ca_list, ca_list_size, 
+			GNUTLS_VERIFY_ALLOW_X509_V1_CA_CRT, &output);
+	if (output & GNUTLS_CERT_INVALID) {
+		printf("Certificate not truested!\n");
+		if (output & GNUTLS_CERT_SIGNER_NOT_CA) {
+			printf(": Issuer is not a CA\n");
+		}
+	}
+	else {
+		printf("Certificate trusted\n");
+	}
+
+	/* Now check the expiration dates */
+	if (gnutls_x509_crt_get_activation_time(crt) > now) {
+		printf("Certificate now yet activated!\n");
+	}
+	if (gnutls_x509_crt_get_expiration_time(crt) < now) {
+		printf("Certificate expired!\n");
+	}
+	/* Check of the vertificate is revoked */
+	if (gnutls_x509_crt_check_revocation(crt, crl_list, crl_list_size) == 1) {
+		printf("Certificate is revoked!\n");
+	}
+}
+
+/* this function will try yo verify the peer's certificate chain, ans
+ * also check if the hostname matches, and the activation and expiration dates.
+ */
+void verify_certificate_chain(gnutls_session_t session, const char *hostname,
+			const gnutls_datum_t *cert_chain, int cert_chain_length) {
+	int i;
+	gnutls_x509_crt_t *cert;
+
+	cert = malloc(sizeof(*cert) * cert_chain_length);
+	if (!cert) {
+		printf("gnutla: failed to allocate memory for cert chain verification'n");
+		return;
+	}
+
+	/* import all the certificates in the chain to native certificate format */
+	for (i = 0; i < cert_chain_length; i++) {
+		gnutls_x509_crt_init(&cert[i]);
+		gnutls_x509_crt_import(cert[i], &cert_chain[i], GNUTLS_X509_FMT_DER);
+	}
+
+	/* if the last certificate in the chain is seld signed ignore it.
+	 * that is because we want to check against our trusted certificate list
+	 */
+	if (gnutls_x509_crt_check_issuer(cert[cert_chain_length - 1],
+				cert[cert_chain_length -1]) > 0 && cert_chain_length > 0) {
+		cert_chain_length--;
+	}
+	/* now verify the certificates against ther issuers in the chain */
+	for (i = 1; i < cert_chain_length; i++) {
+		verify_cert2(cert[i - 1], cert[i], crl_list, crl_list_size);
+	}
+	/* here we must verify the last certificate in the chain against our 
+	 * trusted CA list
+	 */
+	verify_last_cert(cert[cert_chain_length - 1], ca_list, ca_list_size, 
+			crl_list, crl_list_size);
+	/* check if the name in the first certificate matches our destination */
+	if (!gnutls_x509_crt_check_hostname(cert[0], hostname)) {
+		printf("The certificate's owner does not match hostname '%s'\n", 
+				hostname);
+	}
+
+	for (i = 0; i < cert_chain_length; i++) {
+		gnutls_x509_crt_deinit(cert[i]);
+	}
+	return;
+}
+
+void verify_certificate_simple(gnutls_session_t session, const char *hostname) {
+	unsigned int status, cert_list_size;
+	const gnutls_datum_t *cert_list;
+	int ret;
+	gnutls_x509_crt_t cert;
+
+	// this verification function usese the trusted CAs in the credentials
+	// stucture. so you must have installed on or more CA certificates.
+	ret = gnutls_certificate_verify_peers2(session, &status);
+
+	if (ret < 0) {
+		printf("gnutls verify peer failed\n");
+		return;
+	}
+
+	if (status & GNUTLS_CERT_INVALID) {
+		printf("The certificate is not trusted\n");
+		if (status & GNUTLS_CERT_SIGNER_NOT_FOUND) {
+			printf("The certificate hasn't got a known issuer.\n");
+		}
+		if (status & GNUTLS_CERT_SIGNER_NOT_CA) {
+			printf("The certificate issuer is not a CA\n");
+		}
+	}
+	if (status & GNUTLS_CERT_REVOKED) {
+		printf("The certificate has beend revoked.\n");
+	}
+
+	// from here on it works only with X509 certs
+	if (gnutls_certificate_type_get(session) != GNUTLS_CRT_X509){
+		return;
+	}
+	if (gnutls_x509_crt_init(&cert) < 0) {
+		printf("gnutls crt init failed\n");
+		return;
+	}
+
+	cert_list = gnutls_certificate_get_peers(session, &cert_list_size);
+	if (cert_list == NULL) {
+		printf("gnutls did not found a certificate'n");
+		return;
+	}
+
+	// this not a real world check as only the first cert is checked!
+	if (gnutls_x509_crt_import(cert, &cert_list[0], GNUTLS_X509_FMT_DER)) {
+		printf("gnutls failed to parse certificate\n");
+		return;
+	}
+
+	// beware here we do not check for errors
+	if (gnutls_x509_crt_get_expiration_time(cert) < time(0)) {
+		printf("The certificate hax expired\n");
+		return;
+	}
+	if (gnutls_x509_crt_get_activation_time(cert) > time(0)) {
+		printf("The certificate is not yet activated\n");
+		return;
+	}
+	if (!gnutls_x509_crt_check_hostname(cert, hostname)) {
+		printf("The certificate's owner does not match hostname '%s'", 
+			hostname);
+		return;
+	}
+
+	gnutls_x509_crt_deinit(cert);
+	return;
+}
+
 static const char *bin2hex(const void *bin, size_t bin_size) {
 	static char printable[110];
 	const unsigned char *_bin = bin;
@@ -149,7 +374,7 @@ void print_x509_certificate_info(gnutls_session_t session) {
 	unsigned int algo, bits;
 	time_t expiration_time, activation_time;
 	const gnutls_datum_t *cert_list;
-	int cert_list_size = 0;
+	unsigned int cert_list_size = 0;
 	gnutls_x509_crt_t cert;
 
 	// check if we got a X.509 cert
@@ -920,6 +1145,8 @@ int set_target(struct sockaddr_in *adr, unsigned long target, int port, int sock
 #ifdef DEBUG
 				gnutls_session_info(tls_session);
 #endif
+				verify_certificate_simple(tls_session, domainname);
+				//verify_certificate_chain(tls_session, domainname, cert_chain, cert_chain_length);
 			}
 #endif
 # else /* USE_GNUTLS */

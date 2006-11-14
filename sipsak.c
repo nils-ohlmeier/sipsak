@@ -91,6 +91,7 @@ void print_version() {
 		);
 }
 
+#ifdef HAVE_GETOPT_LONG
 void print_long_help() {
 	print_version();
 	printf(
@@ -158,6 +159,7 @@ void print_long_help() {
 		);
 	exit_code(0);
 }
+#endif
 
 /* prints out some usage help and exits */
 void print_help() {
@@ -289,6 +291,9 @@ int main(int argc, char *argv[])
 		{"transport", 1, 0, 'E'},
 		{"headers", 1, 0, 'j'},
 		{"authhash", 1, 0, 'J'},
+#ifdef WITH_TLS_TRANSP
+		{"tls-ca-cert", 1, 0, 'k'},
+#endif
 		{0, 0, 0, 0}
 	};
 #endif
@@ -315,11 +320,16 @@ int main(int argc, char *argv[])
 	memset(buff, 0, BUFSIZE);
 	memset(fqdn, 0, FQDN_SIZE);
 #ifdef WITH_TLS_TRANSP
-# ifdef USE_OPENSSL
+	cert_file = ca_file = NULL;
+# ifdef USE_GNUTLS
+	tls_session = NULL;
+	xcred = NULL;
+# else
+#  ifdef USE_OPENSSL
 	ctx = NULL;
 	ssl = NULL;
-	cert_file = ca_file = NULL;
-# endif
+#  endif
+#endif
 #endif /* WITH_TLS_TRANSP */
 
 	if (argc==1) {
@@ -499,6 +509,15 @@ int main(int argc, char *argv[])
 					exit_code(2);
 				}
 				authhash=optarg;
+				break;
+			case 'k':
+				pf = fopen(optarg, "rb");
+				if (!pf){
+					fprintf(stderr, "error: unable to open the CA cert file '%s'.\n", optarg);
+					exit_code(2);
+				}
+				fclose(pf);
+				ca_file=optarg;
 				break;
 			case 'l':
 				lport=str_to_int(optarg);
@@ -935,8 +954,10 @@ int main(int argc, char *argv[])
 		gnutls_global_init();
 		//gnutls_anon_allocate_client_credentials(&anoncred);
 		gnutls_certificate_allocate_credentials(&xcred);
-		// set the trusted CA file
-		gnutls_certificate_set_x509_trust_file(xcred, "ca.pem", GNUTLS_X509_FMT_PEM);
+		if (ca_file != NULL) {
+			// set the trusted CA file
+			gnutls_certificate_set_x509_trust_file(xcred, ca_file, GNUTLS_X509_FMT_PEM);
+		}
 # else
 #  ifdef USE_OPENSSL
 		SSL_library_init();
