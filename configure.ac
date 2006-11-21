@@ -32,6 +32,12 @@ case "$host" in
 esac
 AC_SUBST([LIBS])
 
+# Checks if the check unit test framework is available
+AM_PATH_CHECK([0.9.3],
+  AC_DEFINE([HAVE_CHECK_UNIT_TEST], [1], [Has check unit test framework available]),
+  AC_DEFINE([HAVE_CHECK_UNIT_TEST], [0], [Has check unit test framework available])
+)
+
 # Checks for header files.
 AC_HEADER_STDC
 AC_CHECK_HEADERS([ctype.h errno.h arpa/inet.h netdb.h netinet/in.h netinet/in_systm.h limits.h sys/poll.h regex.h signal.h stdlib.h stdio.h string.h sys/param.h sys/socket.h sys/time.h unistd.h sys/utsname.h],,[AC_MSG_ERROR([missing required header (see above)])],)
@@ -88,5 +94,6 @@ fi
 SIPSAK_TIMER
 SIPSAK_OLD_FQDN
 
-AC_CONFIG_FILES([Makefile])
+AC_CONFIG_FILES([Makefile
+                 tests/Makefile])
 AC_OUTPUT
