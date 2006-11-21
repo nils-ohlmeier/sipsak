@@ -726,53 +726,78 @@ double deltaT(struct timeval *t1p, struct timeval *t2p)
 int is_number(char *number)
 {
 	int digit = 1;
+	if (strlen(number) == 0) {
+		return 0;
+	}
 	while (digit && (*number != '\0')) {
 		digit = isdigit(*number);
 		number++;
 	}
-	return digit;
+	return digit ? 1 : 0;
 }
 
 /* tries to convert the given string into an integer. it strips
  * white-spaces and exits if an error happens */
 int str_to_int(char *num)
 {
-	int ret;
+	int ret, len;
+	char *end, *start;
+	char *backup = NULL;
 
-#ifdef HAVE_STRTOL
-	errno = 0;
-	ret = strtol(num, NULL, 10);
-	if (errno == EINVAL || errno == ERANGE) {
-		printf("%s\n", num);
-		perror("integer converting error");
-		exit_code(2);
+	len = strlen(num);
+	if (len == 0) {
+		fprintf(stderr, "error: string has zero length: '%s'\n", num);
+		ret = 2;
+		goto error;
 	}
-#else
-	char backup;
-	int len = strlen(num);
-	char *start = num;
-	char *end = num + len;
+	backup = malloc(len + 1);
+	if (!backup) {
+		fprintf(stderr, "error: failed to allocate memory\n");
+		ret = 2;
+		goto error;
+	}
+	memcpy(backup, num, len + 1);
 
-	while (!isdigit(*start) && isspace(*start) && start < end)
+	start = backup;
+	end = backup + len;
+	while (isspace(*start) && (start < end)) {
 		start++;
-	end = start;
-	end++;
-	while (end < num + len && *end != '\0' && !isspace(*end))
+	}
+	if (start == end) {
+		fprintf(stderr, "error: string is too short: '%s'\n", num);
+		ret = 2;
+		goto error;
+	}
+	end--;
+	while (isspace(*end) && (end > start)) {
+		end--;
+	}
+	if (end != (backup + len - 1)) {
 		end++;
-	backup = *end;
-	*end = '\0';
+		*end = '\0';
+	}
 	if (!is_number(start)) {
-		fprintf(stderr, "error: string is not a number: %s\n", start);
-		exit_code(2);
+		fprintf(stderr, "error: string is not a number: '%s'\n", start);
+		ret = 2;
+		goto error;
 	}
 	ret = atoi(start);
-	*end = backup;
-	if (ret <= 0) {
-		fprintf(stderr, "error: failed to convert string to integer: %s\n", num);
-		exit_code(2);
+	if (ret >= 0) {
+		free(backup);
+		return ret;
 	}
+	else {
+		fprintf(stderr, "error: failed to convert string to integer: '%s'\n", num);
+		ret = 2;
+	}
+error:
+	if (backup) {
+		free(backup);
+	}
+#ifndef RUNNING_CHECK
+	exit_code(ret);
 #endif
-	return ret;
+	return (ret * - 1);
 }
 
 /* reads into the given buffer from standard input until the EOF
