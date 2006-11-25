@@ -1,6 +1,6 @@
 #include "../config.h"
 
-#ifdef HAVE_CHECK_UNIT_TEST
+#ifdef HAVE_CHECK_H
 
 #include <stdlib.h>
 #include <check.h>
@@ -92,10 +92,12 @@ int main(void) {
 	return (number_failed == 0) ? EXIT_SUCCESS : EXIT_FAILURE;
 }
 
-#else
+#else /* HAVE_CHECK_H */
+
 #include <stdio.h>
 int main(void) {
 	printf("check_helper: !!! missing check unit test framework !!!\n");
 	return 0;
 }
-#endif
+
+#endif /* HAVE_CHECK_H */

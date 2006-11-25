@@ -18,8 +18,8 @@
 /* Has cares.h */
 #undef HAVE_CARES_H
 
-/* Has check unit test framework available */
-#undef HAVE_CHECK_UNIT_TEST
+/* Has check.h */
+#undef HAVE_CHECK_H
 
 /* The crypto lib has MD5 functions */
 #undef HAVE_CRYPTO_WITH_MD5
