@@ -85,7 +85,7 @@ int is_ip(char *str) {
 	}
 
 	/* three dots with upto three digits in before, between and after ? */
-	if (dotcount == 3 && i > 0 && i <= 3)
+	if (*str == '\0' && dotcount == 3 && i > 0 && i <= 3)
 		return 1;
 	else
 		return 0;
@@ -108,8 +108,12 @@ unsigned long getaddress(char *host) {
 	struct hostent* pent;
 	long l, *lp;
 
-	if (is_ip(host))
+	if (strlen(host) == 0) {
+		return 0;
+	}
+	if (is_ip(host)) {
 		return inet_addr(host);
+	}
 
 	/* try the system's own resolution mechanism for dns lookup:
 	 required only for domain names.
@@ -650,13 +654,14 @@ void replace_strings(char *mes, char *strings) {
 #endif
 }
 
-/* insert \r in front of all \n if it is not present allready */
+/* insert \r in front of all \n if it is not present allready
+ * and and a trailing \r\n is not present */
 void insert_cr(char *mes){
 	char *lf, *pos, *backup;
 
 	pos = mes;
 	lf = strchr(pos, '\n');
-	while ((lf != NULL) && (*(--lf) != '\r')) {
+	while ((lf != NULL) && (lf >= mes+1) && (*(--lf) != '\r')) {
 		backup=str_alloc(strlen(lf)+2);
 		strcpy(backup, lf+1);
 		*(lf+1) = '\r';
