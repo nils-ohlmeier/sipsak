@@ -623,9 +623,7 @@ void create_sockets(struct sipsak_con_data *cd) {
 			}
 # endif /* USE_OPENSSL */
 #endif /* USE_GNUTLS */
-#ifdef DEBUG
-			printf("initialized tls socket %i\n", cd->csock);
-#endif
+			dbg("initialized tls socket %i\n", cd->csock);
 		}
 #endif /* WITH_TLS_TRANSP */
 	}
@@ -658,9 +656,7 @@ void close_sockets(struct sipsak_con_data *cd) {
 #endif /* WITH_TLS_TRANSP */
 		shutdown(cd->csock, SHUT_RDWR);
 	}
-#ifdef DEBUG
-	printf("sockets closed\n");
-#endif
+	dbg("sockets closed\n");
 }
 
 void send_message(char* mes, struct sipsak_con_data *cd,
@@ -674,15 +670,11 @@ void send_message(char* mes, struct sipsak_con_data *cd,
 		}
 		/* lets fire the request to the server and store when we did */
 		if (cd->csock == -1) {
-#ifdef DEBUG
-			printf("\nusing un-connected socket for sending\n");
-#endif
+			dbg("\nusing un-connected socket for sending\n");
 			ret = sendto(cd->usock, mes, strlen(mes), 0, (struct sockaddr *) &(cd->adr), sizeof(struct sockaddr));
 		}
 		else {
-#ifdef DEBUG
-			printf("\nusing connected socket for sending\n");
-#endif
+			dbg("\nusing connected socket for sending\n");
 #ifdef WITH_TLS_TRANSP
 			if (transport == SIP_TLS_TRANSPORT) {
 # ifdef USE_GNUTLS
@@ -883,22 +875,16 @@ int complete_mes(char *mes, int size) {
 	char *tmp = NULL;
 
 	cl = get_cl(mes);
-#ifdef DEBUG
-	printf("CL: %i\n", cl);
-#endif
+	dbg("CL: %i\n", cl);
 	if (cl < 0){
 		if (verbose > 0)
 			printf("missing CL header; waiting for more bytes...\n");
 		return 0;
 	}
 	tmp = get_body(mes);
-#ifdef DEBUG
-	printf("body: '%s'\n", tmp);
-#endif
+	dbg("body: '%s'\n", tmp);
 	headers = tmp - mes;
-#ifdef DEBUG
-	printf("length: %i, headers: %i\n", size, headers);
-#endif
+	dbg("length: %i, headers: %i\n", size, headers);
 	len = headers + cl;
 	if (len == size) {
 		if (verbose > 0)
@@ -1005,9 +991,7 @@ int recv_message(char *buf, int size, int inv_trans,
 			udp_hdr = (struct udphdr *) ((char *)s_ip_hdr + s_ip_len);
 			srcport = ntohs(udp_hdr->uh_sport);
 			dstport = ntohs(udp_hdr->uh_dport);
-#ifdef DEBUG
-			printf("\nlport: %i, rport: %i\n", lport, rport);
-#endif
+			dbg("\nlport: %i, rport: %i\n", lport, rport);
 			if ((srcport == lport) && (dstport == rport)) {
 				printf(" (type: %u, code: %u)", icmp_hdr->icmp_type, icmp_hdr->icmp_code);
 #ifdef HAVE_INET_NTOP
@@ -1133,32 +1117,26 @@ int set_target(struct sockaddr_in *adr, unsigned long target, int port, int sock
 # ifdef USE_GNUTLS
 			ret = gnutls_handshake(tls_session);
 			if (ret < 0) {
-#ifdef DEBUG
-				printf("*** TLS Handshake FAILED!!!\n");
-#endif
+				dbg("TLS Handshake FAILED!!!\n");
 				gnutls_perror(ret);
 				exit_code(3);
 			}
-#ifdef DEBUG
-			else {
-				printf("*** TLS Handshake was completed!\n");
-#ifdef DEBUG
+			else if (verbose > 2) {
+				dbg(" TLS Handshake was completed!\n");
 				gnutls_session_info(tls_session);
-#endif
 				verify_certificate_simple(tls_session, domainname);
 				//verify_certificate_chain(tls_session, domainname, cert_chain, cert_chain_length);
 			}
-#endif
 # else /* USE_GNUTLS */
 #  ifdef USE_OPENSSL
 			ret = SSL_connect(ssl);
 			if (ret == 1) {
-#ifdef DEBUG
-				printf("TLS connect successful\n");
-				printf("TLS connect: new connection using %s %s %d\n",
-					SSL_get_cipher_version(ssl), SSL_get_cipher_name(ssl),
-					SSL_get_cipher_bits(ssl, 0));
-#endif
+				dbg("TLS connect successful\n");
+				if (verbose > 2) {
+					printf("TLS connect: new connection using %s %s %d\n",
+						SSL_get_cipher_version(ssl), SSL_get_cipher_name(ssl),
+						SSL_get_cipher_bits(ssl, 0));
+				}
 				cert = SSL_get_peer_certificate(ssl);
 				if (cert != 0) {
 					tls_dump_cert_info("TLS connect: server certificate", cert);

@@ -18,6 +18,9 @@
  */
 #include "sipsak.h"
 
+#ifdef HAVE_STDARG_H
+# include <stdarg.h>
+#endif
 #ifdef HAVE_NETDB_H
 # include <netdb.h>
 #endif
@@ -144,9 +147,7 @@ static const unsigned char *parse_rr(const unsigned char *aptr, const unsigned c
 	int status, type, dnsclass, dlen;
 	struct in_addr addr;
 
-#ifdef DEBUG
-	printf("ca_tmpname: %s\n", ca_tmpname);
-#endif
+	dbg("ca_tmpname: %s\n", ca_tmpname);
 	status = ares_expand_name(aptr, abuf, alen, &name, &len);
 	if (status != ARES_SUCCESS) {
 		printf("error: failed to expand query name\n");
@@ -182,17 +183,13 @@ static const unsigned char *parse_rr(const unsigned char *aptr, const unsigned c
 	if (type == CARES_TYPE_SRV) {
 		free(name);
 		caport = DNS__16BIT(aptr + 4);
-#ifdef DEBUG
-		printf("caport: %i\n", caport);
-#endif
+		dbg("caport: %i\n", caport);
 		status = ares_expand_name(aptr + 6, abuf, alen, &name, &len);
 		if (status != ARES_SUCCESS) {
 			printf("error: failed to expand SRV name\n");
 			return NULL;
 		}
-#ifdef DEBUG
-		printf("SRV name: %s\n", name);
-#endif
+		dbg("SRV name: %s\n", name);
 		if (is_ip(name)) {
 			caadr = inet_addr(name);
 			free(name);
@@ -227,9 +224,7 @@ static const unsigned char *skip_rr(const unsigned char *aptr, const unsigned ch
 	long len;
 	char *name;
 
-#ifdef DEBUG
-	printf("skipping rr section...\n");
-#endif
+	dbg("skipping rr section...\n");
 	status = ares_expand_name(aptr, abuf, alen, &name, &len);
 	aptr += len;
 	dlen = DNS_RR_LEN(aptr);
@@ -244,9 +239,7 @@ static const unsigned char *skip_query(const unsigned char *aptr, const unsigned
 	long len;
 	char *name;
 
-#ifdef DEBUG
-	printf("skipping query section...\n");
-#endif
+	dbg("skipping query section...\n");
 	status = ares_expand_name(aptr, abuf, alen, &name, &len);
 	aptr += len;
 	aptr += NS_QFIXEDSZ;
@@ -259,9 +252,7 @@ static void cares_callback(void *arg, int status, unsigned char *abuf, int alen)
 	unsigned int ancount, nscount, arcount;
 	const unsigned char *aptr;
 
-#ifdef DEBUG
-	printf("cares_callback: status=%i, alen=%i\n", status, alen);
-#endif
+	dbg("cares_callback: status=%i, alen=%i\n", status, alen);
 	if (status != ARES_SUCCESS) {
 		if (verbose > 1)
 			printf("ares failed: %s\n", ares_strerror(status));
@@ -271,10 +262,8 @@ static void cares_callback(void *arg, int status, unsigned char *abuf, int alen)
 	ancount = DNS_HEADER_ANCOUNT(abuf);
 	nscount = DNS_HEADER_NSCOUNT(abuf);
 	arcount = DNS_HEADER_ARCOUNT(abuf);
-	
-#ifdef DEBUG
-	printf("ancount: %i, nscount: %i, arcount: %i\n", ancount, nscount, arcount);
-#endif
+
+	dbg("ancount: %i, nscount: %i, arcount: %i\n", ancount, nscount, arcount);
 
 	/* safety check */
 	if (alen < NS_HFIXEDSZ)
@@ -308,9 +297,7 @@ inline unsigned long srv_ares(char *host, int *port, char *srv) {
 	caport = 0;
 	caadr = 0;
 	ca_tmpname = NULL;
-#ifdef DEBUG
-	printf("!!! ARES query !!!\n");
-#endif
+	dbg("starting ARES query\n");
 
 	srvh_len = strlen(host) + strlen(srv) + 2;
 	srvh = malloc(srvh_len);
@@ -322,14 +309,10 @@ inline unsigned long srv_ares(char *host, int *port, char *srv) {
 	strncpy(srvh, srv, strlen(srv));
 	memcpy(srvh + strlen(srv), ".", 1);
 	strcpy(srvh + strlen(srv) + 1, host);
-#ifdef DEBUG
-	printf("hostname: '%s', len: %i\n", srvh, srvh_len);
-#endif
+	dbg("hostname: '%s', len: %i\n", srvh, srvh_len);
 
 	ares_query(channel, srvh, CARES_CLASS_C_IN, CARES_TYPE_SRV, cares_callback, (char *) NULL);
-#ifdef DEBUG
-	printf("after ares_query\n");
-#endif
+	dbg("ares_query finished, waiting for result...\n");
 	/* wait for query to complete */
 	while (1) {
 		FD_ZERO(&read_fds);
@@ -345,9 +328,7 @@ inline unsigned long srv_ares(char *host, int *port, char *srv) {
 		}
 		ares_process(channel, &read_fds, &write_fds);
 	}
-#ifdef DEBUG
-	printf("end of while\n");
-#endif
+	dbg("ARES answer processed\n");
 	*port = caport;
 	if (caadr == 0 && ca_tmpname != NULL) {
 		caadr = getaddress(ca_tmpname);
@@ -499,7 +480,7 @@ unsigned long getsrvadr(char *host, int *port, unsigned int *transport) {
 /* because the full qualified domain name is needed by many other
    functions it will be determined by this function.
 */
-void get_fqdn(){
+void get_fqdn() {
 	char hname[100], dname[100], hlp[18];
 	size_t namelen=100;
 	struct hostent* he;
@@ -577,7 +558,7 @@ void get_fqdn(){
 
 /* this function searches for search in mess and replaces it with
    replacement */
-void replace_string(char *mess, char *search, char *replacement){
+void replace_string(char *mess, char *search, char *replacement) {
 	char *backup, *insert;
 
 	insert=STRCASESTR(mess, search);
@@ -605,18 +586,14 @@ void replace_strings(char *mes, char *strings) {
 	char sep;
 
 	pos=atr=val=repl = NULL;
-#ifdef DEBUG
-	printf("replace_strings entered\nstrings: '%s'\n", strings);
-#endif
+	dbg("replace_strings entered\nstrings: '%s'\n", strings);
 	if ((isalnum(*strings) != 0) && 
 		(isalnum(*(strings + strlen(strings) - 1)) != 0)) {
 		replace_string(req, "$replace$", replace_str);
 	}
 	else {
 		sep = *strings;
-#ifdef DEBUG
-		printf("sep: '%c'\n", sep);
-#endif
+		dbg("sep: '%c'\n", sep);
 		end = strings + strlen(strings);
 		pos = strings + 1;
 		while (pos < end) {
@@ -631,9 +608,7 @@ void replace_strings(char *mes, char *strings) {
 					pos++;
 				}
 			}
-#ifdef DEBUG
-			printf("atr: '%s'\nval: '%s'\n", atr, val);
-#endif
+			dbg("atr: '%s'\nval: '%s'\n", atr, val);
 			if ((atr != NULL) && (val != NULL)) {
 				repl = str_alloc(strlen(val) + 3);
 				if (repl == NULL) {
@@ -644,19 +619,15 @@ void replace_strings(char *mes, char *strings) {
 				replace_string(mes, repl, val);
 				free(repl);
 			}
-#ifdef DEBUG
-			printf("pos: '%s'\n", pos);
-#endif
+			dbg("pos: '%s'\n", pos);
 		}
 	}
-#ifdef DEBUG
-	printf("mes:\n'%s'\n", mes);
-#endif
+	dbg("mes:\n'%s'\n", mes);
 }
 
 /* insert \r in front of all \n if it is not present allready
  * and and a trailing \r\n is not present */
-void insert_cr(char *mes){
+void insert_cr(char *mes) {
 	char *lf, *pos, *backup;
 
 	pos = mes;
@@ -690,8 +661,7 @@ void swap_buffers(char *fst, char *snd) {
 	free(tmp);
 }
 
-void swap_ptr(char **fst, char **snd)
-{
+void swap_ptr(char **fst, char **snd) {
 	char *tmp;
 
 	tmp = *fst;
@@ -700,8 +670,7 @@ void swap_ptr(char **fst, char **snd)
 }
 
 /* trashes one character in buff randomly */
-void trash_random(char *message)
-{
+void trash_random(char *message) {
 	int r;
 	float t;
 	char *position;
@@ -718,8 +687,7 @@ void trash_random(char *message)
 /* this function is taken from traceroute-1.4_p12 
    which is distributed under the GPL and it returns
    the difference between to timeval structs */
-double deltaT(struct timeval *t1p, struct timeval *t2p)
-{
+double deltaT(struct timeval *t1p, struct timeval *t2p) {
 	register double dt;
 
 	dt = (double)(t2p->tv_sec - t1p->tv_sec) * 1000.0 +
@@ -728,8 +696,7 @@ double deltaT(struct timeval *t1p, struct timeval *t2p)
 }
 
 /* returns one if the string contains only numbers otherwise zero */
-int is_number(char *number)
-{
+int is_number(char *number) {
 	int digit = 1;
 	if (strlen(number) == 0) {
 		return 0;
@@ -743,8 +710,7 @@ int is_number(char *number)
 
 /* tries to convert the given string into an integer. it strips
  * white-spaces and exits if an error happens */
-int str_to_int(char *num)
-{
+int str_to_int(int mode, char *num) {
 	int ret, len;
 	char *end, *start;
 	char *backup = NULL;
@@ -755,6 +721,7 @@ int str_to_int(char *num)
 		ret = 2;
 		goto error;
 	}
+	/* we need to make a backup to insert the zero char */
 	backup = malloc(len + 1);
 	if (!backup) {
 		fprintf(stderr, "error: failed to allocate memory\n");
@@ -773,12 +740,22 @@ int str_to_int(char *num)
 		ret = 2;
 		goto error;
 	}
-	end--;
-	while (isspace(*end) && (end > start)) {
+	if (mode == 0) {
 		end--;
+		while (isspace(*end) && (end > start)) {
+			end--;
+		}
+		if (end != (backup + len - 1)) {
+			end++;
+			*end = '\0';
+		}
 	}
-	if (end != (backup + len - 1)) {
+	else {
+		end = start;
 		end++;
+		while ((end < backup + len) && *end != '\0' && !isspace(*end)) {
+			end++;
+		}
 		*end = '\0';
 	}
 	if (!is_number(start)) {
@@ -799,16 +776,18 @@ error:
 	if (backup) {
 		free(backup);
 	}
+	if (mode == 0) {
+		/* libcheck expects a return value not an exit code */
 #ifndef RUNNING_CHECK
-	exit_code(ret);
+		exit_code(ret);
 #endif
+	}
 	return (ret * - 1);
 }
 
 /* reads into the given buffer from standard input until the EOF
  * character, LF character or the given size of the buffer is exceeded */
-int read_stdin(char *buf, int size, int ret)
-{
+int read_stdin(char *buf, int size, int ret) {
 	int i, j;
 
 	for(i = 0; i < size - 1; i++) {
@@ -830,8 +809,7 @@ int read_stdin(char *buf, int size, int ret)
 
 /* tries to allocate the given size of memory and sets it all to zero.
  * if the allocation fails it exits */
-void *str_alloc(size_t size)
-{
+void *str_alloc(size_t size) {
 	char *ptr;
 #ifdef HAVE_CALLOC
 	ptr = calloc(1, size);
@@ -846,4 +824,16 @@ void *str_alloc(size_t size)
 	memset(ptr, 0, size);
 #endif
 	return ptr;
+}
+
+void dbg(char* format, ...) {
+#ifdef DEBUG
+	va_list ap;
+
+	fprintf(stderr, "DEBUG: ");
+	va_start(ap, format);
+	vfprintf(stderr, format, ap);
+	fflush(stderr);
+	va_end(ap);
+#endif
 }

@@ -198,7 +198,7 @@ void set_maxforw(char *mes, int value){
 		strncpy(backup, crlfi, strlen(crlfi));
 		crlfi=max + MAX_FRW_STR_LEN;
 		if (value == -1) {
-			maxforward = str_to_int(crlfi);
+			maxforward = str_to_int(1, crlfi);
 			maxforward++;
 		}
 		else {
@@ -286,7 +286,7 @@ int get_cl(char* mes) {
 	else {
 		cl+=15;
 	}
-	return str_to_int(cl);
+	return str_to_int(1, cl);
 }
 
 /* returns 1 if the rr_line contains the lr parameter
@@ -417,7 +417,7 @@ int cseq(char *message)
 	cseq=STRCASESTR(message, CSEQ_STR);
 	if (cseq) {
 		cseq+=6;
-		num=str_to_int(cseq);
+		num=str_to_int(1, cseq);
 		if (num < 1) {
 			if (verbose > 2)
 				printf("CSeq found but not convertable\n");
@@ -480,13 +480,13 @@ void parse_uri(char *uri, char **scheme, char **user, char **host, int *port)
 				*host = ++at;
 				if ((col2=strchr(*host,':'))!=NULL) {
 					*col2 = '\0';
-					*port = str_to_int(++col2);
+					*port = str_to_int(1, ++col2);
 				}
 			}
 			else {
 				*user = uri;
 				*host = ++at;
-				*port = str_to_int(++col);
+				*port = str_to_int(1, ++col);
 			}
 		}
 		else {
@@ -496,12 +496,12 @@ void parse_uri(char *uri, char **scheme, char **user, char **host, int *port)
 				*col2 = '\0';
 				*scheme = uri;
 				*host = col;
-				*port = str_to_int(++col2);
+				*port = str_to_int(1, ++col2);
 			}
 			else {
 				if (is_number(col)) {
 					*host = uri;
-					*port = str_to_int(col);
+					*port = str_to_int(1, col);
 				}
 				else {
 					*scheme = uri;

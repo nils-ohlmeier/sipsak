@@ -357,10 +357,10 @@ int main(int argc, char *argv[])
 				}
 				break;
 			case 'A':
-				timing=str_to_int(optarg);
+				timing=str_to_int(0, optarg);
 				break;
 			case 'b':
-				namebeg=str_to_int(optarg);
+				namebeg=str_to_int(0, optarg);
 				break;
 			case 'B':
 				mes_body=str_alloc(strlen(optarg) + 1);
@@ -425,10 +425,10 @@ int main(int argc, char *argv[])
 				redirects=0;
 				break;
 			case 'D':
-				inv_final = str_to_int(optarg) * SIP_T1;
+				inv_final = str_to_int(0, optarg) * SIP_T1;
 				break;
 			case 'e':
-				nameend=str_to_int(optarg);
+				nameend=str_to_int(0, optarg);
 				break;
 			case 'E':
 				if (strlen(optarg) == 3 && 
@@ -522,13 +522,13 @@ int main(int argc, char *argv[])
 				break;
 #endif
 			case 'l':
-				lport=str_to_int(optarg);
+				lport=str_to_int(0, optarg);
 				break;
 			case 'L':
 				fix_crlf=0;
 				break;
 			case 'm':
-				maxforw=str_to_int(optarg);
+				maxforw=str_to_int(0, optarg);
 				break;
 			case 'M':
 				message=1;
@@ -545,7 +545,7 @@ int main(int argc, char *argv[])
 					sleep_ms = -2;
 				}
 				else {
-					sleep_ms = str_to_int(optarg);
+					sleep_ms = str_to_int(0, optarg);
 				}
 				break;
 			case 'O':
@@ -586,7 +586,7 @@ int main(int argc, char *argv[])
 				outbound_proxy=1;
 				break;
 			case 'P':
-				processes=str_to_int(optarg);
+				processes=str_to_int(0, optarg);
 				break;
 			case 'q':
 				if (re) {
@@ -607,7 +607,7 @@ int main(int argc, char *argv[])
 				break;
 			case 'r':
 				port = 0;
-				port=str_to_int(optarg);
+				port=str_to_int(0, optarg);
 				if (rport) {
 					fprintf(stderr, "warning: you are overwritting the destination port with the r argument\n");
 				}
@@ -676,7 +676,7 @@ int main(int argc, char *argv[])
 				symmetric=1;
 				break;
 			case 't':
-				trashchar=str_to_int(optarg);
+				trashchar=str_to_int(0, optarg);
 				break;
 			case 'T':
 				trace=1;
@@ -737,6 +737,9 @@ int main(int argc, char *argv[])
 #ifdef HAVE_STRNCASECMP
 				printf(", CMP_CASE_INSENSITIVE");
 #endif
+#ifdef DEBUG
+				printf(", DEBUG");
+#endif
 				printf("\n");
 				exit_code(0);
 				break;
@@ -744,10 +747,10 @@ int main(int argc, char *argv[])
 				warning_ext=1;
 				break;
 			case 'W':
-				nagios_warn = str_to_int(optarg);
+				nagios_warn = str_to_int(0, optarg);
 				break;
 			case 'x':
-				expires_t=str_to_int(optarg);
+				expires_t=str_to_int(0, optarg);
 				break;
 #ifdef HAVE_GETOPT_LONG
 			case 'X':
@@ -755,7 +758,7 @@ int main(int argc, char *argv[])
 				break;
 #endif
 			case 'z':
-				rand_rem=str_to_int(optarg);
+				rand_rem=str_to_int(0, optarg);
 				if (rand_rem < 0 || rand_rem > 100) {
 					fprintf(stderr, "error: z option must between 0 and 100\n");
 					exit_code(2);
