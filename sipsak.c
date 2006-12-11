@@ -395,8 +395,8 @@ int main(int argc, char *argv[])
 				}
 				else if ((strlen(optarg) == 1 && STRNCASECMP(optarg, "*", 1) == 0) ||
 						(strlen(optarg) == 4 && STRNCASECMP(optarg, "star", 4) == 0)) {
-					contact_uri=str_alloc(strlen(optarg)+1);
-					strncpy(contact_uri, optarg, strlen(optarg));
+					contact_uri=str_alloc(2);
+					memcpy(contact_uri, "*", 1);
 				}
 				else {
 					backup=str_alloc(strlen(optarg)+1);
