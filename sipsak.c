@@ -393,7 +393,8 @@ int main(int argc, char *argv[])
 					(strlen(optarg) == 4 && STRNCASECMP(optarg, "none", 4) == 0)) {
 					empty_contact = 1;
 				}
-				else if (strlen(optarg) == 1 && STRNCASECMP(optarg, "*", 1) == 0) {
+				else if ((strlen(optarg) == 1 && STRNCASECMP(optarg, "*", 1) == 0) ||
+						(strlen(optarg) == 4 && STRNCASECMP(optarg, "star", 4) == 0)) {
 					contact_uri=str_alloc(strlen(optarg)+1);
 					strncpy(contact_uri, optarg, strlen(optarg));
 				}

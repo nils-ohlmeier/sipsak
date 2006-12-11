@@ -177,6 +177,12 @@ or
 .B none
 will result in no contact header in the REGISTER request and thus the server
 should answer with the current bindings for the account at the registrar.
+The special words 
+.B *
+or
+.B star
+will result in Contact header containing just a star, e.g. to remove all
+bindings by using expires value 0 together with this Contact.
 
 .IP "-d, --ignore-redirects"
 If this option is set all redirects will be ignored. By default without this 
