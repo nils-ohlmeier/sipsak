@@ -585,6 +585,9 @@ int main(int argc, char *argv[])
 					rport = port;
 				}
 				outbound_proxy=1;
+#ifdef DEBUG
+				printf("address: %lu, rport: %i\n", address, rport);
+#endif
 				break;
 			case 'P':
 				processes=str_to_int(0, optarg);
@@ -644,7 +647,7 @@ int main(int argc, char *argv[])
 				if (port && !rport) {
 					rport = port;
 				}
-				if (is_ip(domainname)) {
+				if (is_ip(domainname) && !address) {
 					address = getaddress(domainname);
 					if (transport == 0)
 						transport = SIP_UDP_TRANSPORT;
@@ -671,6 +674,9 @@ int main(int argc, char *argv[])
 					domainname = backup;
 				}
 				uri_b=1;
+#ifdef DEBUG
+				printf("address: %lu, rport: %i, username: '%s', domain: '%s'\n", address, rport, username, domainname);
+#endif
 				break;
 			case 'S':
 				fprintf(stderr, "warning: symmetric does not work with a-symmetric servers\n");
