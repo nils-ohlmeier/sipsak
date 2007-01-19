@@ -115,6 +115,7 @@
 #define SIP_T2 8*SIP_T1
 
 #define SIPSAK_VERSION PACKAGE_VERSION
+#define UA_VAL_STR "sipsak " SIPSAK_VERSION
 #define BUFSIZE		4096
 
 #define SIPSAK_MAX_PASSWD_LEN 20
@@ -299,8 +300,8 @@
 #define SIPSAK_HASHHEXLEN 2 * SIPSAK_HASHLEN
 
 // FIXME: this has to replaced with a real evaluation
-// #define WITH_TLS_TRANSP 1
-// #define DEBUG 1
+#define WITH_TLS_TRANSP 1
+#define DEBUG 1
 
 #ifdef WITH_TLS_TRANSP
 char *cert_file, *ca_file;
