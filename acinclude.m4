@@ -48,6 +48,32 @@ AC_DEFUN([SIPSAK_OLD_FQDN],
        ])
 ])
 
+AC_DEFUN([SIPSAK_TLS],
+[
+    AC_MSG_CHECKING([disable TLS])
+    AC_ARG_ENABLE([tls],
+       AC_HELP_STRING([--disable-tls], [compile without TLS transport]),
+       [
+        AC_MSG_RESULT([yes])
+        AC_DEFINE([SIPSAK_NO_TLS], [1], [Skip TLS transport])
+       ],
+       [ AC_MSG_RESULT([not requested])
+       ])
+])
+
+AC_DEFUN([SIPSAK_DBG_PRINT],
+[
+    AC_MSG_CHECKING([enable debug messages])
+    AC_ARG_ENABLE([debug],
+       AC_HELP_STRING([--enable-debug], [compile extra debug messages]),
+       [
+        AC_MSG_RESULT([yes])
+        AC_DEFINE([SIPSAK_PRINT_DBG], [1], [Enable debug messages])
+       ],
+       [ AC_MSG_RESULT([not requested])
+       ])
+])
+
 dnl AM_PATH_CHECK([MINIMUM-VERSION])
 dnl Test for check, and define CHECK_CFLAGS, CHECK_LIBS and HAVE_CHECK_H
 dnl

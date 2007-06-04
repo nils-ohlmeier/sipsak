@@ -90,6 +90,8 @@ fi
 
 SIPSAK_TIMER
 SIPSAK_OLD_FQDN
+SIPSAK_TLS
+SIPSAK_DBG_PRINT
 
 AC_CONFIG_FILES([Makefile
                  tests/Makefile])

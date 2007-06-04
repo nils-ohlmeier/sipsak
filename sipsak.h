@@ -74,6 +74,9 @@
 #ifdef HAVE_GNUTLS
 # define HAVE_EXTERNAL_MD5
 # define USE_GNUTLS
+# ifndef SIPSAK_NO_TLS
+#  define WITH_TLS_TRANSP 1
+# endif
 # include <gnutls/gnutls.h>
 #else
 # ifdef HAVE_OPENSSL_MD5_H
@@ -90,6 +93,10 @@
 # ifdef HAVE_CRYPTO_WITH_SHA1
 #  define HAVE_OPENSSL_SHA1
 # endif
+#endif
+
+#ifdef SIPSAK_PRINT_DBG
+# define DEBUG 1
 #endif
 
 #ifndef REG_NOERROR
@@ -127,8 +134,6 @@
 #define REQ_OPT 5
 #define REQ_FLOOD 6
 #define REQ_RAND 7
-
-#undef WITH_TLS_TRANSP
 
 #define SIP_TLS_TRANSPORT 1
 #define SIP_TCP_TRANSPORT 2
@@ -298,10 +303,6 @@
 # define SIPSAK_HASHLEN SIPSAK_HASHLEN_MD5 
 #endif
 #define SIPSAK_HASHHEXLEN 2 * SIPSAK_HASHLEN
-
-// FIXME: this has to replaced with a real evaluation
-#define WITH_TLS_TRANSP 1
-#define DEBUG 1
 
 #ifdef WITH_TLS_TRANSP
 char *cert_file, *ca_file;
