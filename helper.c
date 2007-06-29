@@ -173,9 +173,7 @@ static const unsigned char *parse_rr(const unsigned char *aptr, const unsigned c
 		free(name);
 		return NULL;
 	}
-	if ((ca_tmpname == NULL && type != CARES_TYPE_SRV) ||
-		(ca_tmpname != NULL && 
-		 	(type != CARES_TYPE_A && type != CARES_TYPE_CNAME))) {
+	if (type != CARES_TYPE_SRV && type != CARES_TYPE_A && type != CARES_TYPE_CNAME) {
 		printf("error: unsupported DNS response type (%i)\n", type);
 		free(name);
 		return NULL;
@@ -199,15 +197,32 @@ static const unsigned char *parse_rr(const unsigned char *aptr, const unsigned c
 		}
 	}
 	else if (type == CARES_TYPE_CNAME) {
-		if (STRNCASECMP(ca_tmpname, name, strlen(ca_tmpname)) == 0) {
+		if ((ca_tmpname != NULL) &&
+				(STRNCASECMP(ca_tmpname, name, strlen(ca_tmpname)) == 0)) {
 			ca_tmpname = malloc(strlen(name));
 			if (ca_tmpname == NULL) {
 				printf("error: failed to allocate memory\n");
 				exit_code(2);
 			}
 			strcpy(ca_tmpname, name);
+			free(name);
 		}
-		free(name);
+		else {
+			free(name);
+			status = ares_expand_name(aptr, abuf, alen, &name, &len);
+			if (status != ARES_SUCCESS) {
+				printf("error: failed to expand CNAME\n");
+				return NULL;
+			}
+			dbg("CNAME: %s\n", name);
+			if (is_ip(name)) {
+				caadr = inet_addr(name);
+				free(name);
+			}
+			else {
+				ca_tmpname = name;
+			}
+		}
 	}
 	else if (type == CARES_TYPE_A) {
 		if (dlen == 4 && STRNCASECMP(ca_tmpname, name, strlen(ca_tmpname)) == 0) {
@@ -278,7 +293,7 @@ static void cares_callback(void *arg, int status, unsigned char *abuf, int alen)
 		else
 			aptr = skip_rr(aptr, abuf, alen);
 	}
-	if (caadr == 0) {
+	if (caadr == 0 && aptr != NULL) {
 		for (i = 0; i < nscount; i++) {
 			aptr = skip_rr(aptr, abuf, alen);
 		}
