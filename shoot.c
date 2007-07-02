@@ -957,6 +957,7 @@ void shoot(char *buf, int buff_size)
 			sleep_ms_s.tv_nsec = (rand_tmp % 1000) * 1000;
 		}
 		if (sleep_ms != 0) {
+			dbg("sleeping for %li s + %li ns\n", sleep_ms_s.tv_sec, sleep_ms_s.tv_nsec);
 			nanosleep(&sleep_ms_s, &sleep_rem);
 		}
 
