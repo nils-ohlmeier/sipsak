@@ -528,6 +528,12 @@ per cent of the bindings will be removed, is determined by the
 USRLOC_REMOVE_PERCENT define within the code (set it before compilation).
 Multiple removing of bindings is possible, and cannot be prevented.
 
+.IP "-Z, --timer-t1"
+Sets the amount of milliseconds for the SIP timer T1. It determines the
+length of the gaps between two retransmissions of a request on a unreliable
+transport. Default value is 500 if not changed via the configure option
+--enable-timeout.
+
 .SH RETURN VALUES
 The return value 0 means that a 200 was received. 1 means something else 
 then 1xx or 2xx was received.

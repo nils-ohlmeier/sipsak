@@ -766,7 +766,7 @@ int check_for_message(char *recv, int size, struct sipsak_con_data *cd,
 	if (count->send_counter==1) {
 		memcpy(&(srt->firstsendt), &(srt->sendtime), sizeof(struct timeval));
 	}
-	if (sd->retryAfter == SIP_T1) {
+	if (sd->retryAfter == timer_t1) {
 		memcpy(&(srt->starttime), &(srt->sendtime), sizeof(struct timeval));
 	}
 	if (ret == 0)
@@ -805,7 +805,7 @@ int check_for_message(char *recv, int size, struct sipsak_con_data *cd,
 			}
 		}
 		senddiff = deltaT(&(srt->starttime), &(srt->recvtime));
-		if (senddiff > (float)inv_final) {
+		if (senddiff > (float)timer_final) {
 			if (timing == 0) {
 				if (verbose>0)
 					printf("*** giving up, no final response after %.3f ms\n", senddiff);
@@ -817,7 +817,7 @@ int check_for_message(char *recv, int size, struct sipsak_con_data *cd,
 				sd->all_delay += senddiff;
 				sd->big_delay = senddiff;
 				new_transaction(req);
-				sd->retryAfter = SIP_T1;
+				sd->retryAfter = timer_t1;
 				if (timing == 0) {
 					printf("%.3f/%.3f/%.3f ms\n", sd->small_delay, sd->all_delay / count->run, sd->big_delay);
 					exit_code(3);
@@ -826,11 +826,11 @@ int check_for_message(char *recv, int size, struct sipsak_con_data *cd,
 		}
 		else {
 			/* set retry time according to RFC3261 */
-			if ((inv_trans) || (sd->retryAfter *2 < SIP_T2)) {
+			if ((inv_trans) || (sd->retryAfter *2 < timer_t2)) {
 				sd->retryAfter = sd->retryAfter * 2;
 			}
 			else {
-				sd->retryAfter = SIP_T2;
+				sd->retryAfter = timer_t2;
 			}
 		}
 		(count->retrans_s_c)++;
@@ -1070,7 +1070,7 @@ int recv_message(char *buf, int size, int inv_trans,
 			printf(":\n");
 #endif // HAVE_INET_NTOP
 		if (!inv_trans && ret > 0 && (regexec(&(reg->proexp), buf, 0, 0, 0) != REG_NOERROR)) {
-			sd->retryAfter = SIP_T1;
+			sd->retryAfter = timer_t1;
 		}
 	}
 	else {

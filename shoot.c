@@ -183,7 +183,7 @@ void trace_reply()
 			printf("(%.3f ms) ", deltaT(&(timers.sendtime), &(timers.recvtime)));
 			print_message_line(rec);
 		}
-		delays.retryAfter = SIP_T2;
+		delays.retryAfter = timer_t2;
 		cdata.dontsend=1;
 		return;
 	}
@@ -235,10 +235,10 @@ void handle_default()
 					" waiting for a final response\n");
 		}
 		if (inv_trans) {
-			delays.retryAfter = inv_final;
+			delays.retryAfter = timer_final;
 		}
 		else {
-			delays.retryAfter = SIP_T2;
+			delays.retryAfter = timer_t2;
 		}
 		cdata.dontsend = 1;
 		return;
@@ -273,7 +273,7 @@ void handle_default()
 			else {
 				counters.run++;
 				new_transaction(req);
-				delays.retryAfter = SIP_T1;
+				delays.retryAfter = timer_t1;
 			}
 		}
 		if (timing == 0) {
@@ -340,10 +340,10 @@ void handle_usrloc()
 			printf("ignoring provisional response\n\n");
 		}
 		if (inv_trans) {
-			delays.retryAfter = inv_final;
+			delays.retryAfter = timer_final;
 		}
 		else {
-			delays.retryAfter = SIP_T2;
+			delays.retryAfter = timer_t2;
 		}
 		cdata.dontsend = 1;
 	}
@@ -794,10 +794,10 @@ void shoot(char *buf, int buff_size)
 
 	/* delays.retryAfter = DEFAULT_TIMEOUT; */
 	if (transport == SIP_UDP_TRANSPORT) {
-		delays.retryAfter = SIP_T1;
+		delays.retryAfter = timer_t1;
 	}
 	else {
-		delays.retryAfter = inv_final;
+		delays.retryAfter = timer_final;
 	}
 	inv_trans = 0;
 	cseq_counter = 1;
@@ -1009,7 +1009,7 @@ void shoot(char *buf, int buff_size)
 							}
 							counters.run++;
 							new_transaction(req);
-							delays.retryAfter = SIP_T1;
+							delays.retryAfter = timer_t1;
 							continue;
 						}
 						fprintf(stderr, "%s\nerror: received 40[17] but cannot "

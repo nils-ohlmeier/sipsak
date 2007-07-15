@@ -153,9 +153,11 @@ void print_long_help() {
 		"  --from=SIPURI              use the given uri as From in MESSAGE\n"
 		"  --timeout-factor=NUMBER    timeout multiplier for INVITE transactions\n"
 		"                             on non-reliable transports (default: 64)\n"
+		"  --timer-t1=NUMBER          timeout T1 in ms (default: %i)\n"
 		"  --transport=STRING         specify transport to be used\n"
 		"  --headers=STRING           adds additional headers to the request\n"
 		"  --authhash=STRING          ha1 hash for authentication instead of password\n"
+		, DEFAULT_TIMEOUT
 		);
 	exit_code(0);
 }
@@ -225,9 +227,11 @@ void print_help() {
 		"  -c SIPURI         use the given uri as From in MESSAGE\n"
 		"  -D NUMBER         timeout multiplier for INVITE transactions\n"
 		"                    on non-reliable transports (default: 64)\n"
+		"  -Z NUMBER         timeout T1 in ms (default: %i)\n"
 		"  -E STRING         specify transport to be used\n"
 		"  -j STRING         adds additional headers to the request\n"
 		"  -J STRING         ha1 hash for authentication instead of password\n"
+		, DEFAULT_TIMEOUT
 		);
 		exit_code(0);
 }
@@ -288,6 +292,7 @@ int main(int argc, char *argv[])
 		{"symmetric", 0, 0, 'S'},
 		{"from", 1, 0, 'c'},
 		{"timeout-factor", 1, 0, 'D'},
+		{"timer-t1", 1, 0, 'Z'},
 		{"transport", 1, 0, 'E'},
 		{"headers", 1, 0, 'j'},
 		{"authhash", 1, 0, 'J'},
@@ -316,7 +321,9 @@ int main(int argc, char *argv[])
 	transport=tsp = 0;
 	rport = port = 0;
 	expires_t = USRLOC_EXP_DEF;
-	inv_final = 64 * SIP_T1;
+	timer_t1 = SIP_T1;
+	timer_t2 = 8;
+	timer_final = 64;
 	memset(buff, 0, BUFSIZE);
 	memset(fqdn, 0, FQDN_SIZE);
 #ifdef WITH_TLS_TRANSP
@@ -338,9 +345,9 @@ int main(int argc, char *argv[])
 
 	/* lots of command line switches to handle*/
 #ifdef HAVE_GETOPT_LONG
-	while ((c=getopt_long(argc, argv, "a:A:b:B:c:C:dD:e:E:f:Fg:GhH:iIj:J:l:Lm:MnNo:O:p:P:q:r:Rs:St:Tu:UvVwW:x:Xz:", l_opts, &option_index)) != EOF){
+	while ((c=getopt_long(argc, argv, "a:A:b:B:c:C:dD:e:E:f:Fg:GhH:iIj:J:l:Lm:MnNo:O:p:P:q:r:Rs:St:Tu:UvVwW:x:Xz:Z:", l_opts, &option_index)) != EOF){
 #else
-	while ((c=getopt(argc, argv, "a:A:b:B:c:C:dD:e:E:f:Fg:GhH:iIj:J:l:Lm:MnNo:O:p:P:q:r:Rs:St:Tu:UvVwW:x:z:")) != EOF){
+	while ((c=getopt(argc, argv, "a:A:b:B:c:C:dD:e:E:f:Fg:GhH:iIj:J:l:Lm:MnNo:O:p:P:q:r:Rs:St:Tu:UvVwW:x:z:Z:")) != EOF){
 #endif
 		switch(c){
 			case 'a':
@@ -426,7 +433,11 @@ int main(int argc, char *argv[])
 				redirects=0;
 				break;
 			case 'D':
-				inv_final = str_to_int(0, optarg) * SIP_T1;
+				timer_final = str_to_int(0, optarg);
+				if (timer_final <= 0) {
+					fprintf(stderr, "error: option D has to be above 0\n");
+					exit_code(2);
+				}
 				break;
 			case 'e':
 				nameend=str_to_int(0, optarg);
@@ -771,6 +782,13 @@ int main(int argc, char *argv[])
 					exit_code(2);
 				}
 				break;
+			case 'Z':
+				timer_t1 = str_to_int(0, optarg);
+				if (timer_t1 <= 0) {
+					fprintf(stderr, "error: Z option must be above 0\n");
+					exit_code(2);
+				}
+				break;
 			default:
 				fprintf(stderr, "error: unknown parameter %c\n", c);
 				exit_code(2);
@@ -788,6 +806,9 @@ int main(int argc, char *argv[])
 	if (transport == 0) {
 		transport = SIP_UDP_TRANSPORT;
 	}
+
+	timer_t2 = timer_t2 * timer_t1;
+	timer_final = timer_final * timer_t1;
 
 	/* replace LF with CRLF if we read from a file */
 	if ((file_b) && (fix_crlf)) {
