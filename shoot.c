@@ -265,6 +265,9 @@ void handle_default()
 		if (timing > 0) {
 			timing--;
 			if (timing == 0) {
+				if (counters.run == 0) {
+					counters.run++;
+				}
 				printf("%.3f/%.3f/%.3f ms\n", delays.small_delay, delays.all_delay / counters.run, delays.big_delay);
 			}
 			else {
@@ -998,6 +1001,9 @@ void shoot(char *buf, int buff_size)
 						if (timing > 0) {
 							timing--;
 							if (timing == 0) {
+								if (counters.run == 0) {
+									counters.run++;
+								}
 								printf("%.3f/%.3f/%.3f ms\n", delays.small_delay, delays.all_delay / counters.run, delays.big_delay);
 								exit_code(0);
 							}
