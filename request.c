@@ -35,7 +35,7 @@ void create_msg(int action, char *req_buff, char *repl_buff, char *username, int
 
 	if(cseq == 0) {
 		fprintf(stderr, "error: CSeq 0 is not allowed\n");
-		exit_code(253);
+		exit_code(253, __PRETTY_FUNCTION__, "invalid CSeq 0");
 	}
 	if (req_buff == NULL)
 		abort();
@@ -306,7 +306,7 @@ void create_msg(int action, char *req_buff, char *repl_buff, char *username, int
 			break;
 		default:
 			fprintf(stderr, "error: unknown request type to create\n");
-			exit_code(2);
+			exit_code(2, __PRETTY_FUNCTION__, "unknown request type requested");
 			break;
 	}
 	if (headers) {

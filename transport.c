@@ -488,7 +488,7 @@ void create_tls_ctx() {
 	if (ctx == NULL) {
 		ERR_print_errors_fp(stderr);
 		perror("create_tls_ctx: failed to create TLS ctx");
-		exit_code(2);
+		exit_code(2, __PRETTY_FUNCTION__, "failed to create TLS ctx");
 	}
 	/*if (!SSL_CTX_use_certificate_chain_file(ctx, cert_file)) {
 		perror("create_tls_ctx: failed to load certificate file");
@@ -540,11 +540,11 @@ void create_sockets(struct sipsak_con_data *cd) {
 			cd->usock = (int)socket(PF_INET, SOCK_DGRAM, IPPROTO_UDP);
 			if (cd->usock==-1) {
 				perror("unconnected UDP socket creation failed");
-				exit_code(2);
+				exit_code(2, __PRETTY_FUNCTION__, "failed to create unconnected UDP socket");
 			}
 			if (bind(cd->usock, (struct sockaddr *) &(cd->adr), sizeof(struct sockaddr_in) )==-1) {
 				perror("unconnected UDP socket binding failed");
-				exit_code(2);
+				exit_code(2, __PRETTY_FUNCTION__, "failed to bind unconnected UDP socket");
 			}
 		}
 
@@ -561,14 +561,14 @@ void create_sockets(struct sipsak_con_data *cd) {
 			cd->csock = (int)socket(PF_INET, SOCK_DGRAM, IPPROTO_UDP);
 			if (cd->csock==-1) {
 				perror("connected UDP socket creation failed");
-				exit_code(2);
+				exit_code(2, __PRETTY_FUNCTION__, "failed to create connected UDP socket");
 			}
 
 			if (!symmetric)
 				cd->adr.sin_port = htons((short)0);
 			if (bind(cd->csock, (struct sockaddr *) &(cd->adr), sizeof(struct sockaddr_in) )==-1) {
 				perror("connected UDP socket binding failed");
-				exit_code(2);
+				exit_code(2, __PRETTY_FUNCTION__, "failed to bind connected UDP socket");
 			}
 #ifdef RAW_SUPPORT
 		}
@@ -576,11 +576,11 @@ void create_sockets(struct sipsak_con_data *cd) {
 			cd->csock = (int)socket(PF_INET, SOCK_DGRAM, IPPROTO_UDP);
 			if (cd->csock==-1) {
 				perror("connected UDP socket creation failed");
-				exit_code(2);
+				exit_code(2, __PRETTY_FUNCTION__, "failed to create connected UDP socket");
 			}
 			if (bind(cd->csock, (struct sockaddr *) &(cd->adr), sizeof(struct sockaddr_in) )==-1) {
 				perror("connected UDP socket binding failed");
-				exit_code(2);
+				exit_code(2, __PRETTY_FUNCTION__, "failed to bind connected UDP socket");
 			}
 		}
 #endif
@@ -589,11 +589,11 @@ void create_sockets(struct sipsak_con_data *cd) {
 		cd->csock = (int)socket(PF_INET, SOCK_STREAM, IPPROTO_TCP);
 		if (cd->csock==-1) {
 			perror("TCP socket creation failed");
-			exit_code(2);
+			exit_code(2, __PRETTY_FUNCTION__, "failed to create TCP socket");
 		}
 		if (bind(cd->csock, (struct sockaddr *) &(cd->adr), sizeof(struct sockaddr_in) )==-1) {
 			perror("TCP socket binding failed");
-			exit_code(2);
+			exit_code(2, __PRETTY_FUNCTION__, "failed to bind TCP socket");
 		}
 #ifdef WITH_TLS_TRANSP
 		if (transport == SIP_TLS_TRANSPORT) {
@@ -615,11 +615,11 @@ void create_sockets(struct sipsak_con_data *cd) {
 			ssl = SSL_new(ctx);
 			if (ssl == NULL) {
 				perror("TLS failed to create SSL object");
-				exit_code(2);
+				exit_code(2, __PRETTY_FUNCTION__, "failed to create SSL object");
 			}
 			if (SSL_set_fd(ssl, cd->csock) != 1) {
 				perror("TLS failed to add socket to SSL object");
-				exit_code(2);
+				exit_code(2, __PRETTY_FUNCTION__, "failed to add socket to SSL object");
 			}
 # endif /* USE_OPENSSL */
 #endif /* USE_GNUTLS */
@@ -696,7 +696,7 @@ void send_message(char* mes, struct sipsak_con_data *cd,
 			if (verbose)
 				printf("\n");
 			perror("send failure");
-			exit_code(2);
+			exit_code(2, __PRETTY_FUNCTION__, "send failure");
 		}
 #ifdef HAVE_INET_NTOP
 		if (verbose > 2) {
@@ -726,7 +726,7 @@ void check_socket_error(int socket, int size) {
 			perror("send failure");
 			if (randtrash == 1) 
 				printf ("last message before send failure:\n%s\n", req);
-			exit_code(3);
+			exit_code(3, __PRETTY_FUNCTION__, "send failure");
 		}
 	}
 }
@@ -795,7 +795,7 @@ int check_for_message(char *recv, int size, struct sipsak_con_data *cd,
 					printf("sended the following message three "
 							"times without getting a response:\n%s\n"
 							"give up further retransmissions...\n", req);
-					exit_code(3);
+					exit_code(3, __PRETTY_FUNCTION__, "too many retransmissions, giving up...");
 				}
 				else {
 					printf("resending it without additional "
@@ -809,7 +809,7 @@ int check_for_message(char *recv, int size, struct sipsak_con_data *cd,
 			if (timing == 0) {
 				if (verbose>0)
 					printf("*** giving up, no final response after %.3f ms\n", senddiff);
-				exit_code(3);
+				exit_code(3, __PRETTY_FUNCTION__, "timeout (no final response)");
 			}
 			else {
 				timing--;
@@ -820,7 +820,7 @@ int check_for_message(char *recv, int size, struct sipsak_con_data *cd,
 				sd->retryAfter = timer_t1;
 				if (timing == 0) {
 					printf("%.3f/%.3f/%.3f ms\n", sd->small_delay, sd->all_delay / count->run, sd->big_delay);
-					exit_code(3);
+					exit_code(3, __PRETTY_FUNCTION__, "timeout (no final response)");
 				}
 			}
 		}
@@ -841,7 +841,7 @@ int check_for_message(char *recv, int size, struct sipsak_con_data *cd,
 	}
 	else if ( ret == -1 ) {
 		perror("select error");
-		exit_code(2);
+		exit_code(2, __PRETTY_FUNCTION__, "internal select error");
 	}
 	else if (((cd->usock != -1) && FD_ISSET(cd->usock, &fd)) || ((cd->csock != -1) && FD_ISSET(cd->csock, &fd))) {
 		if ((cd->usock != -1) && FD_ISSET(cd->usock, &fd))
@@ -850,7 +850,7 @@ int check_for_message(char *recv, int size, struct sipsak_con_data *cd,
 			ret = cd->csock;
 		else {
 			printf("unable to determine the socket which received something\n");
-			exit_code(2);
+			exit_code(2, __PRETTY_FUNCTION__, "failed to determine receiving socket");
 		}
 		/* no timeout, no error ... something has happened :-) */
 	 	if (trace == 0 && usrloc ==0 && invite == 0 && message == 0 && randtrash == 0 && (verbose > 1))
@@ -967,7 +967,7 @@ int recv_message(char *buf, int size, int inv_trans,
 		ret = recvfrom(rawsock, buf, size, 0, (struct sockaddr *)&faddr, &flen);
 		if (ret == -1) {
 			perror("error while trying to read from icmp raw socket");
-			exit_code(2);
+			exit_code(2, __PRETTY_FUNCTION__, "failed to read from ICMP RAW socket");
 		}
 		r_ip_hdr = (struct ip *) buf;
 		r_ip_len = r_ip_hdr->ip_hl << 2;
@@ -1002,7 +1002,7 @@ int recv_message(char *buf, int size, int inv_trans,
 #else
 				printf("\n");
 #endif // HAVE_INET_NTOP
-				exit_code(3);
+				exit_code(3, __PRETTY_FUNCTION__, "received ICMP error");
 			}
 			else {
 				if (verbose > 2)
@@ -1076,7 +1076,7 @@ int recv_message(char *buf, int size, int inv_trans,
 	else {
 		check_socket_error(sock, size);
 		printf("\nnothing received, select returned error\n");
-		exit_code(2);
+		exit_code(2, __PRETTY_FUNCTION__, "nothing received, select returned error");
 	}
 	return ret;
 }
@@ -1110,7 +1110,7 @@ int set_target(struct sockaddr_in *adr, unsigned long target, int port, int sock
 	if (socket != -1) {
 		if (connect(socket, (struct sockaddr *)adr, sizeof(struct sockaddr_in)) == -1) {
 			perror("connecting socket failed");
-			exit_code(2);
+			exit_code(2, __PRETTY_FUNCTION__, "connection socket failed");
 		}
 #ifdef WITH_TLS_TRANSP
 		if (transport == SIP_TLS_TRANSPORT) {
@@ -1119,7 +1119,7 @@ int set_target(struct sockaddr_in *adr, unsigned long target, int port, int sock
 			if (ret < 0) {
 				dbg("TLS Handshake FAILED!!!\n");
 				gnutls_perror(ret);
-				exit_code(3);
+				exit_code(3, __PRETTY_FUNCTION__, "TLS handshake failed");
 			}
 			else if (verbose > 2) {
 				dbg(" TLS Handshake was completed!\n");
@@ -1142,13 +1142,13 @@ int set_target(struct sockaddr_in *adr, unsigned long target, int port, int sock
 					tls_dump_cert_info("TLS connect: server certificate", cert);
 					if (SSL_get_verify_result(ssl) != X509_V_OK) {
 						perror("TLS connect: server certifcate verification failed!!!\n");
-						exit_code(3);
+						exit_code(3, __PRETTY_FUNCTION__, "TLS server certificate verification falied");
 					}
 					X509_free(cert);
 				}
 				else {
 					perror("TLS connect: server did not present a certificate\n");
-					exit_code(3);
+					exit_code(3, __PRETTY_FUNCTION__, "missing TLS server certificate");
 				}
 			}
 			else {
@@ -1188,7 +1188,7 @@ int set_target(struct sockaddr_in *adr, unsigned long target, int port, int sock
 					default:
 						printf("TLS error: %d\n", err);
 				}
-				exit_code(2);
+				exit_code(2, __PRETTY_FUNCTION__, "generic SSL error");
 			}
 #  endif /* USE_OPENSSL */
 # endif /* USE_GNUTLS */

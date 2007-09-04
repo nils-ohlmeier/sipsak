@@ -24,6 +24,6 @@ enum exit_modes { EM_DEFAULT, EM_NAGIOS };
 
 extern enum exit_modes exit_mode;
 
-void exit_code( int code );
+void exit_code(int code, const char *function, const char *reason);
 
 #endif

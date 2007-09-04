@@ -75,9 +75,9 @@ inline static void on_success(char *rep)
 {
 	if ((rep != NULL) && re && regexec(re, rep, 0, 0, 0) == REG_NOMATCH) {
 		fprintf(stderr, "error: RegExp failed\n");
-		exit_code(32);
+		exit_code(32, __PRETTY_FUNCTION__, "regular expression failed");
 	} else {
-		exit_code(0);
+		exit_code(0, __PRETTY_FUNCTION__, NULL);
 	}
 }
 
@@ -115,7 +115,7 @@ void handle_3xx(struct sockaddr_in *tadr)
 		if (contact==NULL) {
 			fprintf(stderr, "error: cannot find Contact in this "
 				"redirect:\n%s\n", rec);
-			exit_code(3);
+			exit_code(3, __PRETTY_FUNCTION__, "missing Contact header in reply");
 		}
 		/* correct our request */
 		uri_replace(req, contact);
@@ -132,7 +132,7 @@ void handle_3xx(struct sockaddr_in *tadr)
 			fprintf(stderr, "error: cannot determine host "
 					"address from Contact of redirect:"
 					"\n%s\n", rec);
-			exit_code(2);
+			exit_code(2, __PRETTY_FUNCTION__, "missing host in Contact header");
 		}
 		if (!rport) {
 			rport = 5060;
@@ -144,7 +144,7 @@ void handle_3xx(struct sockaddr_in *tadr)
 	else {
 		fprintf(stderr, "error: cannot handle this redirect:"
 				"\n%s\n", rec);
-		exit_code(2);
+		exit_code(2, __PRETTY_FUNCTION__, "unsupported redirect reply");
 	}
 }
 
@@ -208,7 +208,7 @@ void trace_reply()
 		if (regexec(&(regexps.okexp), rec, 0, 0, 0) == REG_NOERROR)
 			on_success(rec);
 		else
-			exit_code(1);
+			exit_code(1, __PRETTY_FUNCTION__, "received final non-2xx reply");
 	}
 }
 
@@ -281,7 +281,7 @@ void handle_default()
 				on_success(rec);
 			}
 			else {
-				exit_code(1);
+				exit_code(1, __PRETTY_FUNCTION__, "received final non-2xx reply");
 			}
 		}
 	}
@@ -315,12 +315,12 @@ void handle_randtrash()
 	if (cseq_counter == nameend) {
 		if (counters.randretrys == 0) {
 			printf("random end reached. server survived :) respect!\n");
-			exit_code(0);
+			exit_code(0, __PRETTY_FUNCTION__, NULL);
 		}
 		else {
 			printf("maximum sendings reached but did not "
 				"get a response on this request:\n%s\n", req);
-			exit_code(3);
+			exit_code(3, __PRETTY_FUNCTION__, "missing reply on trashed request");
 		}
 	}
 	else {
@@ -364,7 +364,7 @@ void handle_usrloc()
 					fprintf(stderr, "received:\n%s\nerror: didn't "
 									"received '200 OK' on register (see "
 									"above). aborting\n", rec);
-					exit_code(1);
+					exit_code(1, __PRETTY_FUNCTION__, "received non-2xx reply for REGISTER");
 				}
 				if (invite == 0 && message == 0) {
 					if (namebeg==nameend) {
@@ -390,7 +390,7 @@ void handle_usrloc()
 										" retransmitted.\n", 
 										counters.retrans_s_c, delays.retryAfter);
 							if (counters.retrans_s_c > nagios_warn) {
-												exit_code(4);
+												exit_code(4, __PRETTY_FUNCTION__, "#retransmissions above nagios warn level");
 							}
 						}
 						if (timing) {
@@ -449,7 +449,7 @@ void handle_usrloc()
 					fprintf(stderr, "received:\n%s\nerror: did not "
 								"received the INVITE that was sent "
 								"(see above). aborting\n", rec);
-					exit_code(1);
+					exit_code(1, __PRETTY_FUNCTION__, "did not received our own INVITE request");
 				}
 				break;
 			case INV_OK_RECV:
@@ -478,7 +478,7 @@ void handle_usrloc()
 								"received the '200 OK' that was sent "
 								"as the reply on the INVITE (see "
 								"above). aborting\n", rec);
-					exit_code(1);
+					exit_code(1, __PRETTY_FUNCTION__, "did not received our own 200 reply");
 				}
 				break;
 			case INV_ACK_RECV:
@@ -528,7 +528,7 @@ void handle_usrloc()
 										" retransmitted.\n", 
 										counters.retrans_s_c, delays.retryAfter);
 							if (counters.retrans_s_c > nagios_warn) {
-								exit_code(4);
+								exit_code(4, __PRETTY_FUNCTION__, "#retransmissions above nagios warn level");
 							}
 						}
 						on_success(rec);
@@ -566,7 +566,7 @@ void handle_usrloc()
 								"received the 'ACK' that was sent "
 								"as the reply on the '200 OK' (see "
 								"above). aborting\n", rec);
-					exit_code(1);
+					exit_code(1, __PRETTY_FUNCTION__, "missing ACK that was send by myself");
 				}
 				break;
 			case MES_RECV:
@@ -590,7 +590,7 @@ void handle_usrloc()
 					fprintf(stderr, "received:\n%s\nerror: did not "
 								"received the 'MESSAGE' that was sent "
 								"(see above). aborting\n", rec);
-					exit_code(1);
+					exit_code(1, __PRETTY_FUNCTION__, "did not received my own MESSAGE request");
 				}
 				break;
 			case MES_OK_RECV:
@@ -638,7 +638,7 @@ void handle_usrloc()
 										" retransmitted.\n", 
 										counters.retrans_s_c, delays.retryAfter);
 							if (counters.retrans_s_c > nagios_warn) {
-								exit_code(4);
+								exit_code(4, __PRETTY_FUNCTION__, "#retransmissions above nagios warn level");
 							}
 						}
 						on_success(rec);
@@ -686,7 +686,7 @@ void handle_usrloc()
 										"aborting\n", rec);
 						}
 					}
-					exit_code(1);
+					exit_code(1, __PRETTY_FUNCTION__, "received non-2xx reply for MESSAGE request");
 				}
 				break;
 			case UNREG_REP:
@@ -721,12 +721,12 @@ void handle_usrloc()
 								"remove bindings request for %s%i (see"
 								" above). aborting\n", rec, username, 
 								namebeg);
-					exit_code(1);
+					exit_code(1, __PRETTY_FUNCTION__, "received non-2xx reply for de-register request");
 				}
 				break;
 			default:
 				fprintf(stderr, "error: unknown step in usrloc\n");
-				exit_code(2);
+				exit_code(2, __PRETTY_FUNCTION__, "unknown step in usrloc");
 				break;
 		} /* switch */
 	} /* regexec proexp */
@@ -1005,7 +1005,7 @@ void shoot(char *buf, int buff_size)
 									counters.run++;
 								}
 								printf("%.3f/%.3f/%.3f ms\n", delays.small_delay, delays.all_delay / counters.run, delays.big_delay);
-								exit_code(0);
+								exit_code(0, __PRETTY_FUNCTION__, NULL);
 							}
 							counters.run++;
 							new_transaction(req);
@@ -1014,7 +1014,7 @@ void shoot(char *buf, int buff_size)
 						}
 						fprintf(stderr, "%s\nerror: received 40[17] but cannot "
 							"authentication without a username or auth username\n", rec);
-						exit_code(2);
+						exit_code(2, __PRETTY_FUNCTION__, "missing username for authentication");
 					}
 					/* prevents a strange error */
 					regcomp(&(regexps.authexp), "^SIP/[0-9]\\.[0-9] 40[17] ", REG_EXTENDED|REG_NOSUB|REG_ICASE);
@@ -1057,7 +1057,7 @@ void shoot(char *buf, int buff_size)
 					printf("failed\n");
 				}
 				perror("socket error");
-				exit_code(3);
+				exit_code(3, __PRETTY_FUNCTION__, "internal socket error");
 			}
 		} /* !flood */
 		else {
@@ -1070,7 +1070,7 @@ void shoot(char *buf, int buff_size)
 						deltaT(&(timers.firstsendt), &(timers.sendtime)), namebeg);
 				printf("we sent %f requests per second.\n", 
 						(namebeg/(deltaT(&(timers.firstsendt), &(timers.sendtime)))*1000));
-				exit_code(0);
+				exit_code(0, __PRETTY_FUNCTION__, NULL);
 			}
 			namebeg++;
 			cseq_counter++;
@@ -1080,7 +1080,7 @@ void shoot(char *buf, int buff_size)
 
 	/* this should never happen any more... */
 	if (randtrash == 1) {
-		exit_code(0);
+		exit_code(0, __PRETTY_FUNCTION__, NULL);
 	}
 	printf("** give up retransmissioning....\n");
 	if (counters.retrans_r_c>0 && (verbose > 1)) {
@@ -1089,5 +1089,5 @@ void shoot(char *buf, int buff_size)
 	if (counters.retrans_s_c>0 && (verbose > 1)) {
 		printf("sent %i retransmissions during test\n", counters.retrans_s_c);
 	}
-	exit_code(3);
+	exit_code(3, __PRETTY_FUNCTION__, "got outside of endless messaging loop");
 }

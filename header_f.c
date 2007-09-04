@@ -33,7 +33,7 @@ void insert_header(char *mes, char *header, int first) {
 		ins = strchr(mes, '\n');
 		if (ins == NULL) {
 			printf("failed to find a new line in the message\n");
-			exit_code(2);
+			exit_code(2, __PRETTY_FUNCTION__, "failed to find a new line in the message");
 		}
 		ins++;
 	}
@@ -60,7 +60,7 @@ void add_via(char *mes)
 		if(via == NULL) {
 			fprintf(stderr, "error: failed to find a position to insert Via:\n"
 											"'%s'\n", mes);
-			exit_code(2);
+			exit_code(2, __PRETTY_FUNCTION__, "failed to find position to insert to insert Via header");
 		}
 		via++;
 	}
@@ -78,7 +78,7 @@ void add_via(char *mes)
 
 	if (strlen(mes)+strlen(via_line)>= BUFSIZE){
 		printf("can't add our Via Header Line because file is too big\n");
-		exit_code(2);
+		exit_code(2, __PRETTY_FUNCTION__, "Via header to big for buffer");
 	}
 	/* finnaly make a backup, insert our via and append the backup */
 	backup=str_alloc((strlen(via)+1));
@@ -101,7 +101,7 @@ void cpy_vias(char *reply, char *dest){
 	if ((first_via=STRCASESTR(reply, VIA_STR))==NULL &&
 		(first_via=STRCASESTR(reply, VIA_SHORT_STR))==NULL ){
 		fprintf(stderr, "error: the received message doesn't contain a Via header\n");
-		exit_code(3);
+		exit_code(3, __PRETTY_FUNCTION__, "missing Via header in message");
 	}
 	last_via=first_via+4;
 	middle_via=last_via;
@@ -130,7 +130,7 @@ void cpy_to(char *reply, char *dest) {
 	if ((dst_to=STRCASESTR(dest, TO_STR))==NULL &&
 		(dst_to=STRCASESTR(dest, TO_SHORT_STR))==NULL) {
 		fprintf(stderr, "error: could not find To in the destination: %s\n", dest);
-		exit_code(2);
+		exit_code(2, __PRETTY_FUNCTION__, "missing To header in target buffer");
 	}
 	if (*dst_to == '\n')
 		dst_to++;
@@ -169,7 +169,7 @@ void set_maxforw(char *mes, int value){
 		max=strchr(mes,'\n');
 		if (!max) {
 			printf("failed to find newline\n");
-			exit_code(254);
+			exit_code(254, __PRETTY_FUNCTION__, "missing newline in buffer");
 		}
 		max++;
 		backup=str_alloc(strlen(max)+1);
@@ -224,7 +224,7 @@ void uri_replace(char *mes, char *uri)
 	foo=strchr(mes, '\n');
 	if (!foo) {
 		printf("failed to find newline\n");
-		exit_code(254);
+		exit_code(254, __PRETTY_FUNCTION__, "missing newline in buffer");
 	}
 	foo++;
 	backup=str_alloc(strlen(foo)+1);
@@ -312,15 +312,15 @@ void cpy_rr(char* src, char *dst, int route) {
 
 	cr = strchr(dst, '\n');
 	if (cr == NULL) {
-		fprintf(stderr, "error: failed to end of line in destination\n");
-		exit_code(3);
+		fprintf(stderr, "error: failed to find newline in destination\n");
+		exit_code(3, __PRETTY_FUNCTION__, "missing newline in target buffer");
 	}
 	cr++;
 	rr = STRCASESTR(src, RR_STR);
 	if (rr != NULL) {
 		if (find_lr_parameter(rr) == 0) {
 			fprintf(stderr, "error: strict routing is not support yet\n");
-			exit_code(252);
+			exit_code(252, __PRETTY_FUNCTION__, "strict routing is not supported");
 		}
 		backup=str_alloc(strlen(cr)+1);
 		strncpy(backup, cr, strlen(cr));
@@ -339,7 +339,7 @@ void cpy_rr(char* src, char *dst, int route) {
 			cr2 = strchr(rr, '\n');
 			if (cr2 == NULL) {
 				fprintf(stderr, "error: failed to find end of line\n");
-				exit_code(3);
+				exit_code(3, __PRETTY_FUNCTION__, "missing newline in buffer");
 			}
 			strncpy(cr, rr + RR_STR_LEN, (cr2 - (rr + len) + 1));
 			cr+=(cr2 - (rr + RR_STR_LEN) + 1);
@@ -596,7 +596,7 @@ void print_message_line(char *message)
 	crlf=strchr(message, '\n');
 	if (!crlf) {
 		printf("failed to find newline\n");
-		exit_code(254);
+		exit_code(254, __PRETTY_FUNCTION__, "missing newline in buffer");
 	}
 	else if (*(crlf - 1) == '\r')
 		crlf--;

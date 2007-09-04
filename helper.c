@@ -133,7 +133,7 @@ unsigned long getaddress(char *host) {
 	pent = gethostbyname(host);
 	if (!pent) {
 		printf("'%s' is unresolveable\n", host);
-		exit_code(2);
+		exit_code(2, __PRETTY_FUNCTION__, "hostname is not resolveable");
 	}
 	lp = (long *) (pent->h_addr);
 	l = *lp;
@@ -151,7 +151,7 @@ static const unsigned char *parse_rr(const unsigned char *aptr, const unsigned c
 	status = ares_expand_name(aptr, abuf, alen, &name, &len);
 	if (status != ARES_SUCCESS) {
 		printf("error: failed to expand query name\n");
-		exit_code(2);
+		exit_code(2, __PRETTY_FUNCTION__, "failed to expand query name");
 	}
 	aptr += len;
 	if (aptr + NS_RRFIXEDSZ > abuf + alen) {
@@ -202,7 +202,7 @@ static const unsigned char *parse_rr(const unsigned char *aptr, const unsigned c
 			ca_tmpname = malloc(strlen(name));
 			if (ca_tmpname == NULL) {
 				printf("error: failed to allocate memory\n");
-				exit_code(2);
+				exit_code(2, __PRETTY_FUNCTION__, "memory allocation failure");
 			}
 			strcpy(ca_tmpname, name);
 			free(name);
@@ -318,7 +318,7 @@ inline unsigned long srv_ares(char *host, int *port, char *srv) {
 	srvh = malloc(srvh_len);
 	if (srvh == NULL) {
 		printf("error: failed to allocate memory (%i) for ares query\n", srvh_len);
-		exit_code(2);
+		exit_code(2, __PRETTY_FUNCTION__, "memory allocation failure");
 	}
 	memset(srvh, 0, srvh_len);
 	strncpy(srvh, srv, strlen(srv));
@@ -339,7 +339,7 @@ inline unsigned long srv_ares(char *host, int *port, char *srv) {
 		count = select(nfds, &read_fds, &write_fds, NULL, tvp);
 		if (count < 0 && errno != EINVAL) {
 			perror("ares select");
-			exit_code(2);
+			exit_code(2, __PRETTY_FUNCTION__, "ares DNS resolution failure");
 		}
 		ares_process(channel, &read_fds, &write_fds);
 	}
@@ -368,7 +368,7 @@ inline unsigned long srv_ruli(char *host, int *port, char *srv) {
 	/* sync query failure? */
 	if (!sync_query) {
 		printf("DNS SRV lookup failed for: %s\n", host);
-		exit_code(2);
+		exit_code(2, __PRETTY_FUNCTION__, "DNS SRV lookup failed");
 	}
 
 	srv_code = ruli_sync_srv_code(sync_query);
@@ -376,13 +376,13 @@ inline unsigned long srv_ruli(char *host, int *port, char *srv) {
 	if (srv_code == RULI_SRV_CODE_ALARM) {
 		printf("Timeout during DNS SRV lookup for: %s\n", host);
 		ruli_sync_delete(sync_query);
-		exit_code(2);
+		exit_code(2, __PRETTY_FUNCTION__, "timeout during DNS SRV lookup");
 	}
 	/* service provided? */
 	else if (srv_code == RULI_SRV_CODE_UNAVAILABLE) {
 		printf("SRV service not provided for: %s\n", host);
 		ruli_sync_delete(sync_query);
-		exit_code(2);
+		exit_code(2, __PRETTY_FUNCTION__, "missing service in DNS SRV reply");
 	}
 	else if (srv_code) {
 		int rcode = ruli_sync_rcode(sync_query);
@@ -409,7 +409,7 @@ inline unsigned long srv_ruli(char *host, int *port, char *srv) {
 	if (addr_list_size < 1) {
 		printf("missing addresses in SRV lookup for: %s\n", host);
 		ruli_sync_delete(sync_query);
-		exit_code(2);
+		exit_code(2, __PRETTY_FUNCTION__, "missing address in DNS SRV reply");
 	}
 
 	*port = entry->port;
@@ -452,7 +452,7 @@ unsigned long getsrvadr(char *host, int *port, unsigned int *transport) {
 	status = ares_init_options(&channel, &options, optmask);
 	if (status != ARES_SUCCESS) {
 		printf("error: failed to initialize ares\n");
-		exit_code(2);
+		exit_code(2, __PRETTY_FUNCTION__, "failed to init ares lib");
 	}
 #endif
 
@@ -516,7 +516,7 @@ void get_fqdn() {
 		else {
 			if (gethostname(&hname[0], namelen) < 0) {
 				fprintf(stderr, "error: cannot determine hostname\n");
-				exit_code(2);
+				exit_code(2, __PRETTY_FUNCTION__, "failed to determine hostname");
 			}
 		}
 #ifdef HAVE_GETDOMAINNAME
@@ -524,7 +524,7 @@ void get_fqdn() {
 		if ((strchr(hname, '.'))==NULL) {
 			if (getdomainname(&dname[0], namelen) < 0) {
 				fprintf(stderr, "error: cannot determine domainname\n");
-				exit_code(2);
+				exit_code(2, __PRETTY_FUNCTION__, "failed to get domainname");
 			}
 			if (strcmp(&dname[0],"(none)")!=0)
 				snprintf(fqdn, FQDN_SIZE, "%s.%s", hname, dname);
@@ -553,7 +553,7 @@ void get_fqdn() {
 		}
 		else {
 			fprintf(stderr, "error: cannot resolve local hostname: %s\n", hname);
-			exit_code(2);
+			exit_code(2, __PRETTY_FUNCTION__, "failed to resolve local hostname");
 		}
 	}
 	if ((strchr(fqdn, '.'))==NULL) {
@@ -563,7 +563,7 @@ void get_fqdn() {
 		}
 		else {
 			fprintf(stderr, "error: this FQDN or IP is not valid: %s\n", fqdn);
-			exit_code(2);
+			exit_code(2, __PRETTY_FUNCTION__, "invalid IP or FQDN");
 		}
 	}
 
@@ -628,7 +628,7 @@ void replace_strings(char *mes, char *strings) {
 				repl = str_alloc(strlen(val) + 3);
 				if (repl == NULL) {
 					printf("failed to allocate memory\n");
-					exit_code(2);
+					exit_code(2, __PRETTY_FUNCTION__, "memory allocation failure");
 				}
 				sprintf(repl, "$%s$", atr);
 				replace_string(mes, repl, val);
@@ -794,7 +794,7 @@ error:
 	if (mode == 0) {
 		/* libcheck expects a return value not an exit code */
 #ifndef RUNNING_CHECK
-		exit_code(ret);
+		exit_code(ret, __PRETTY_FUNCTION__, NULL);
 #endif
 	}
 	return (ret * - 1);
@@ -833,7 +833,7 @@ void *str_alloc(size_t size) {
 #endif
 	if (ptr == NULL) {
 		fprintf(stderr, "error: memory allocation failed\n");
-		exit_code(255);
+		exit_code(255, __PRETTY_FUNCTION__, "memory allocation failure");
 	}
 #ifndef HAVE_CALLOC
 	memset(ptr, 0, size);

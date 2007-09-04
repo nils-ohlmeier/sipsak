@@ -4423,7 +4423,8 @@ fi
 done
 
 
-for ac_header in getopt.h
+
+for ac_header in getopt.h syslog.h
 do
 as_ac_Header=`echo "ac_cv_header_$ac_header" | $as_tr_sh`
 if { as_var=$as_ac_Header; eval "test \"\${$as_var+set}\" = set"; }; then
@@ -5691,7 +5692,8 @@ done
 
 
 
-for ac_func in calloc getdomainname getopt_long inet_ntop strncasecmp strcasestr
+
+for ac_func in calloc getdomainname getopt_long inet_ntop strncasecmp strcasestr syslog
 do
 as_ac_var=`echo "ac_cv_func_$ac_func" | $as_tr_sh`
 { echo "$as_me:$LINENO: checking for $ac_func" >&5
