@@ -542,7 +542,7 @@ int main(int argc, char *argv[])
 			case 'K':
 				sysl=str_to_int(0, optarg);
 				if (sysl < LOG_ALERT || sysl > LOG_DEBUG) {
-					fprintf(stderr, "error: syslog value '%d' must be between ALERT (1) and DEBUG (7)\n", optarg);
+					fprintf(stderr, "error: syslog value '%s' must be between ALERT (1) and DEBUG (7)\n", optarg);
 					exit_code(2, __PRETTY_FUNCTION__, "unsupported syslog value for option K");
 				}
 #ifdef HAVE_SYSLOG_H

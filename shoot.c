@@ -73,6 +73,7 @@ struct sipsak_delay delays;
 
 inline static void on_success(char *rep)
 {
+	log_message(req);
 	if ((rep != NULL) && re && regexec(re, rep, 0, 0, 0) == REG_NOMATCH) {
 		fprintf(stderr, "error: RegExp failed\n");
 		exit_code(32, __PRETTY_FUNCTION__, "regular expression failed");
@@ -205,10 +206,12 @@ void trace_reply()
 		else {
 			printf("\twithout Contact header\n");
 		}
-		if (regexec(&(regexps.okexp), rec, 0, 0, 0) == REG_NOERROR)
+		if (regexec(&(regexps.okexp), rec, 0, 0, 0) == REG_NOERROR) {
 			on_success(rec);
-		else
+		} else {
+			log_message(req);
 			exit_code(1, __PRETTY_FUNCTION__, "received final non-2xx reply");
+		}
 	}
 }
 
@@ -281,6 +284,7 @@ void handle_default()
 				on_success(rec);
 			}
 			else {
+				log_message(req);
 				exit_code(1, __PRETTY_FUNCTION__, "received final non-2xx reply");
 			}
 		}
@@ -320,6 +324,7 @@ void handle_randtrash()
 		else {
 			printf("maximum sendings reached but did not "
 				"get a response on this request:\n%s\n", req);
+			log_message(req);
 			exit_code(3, __PRETTY_FUNCTION__, "missing reply on trashed request");
 		}
 	}
@@ -364,6 +369,7 @@ void handle_usrloc()
 					fprintf(stderr, "received:\n%s\nerror: didn't "
 									"received '200 OK' on register (see "
 									"above). aborting\n", rec);
+					log_message(req);
 					exit_code(1, __PRETTY_FUNCTION__, "received non-2xx reply for REGISTER");
 				}
 				if (invite == 0 && message == 0) {
@@ -390,7 +396,8 @@ void handle_usrloc()
 										" retransmitted.\n", 
 										counters.retrans_s_c, delays.retryAfter);
 							if (counters.retrans_s_c > nagios_warn) {
-												exit_code(4, __PRETTY_FUNCTION__, "#retransmissions above nagios warn level");
+								log_message(req);
+								exit_code(4, __PRETTY_FUNCTION__, "#retransmissions above nagios warn level");
 							}
 						}
 						if (timing) {
@@ -449,6 +456,7 @@ void handle_usrloc()
 					fprintf(stderr, "received:\n%s\nerror: did not "
 								"received the INVITE that was sent "
 								"(see above). aborting\n", rec);
+					log_message(req);
 					exit_code(1, __PRETTY_FUNCTION__, "did not received our own INVITE request");
 				}
 				break;
@@ -478,6 +486,7 @@ void handle_usrloc()
 								"received the '200 OK' that was sent "
 								"as the reply on the INVITE (see "
 								"above). aborting\n", rec);
+					log_message(req);
 					exit_code(1, __PRETTY_FUNCTION__, "did not received our own 200 reply");
 				}
 				break;
@@ -528,6 +537,7 @@ void handle_usrloc()
 										" retransmitted.\n", 
 										counters.retrans_s_c, delays.retryAfter);
 							if (counters.retrans_s_c > nagios_warn) {
+								log_message(req);
 								exit_code(4, __PRETTY_FUNCTION__, "#retransmissions above nagios warn level");
 							}
 						}
@@ -566,6 +576,7 @@ void handle_usrloc()
 								"received the 'ACK' that was sent "
 								"as the reply on the '200 OK' (see "
 								"above). aborting\n", rec);
+					log_message(req);
 					exit_code(1, __PRETTY_FUNCTION__, "missing ACK that was send by myself");
 				}
 				break;
@@ -590,6 +601,7 @@ void handle_usrloc()
 					fprintf(stderr, "received:\n%s\nerror: did not "
 								"received the 'MESSAGE' that was sent "
 								"(see above). aborting\n", rec);
+					log_message(req);
 					exit_code(1, __PRETTY_FUNCTION__, "did not received my own MESSAGE request");
 				}
 				break;
@@ -638,6 +650,7 @@ void handle_usrloc()
 										" retransmitted.\n", 
 										counters.retrans_s_c, delays.retryAfter);
 							if (counters.retrans_s_c > nagios_warn) {
+								log_message(req);
 								exit_code(4, __PRETTY_FUNCTION__, "#retransmissions above nagios warn level");
 							}
 						}
@@ -686,6 +699,7 @@ void handle_usrloc()
 										"aborting\n", rec);
 						}
 					}
+					log_message(req);
 					exit_code(1, __PRETTY_FUNCTION__, "received non-2xx reply for MESSAGE request");
 				}
 				break;
@@ -721,6 +735,7 @@ void handle_usrloc()
 								"remove bindings request for %s%i (see"
 								" above). aborting\n", rec, username, 
 								namebeg);
+					log_message(req);
 					exit_code(1, __PRETTY_FUNCTION__, "received non-2xx reply for de-register request");
 				}
 				break;
@@ -1014,6 +1029,7 @@ void shoot(char *buf, int buff_size)
 						}
 						fprintf(stderr, "%s\nerror: received 40[17] but cannot "
 							"authentication without a username or auth username\n", rec);
+						log_message(req);
 						exit_code(2, __PRETTY_FUNCTION__, "missing username for authentication");
 					}
 					/* prevents a strange error */

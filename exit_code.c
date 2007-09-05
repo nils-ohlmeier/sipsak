@@ -37,6 +37,14 @@
 
 enum exit_modes exit_mode = EM_DEFAULT;
 
+void log_message(const char *message) {
+	if ((sysl > 3) && (message != NULL)) {
+#ifdef HAVE_SYSLOG
+		syslog(LOG_INFO, "%s", message);
+#endif
+	}
+}
+
 void exit_code(int code, const char *function, const char *reason)
 {
 #ifdef WITH_TLS_TRANSP
