@@ -120,7 +120,7 @@ void handle_3xx(struct sockaddr_in *tadr)
 		}
 		/* correct our request */
 		uri_replace(req, contact);
-		new_transaction(req);
+		new_transaction(req, rep);
 		/* extract the needed information*/
 		rport = 0;
 		address = 0;
@@ -275,7 +275,7 @@ void handle_default()
 			}
 			else {
 				counters.run++;
-				new_transaction(req);
+				new_transaction(req, rep);
 				delays.retryAfter = timer_t1;
 			}
 		}
@@ -1023,7 +1023,7 @@ void shoot(char *buf, int buff_size)
 								exit_code(0, __PRETTY_FUNCTION__, NULL);
 							}
 							counters.run++;
-							new_transaction(req);
+							new_transaction(req, rep);
 							delays.retryAfter = timer_t1;
 							continue;
 						}
@@ -1037,7 +1037,7 @@ void shoot(char *buf, int buff_size)
 					insert_auth(req, rec);
 					if (verbose > 2)
 						printf("\nreceived:\n%s\n", rec);
-					new_transaction(req);
+					new_transaction(req, rep);
 					continue;
 				} /* if auth...*/
 				/* lets see if received a redirect */

@@ -122,7 +122,6 @@ void create_msg(int action, char *req_buff, char *repl_buff, char *username, int
 		case REQ_INV:
 			sprintf(req_buff, 
 				"%s sip:%s%s%s"
-				"%ssip:sipsak@%s:%i;tag=%x\r\n"
 				"%ssip:%s%s\r\n"
 				"%s%u@%s\r\n"
 				"%s%i %s\r\n"
@@ -130,10 +129,8 @@ void create_msg(int action, char *req_buff, char *repl_buff, char *username, int
 				"%ssip:sipsak@%s:%i\r\n"
 				"%sDONT ANSWER this test call!\r\n"
 				"%s70\r\n"
-				"%s%s\r\n"
-				"\r\n", 
+				"%s%s\r\n",
 				INV_STR, username, domainname, SIP20_STR, 
-				FROM_STR, fqdn, lport, c,
 				TO_STR, username, domainname, 
 				CALL_STR, c, fqdn, 
 				CSEQ_STR, cseq, INV_STR, 
@@ -142,6 +139,19 @@ void create_msg(int action, char *req_buff, char *repl_buff, char *username, int
 				SUB_STR, 
 				MAX_FRW_STR, 
 				UA_STR, UA_VAL_STR);
+			req_buff += strlen(req_buff);
+			if (from_uri) {
+				sprintf(req_buff,
+					"%s%s;tag=%x\r\n"
+					"\r\n",
+					FROM_STR, from_uri, c);
+			}
+			else {
+				sprintf(req_buff,
+					"%ssip:sipsak@%s:%i;tag=%x\r\n"
+					"\r\n",
+					FROM_STR, fqdn, lport, c);
+			}
 			add_via(req_buf_begin);
 			sprintf(repl_buff, 
 				"%s"

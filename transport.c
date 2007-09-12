@@ -820,7 +820,7 @@ int check_for_message(char *recv, int size, struct sipsak_con_data *cd,
 				count->run++;
 				sd->all_delay += senddiff;
 				sd->big_delay = senddiff;
-				new_transaction(req);
+				new_transaction(req, rep);
 				sd->retryAfter = timer_t1;
 				if (timing == 0) {
 					printf("%.3f/%.3f/%.3f ms\n", sd->small_delay, sd->all_delay / count->run, sd->big_delay);

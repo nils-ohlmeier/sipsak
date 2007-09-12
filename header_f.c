@@ -431,7 +431,7 @@ int cseq(char *message)
 }
 
 /* if it find the Cseq number in the message it will increased by one */
-void increase_cseq(char *message)
+void increase_cseq(char *message, char *reply)
 {
 	int cs;
 	char *cs_s, *eol, *backup;
@@ -460,6 +460,22 @@ void increase_cseq(char *message)
 	}
 	else if (verbose > 1)
 		printf("'CSeq' not found in message\n");
+	if (reply != NULL) {
+		cs_s=STRCASESTR(reply, CSEQ_STR);
+		if (cs_s) {
+			cs_s+=6;
+			eol=strchr(cs_s, ' ');
+			eol++;
+			backup=str_alloc(strlen(eol)+1);
+			strncpy(backup, eol, (size_t)(strlen(eol)));
+			snprintf(cs_s, 11, "%i ", cs);
+			cs_s+=strlen(cs_s);
+			strncpy(cs_s, backup, strlen(backup));
+			free(backup);
+		}
+		else if (verbose > 1)
+			printf("'CSeq' not found in reply\n");
+	}
 }
 
 /* separates the given URI into the parts by setting the pointer but it
@@ -582,9 +598,9 @@ void new_branch(char *message)
 }
 
 /* increase the CSeq and insert a new branch value */
-void new_transaction(char *message)
+void new_transaction(char *message, char *reply)
 {
-	increase_cseq(message);
+	increase_cseq(message, reply);
 	new_branch(message);
 }
 
