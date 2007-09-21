@@ -915,7 +915,9 @@ int main(int argc, char *argv[])
 			}
 		}
 		if (via_ins) {
-			fprintf(stderr, "warning: ignoring -i option when in usrloc mode\n");
+			if (verbose > 1) {
+				fprintf(stderr, "warning: Deactivated Via insertion in usrloc mode.\n         Please use option -i to surpress this warning.\n");
+			}
 			via_ins=0;
 		}
 		if (nameend==-1)
