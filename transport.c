@@ -280,7 +280,7 @@ void verify_certificate_chain(gnutls_session_t session, const char *hostname,
 	return;
 }
 
-void verify_certificate_simple(gnutls_session_t session, const char *hostname) {
+int verify_certificate_simple(gnutls_session_t session, const char *hostname) {
 	unsigned int status, cert_list_size;
 	const gnutls_datum_t *cert_list;
 	int ret;
@@ -291,61 +291,71 @@ void verify_certificate_simple(gnutls_session_t session, const char *hostname) {
 	ret = gnutls_certificate_verify_peers2(session, &status);
 
 	if (ret < 0) {
-		printf("gnutls verify peer failed\n");
-		return;
+		printf("gnutls verify peer failed.\n");
+		return -1;
 	}
+	ret = 0;
 
 	if (status & GNUTLS_CERT_INVALID) {
-		printf("The certificate is not trusted\n");
+		ret |= -2;
+		printf("The certificate is not trustworthy\n");
 		if (status & GNUTLS_CERT_SIGNER_NOT_FOUND) {
 			printf("The certificate hasn't got a known issuer.\n");
+			ret |= -4;
 		}
 		if (status & GNUTLS_CERT_SIGNER_NOT_CA) {
 			printf("The certificate issuer is not a CA\n");
+			ret |= -8;
 		}
 	}
 	if (status & GNUTLS_CERT_REVOKED) {
 		printf("The certificate has beend revoked.\n");
+		ret = -16;
+	}
+	if (ret != 0 && ignore_ca_fail == 0) {
+		return ret;
 	}
 
 	// from here on it works only with X509 certs
 	if (gnutls_certificate_type_get(session) != GNUTLS_CRT_X509){
-		return;
+		printf("The server certificate is not X509.\n");
+		return -32;;
 	}
 	if (gnutls_x509_crt_init(&cert) < 0) {
-		printf("gnutls crt init failed\n");
-		return;
+		printf("gnutls crt init failed.\n");
+		return -64;
 	}
 
 	cert_list = gnutls_certificate_get_peers(session, &cert_list_size);
 	if (cert_list == NULL) {
-		printf("gnutls did not found a certificate'n");
-		return;
+		printf("gnutls did not found a server certificate.\n");
+		return -128;
 	}
 
 	// this not a real world check as only the first cert is checked!
 	if (gnutls_x509_crt_import(cert, &cert_list[0], GNUTLS_X509_FMT_DER)) {
-		printf("gnutls failed to parse certificate\n");
-		return;
+		printf("gnutls failed to parse server certificate.\n");
+		return -256;
 	}
 
 	// beware here we do not check for errors
 	if (gnutls_x509_crt_get_expiration_time(cert) < time(0)) {
-		printf("The certificate hax expired\n");
-		return;
+		printf("The server certificate is expired.\n");
+		return -512;
 	}
 	if (gnutls_x509_crt_get_activation_time(cert) > time(0)) {
-		printf("The certificate is not yet activated\n");
-		return;
+		printf("The server certificate is not yet activated.\n");
+		return -1024;
 	}
 	if (!gnutls_x509_crt_check_hostname(cert, hostname)) {
-		printf("The certificate's owner does not match hostname '%s'", 
+		printf("The server certificate's owner does not match hostname '%s'\n", 
 			hostname);
-		return;
+		return -2048;
 	}
 
 	gnutls_x509_crt_deinit(cert);
-	return;
+
+	return ret;
 }
 
 static const char *bin2hex(const void *bin, size_t bin_size) {
@@ -371,7 +381,7 @@ void print_x509_certificate_info(gnutls_session_t session) {
 	char serial[40];
 	char dn[128];
 	size_t size;
-	unsigned int algo, bits;
+	unsigned int algo, bits, sigalgo;
 	time_t expiration_time, activation_time;
 	const gnutls_datum_t *cert_list;
 	unsigned int cert_list_size = 0;
@@ -391,9 +401,9 @@ void print_x509_certificate_info(gnutls_session_t session) {
 		gnutls_x509_crt_init(&cert);
 		gnutls_x509_crt_import(cert, &cert_list[0], GNUTLS_X509_FMT_DER);
 		printf("Certificate info:\n");
-		expiration_time = gnutls_x509_crt_get_expiration_time(cert);
 		activation_time = gnutls_x509_crt_get_activation_time(cert);
 		printf("\tCertificate is valid since: %s", ctime(&activation_time));
+		expiration_time = gnutls_x509_crt_get_expiration_time(cert);
 		printf("\tCertificate expires: %s", ctime(&expiration_time));
 		// print the serial number of the certificate
 		size = sizeof(serial);
@@ -401,15 +411,38 @@ void print_x509_certificate_info(gnutls_session_t session) {
 		printf("\tCertificate serail number: %s\n", bin2hex(serial, size));
 		// extract public key algorithm
 		algo = gnutls_x509_crt_get_pk_algorithm(cert, &bits);
-		printf("\tCertificate public key: %s\n", gnutls_pk_algorithm_get_name(algo));
+		printf("\tCertificate public key algorithm: %s\n", gnutls_pk_algorithm_get_name(algo));
 		// print version of x509 cert
 		printf("\tCertificate version: #%d\n", gnutls_x509_crt_get_version(cert));
+		// print name of the certificate
 		size = sizeof(dn);
 		gnutls_x509_crt_get_dn(cert, dn, &size);
 		printf("\tDN: %s\n", dn);
+		// print subject alt name of the certificate
 		size = sizeof(dn);
-		gnutls_x509_crt_get_issuer_dn(cert, dn, &size);
-		printf("\tIssuer's DN: %s\n", dn);
+		if (gnutls_x509_crt_get_subject_alt_name(cert, 0, dn, &size, NULL) == 0) {
+			printf("\tSubject Alt Name: %s\n", dn);
+		}
+		// print the algorithm which was used for signing the cert
+		algo = gnutls_x509_crt_get_signature_algorithm(cert);
+		printf("\tCA's signature algorithm: %s\n", gnutls_pk_algorithm_get_name(algo));
+		// print the name of the CA
+		size = sizeof(dn);
+		if (gnutls_x509_crt_get_issuer_dn(cert, dn, &size) == 0) {
+			printf("\tCA's DN: %s\n", dn);
+		}
+		// print the CA status flags if present
+		if (gnutls_x509_crt_get_ca_status(cert, &algo) > 0 && algo != 0) {
+			printf("\tCA status flag is set\n");
+		}
+		// print the fingerprint of the cert
+		size = sizeof(dn);
+		// FIXME
+		if (gnutls_x509_crt_get_fingerprint(cert, GNUTLS_MAC_SHA1, dn, &size) == 0) {
+			printf("\tFingerprint of the certificate: %s\n", dn);
+		}
+
+
 		gnutls_x509_crt_deinit(cert);
 	}
 }
@@ -1130,7 +1163,18 @@ int set_target(struct sockaddr_in *adr, unsigned long target, int port, int sock
 			else if (verbose > 2) {
 				dbg(" TLS Handshake was completed!\n");
 				gnutls_session_info(tls_session);
-				verify_certificate_simple(tls_session, domainname);
+				if (verify_certificate_simple(tls_session, domainname) != 0) {
+					if (ignore_ca_fail == 1) {
+						if (verbose) {
+							printf("WARN: Ignoring verification failures of the server certificate\n");
+						}
+					} else {
+						if (verbose > 1) {
+							printf("TLS server certificate verification can be ignored with option --tls-ignore-cert-failure.\n");
+						}
+						exit_code(3, __PRETTY_FUNCTION__, "failure during TLS server certificate verification");
+					}
+				}
 				//verify_certificate_chain(tls_session, domainname, cert_chain, cert_chain_length);
 			}
 # else /* USE_GNUTLS */

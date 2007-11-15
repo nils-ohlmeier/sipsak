@@ -163,6 +163,12 @@ void print_long_help() {
 		"  --sylog=NUMBER             log exit message to syslog with given log level\n"
 		, DEFAULT_TIMEOUT
 		);
+#ifdef WITH_TLS_TRANSP
+	printf("  --tls-ca-cert=FILE         file with the cert of the root CA\n"
+		"  --tls-client-cert=FILE     file with the cert which sipsak will send\n"
+		"  --tls-ignore-cert-failure  ignore failures during the TLS handshake\n"
+		);
+#endif
 	exit_code(0, __PRETTY_FUNCTION__, NULL);
 }
 #endif
@@ -255,7 +261,7 @@ int main(int argc, char *argv[])
 #ifdef HAVE_GETOPT_LONG
 	int option_index = 0;
 	static struct option l_opts[] = {
-		{"help", 0, 0, 'X'},
+		{"help", 0, 0, 0},
 		{"version", 0, 0, 'V'},
 		{"filename", 1, 0, 'f'},
 		{"sip-uri", 1, 0, 's'},
@@ -303,7 +309,9 @@ int main(int argc, char *argv[])
 		{"authhash", 1, 0, 'J'},
 		{"syslog", 1, 0, 'K'},
 #ifdef WITH_TLS_TRANSP
-		{"tls-ca-cert", 1, 0, 'k'},
+		{"tls-ca-cert", 1, 0, 0},
+		{"tls-client-cert", 1, 0, 0},
+		{"tls-ignore-cert-failure", 0, 0, 0},
 #endif
 		{0, 0, 0, 0}
 	};
@@ -334,6 +342,7 @@ int main(int argc, char *argv[])
 	memset(fqdn, 0, FQDN_SIZE);
 #ifdef WITH_TLS_TRANSP
 	cert_file = ca_file = NULL;
+	ignore_ca_fail = 0;
 # ifdef USE_GNUTLS
 	tls_session = NULL;
 	xcred = NULL;
@@ -351,11 +360,49 @@ int main(int argc, char *argv[])
 
 	/* lots of command line switches to handle*/
 #ifdef HAVE_GETOPT_LONG
-	while ((c=getopt_long(argc, argv, "a:A:b:B:c:C:dD:e:E:f:Fg:GhH:iIj:J:k:K:l:Lm:MnNo:O:p:P:q:r:Rs:St:Tu:UvVwW:x:Xz:Z:", l_opts, &option_index)) != EOF){
+	while ((c=getopt_long(argc, argv, "a:A:b:B:c:C:dD:e:E:f:Fg:GhH:iIj:J:K:l:Lm:MnNo:O:p:P:q:r:Rs:St:Tu:UvVwW:x:z:Z:", l_opts, &option_index)) != EOF){
 #else
-	while ((c=getopt(argc, argv, "a:A:b:B:c:C:dD:e:E:f:Fg:GhH:iIj:J:k:K:l:Lm:MnNo:O:p:P:q:r:Rs:St:Tu:UvVwW:x:z:Z:")) != EOF){
+	while ((c=getopt(argc, argv, "a:A:b:B:c:C:dD:e:E:f:Fg:GhH:iIj:J:K:l:Lm:MnNo:O:p:P:q:r:Rs:St:Tu:UvVwW:x:z:Z:")) != EOF){
 #endif
 		switch(c){
+#ifdef HAVE_GETOPT_LONG
+			case 0:
+				printf("long option %s", l_opts[option_index].name);
+				if (optarg) {
+					printf(" with arg %s", optarg);
+				}
+				printf("\n");
+				if (STRNCASECMP("help", l_opts[option_index].name, 4) == 0) {
+					print_long_help();
+				}
+#ifdef WITH_TLS_TRANSP
+				else if (STRNCASECMP("tls-ca-cert", l_opts[option_index].name, 11) == 0) {
+					pf = fopen(optarg, "rb");
+					if (!pf){
+						fprintf(stderr, "error: unable to open the CA cert file '%s'.\n", optarg);
+						exit_code(2, __PRETTY_FUNCTION__, "failed to open CA cert file");
+					}
+					fclose(pf);
+					ca_file=optarg;
+					break;
+				}
+				else if (STRNCASECMP("tls-ignore-cert-failure", l_opts[option_index].name, 22) == 0) {
+					ignore_ca_fail = 1;
+					break;
+				}
+				else if (STRNCASECMP("tls-client-cert", l_opts[option_index].name, 14) == 0) {
+					pf = fopen(optarg, "rb");
+					if (!pf){
+						fprintf(stderr, "error: unable to open the client cert file '%s'.\n", optarg);
+						exit_code(2, __PRETTY_FUNCTION__, "failed to open client cert file");
+					}
+					fclose(pf);
+					cert_file=optarg;
+					break;
+				}
+#endif
+				break;
+#endif
 			case 'a':
 				if (strlen(optarg) == 1 && STRNCASECMP(optarg, "-", 1) == 0) {
 					password = str_alloc(SIPSAK_MAX_PASSWD_LEN);
@@ -528,17 +575,6 @@ int main(int argc, char *argv[])
 				}
 				authhash=optarg;
 				break;
-#ifdef WITH_TLS_TRANSP
-			case 'k':
-				pf = fopen(optarg, "rb");
-				if (!pf){
-					fprintf(stderr, "error: unable to open the CA cert file '%s'.\n", optarg);
-					exit_code(2, __PRETTY_FUNCTION__, "failed to open CA cert file");
-				}
-				fclose(pf);
-				ca_file=optarg;
-				break;
-#endif
 			case 'K':
 				sysl=str_to_int(0, optarg);
 				if (sysl < LOG_ALERT || sysl > LOG_DEBUG) {
@@ -786,11 +822,6 @@ int main(int argc, char *argv[])
 			case 'x':
 				expires_t=str_to_int(0, optarg);
 				break;
-#ifdef HAVE_GETOPT_LONG
-			case 'X':
-				print_long_help();
-				break;
-#endif
 			case 'z':
 				rand_rem=str_to_int(0, optarg);
 				if (rand_rem < 0 || rand_rem > 100) {
@@ -806,7 +837,7 @@ int main(int argc, char *argv[])
 				}
 				break;
 			default:
-				fprintf(stderr, "error: unknown parameter %c\n", c);
+				fprintf(stderr, "error: unknown parameter '%c'\n", c);
 				exit_code(2, __PRETTY_FUNCTION__, "unknown parameter");
 				break;
 		}

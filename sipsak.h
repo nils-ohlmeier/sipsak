@@ -306,6 +306,7 @@
 
 #ifdef WITH_TLS_TRANSP
 char *cert_file, *ca_file;
+int ignore_ca_fail;
 # ifdef USE_GNUTLS
 gnutls_session_t tls_session;
 //gnutls_anon_client_credentials_t anoncred;
