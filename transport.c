@@ -381,7 +381,7 @@ void print_x509_certificate_info(gnutls_session_t session) {
 	char serial[40];
 	char dn[128];
 	size_t size;
-	unsigned int algo, bits, sigalgo;
+	unsigned int algo, bits;
 	time_t expiration_time, activation_time;
 	const gnutls_datum_t *cert_list;
 	unsigned int cert_list_size = 0;
