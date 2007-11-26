@@ -189,8 +189,8 @@ AC_DEFUN([CHECK_LIB_CARES],
 	ares_incdir=NONE
 	ares_libdir=NONE
 	ares_libcall=NONE
-	ares_incdirs="/usr/include /usr/local/include /sw/include"
-	ares_libdirs="/usr/lib64 /usr/lib /usr/local/lib64 /usr/local/lib /sw/lib"
+	ares_incdirs="/usr/include /usr/local/include /sw/include /opt/include /opt/local/include"
+	ares_libdirs="/usr/lib64 /usr/lib /usr/local/lib64 /usr/local/lib /sw/lib /opt/lib /opt/local/lib"
 	ares_libexten=".so .dylib .a"
 
 	for dir in $ares_incdirs; do
@@ -244,8 +244,8 @@ AC_DEFUN([CHECK_LIB_RULI],
 
 	ruli_incdir=NONE
 	ruli_libdir=NONE
-	ruli_incdirs="/usr/include /usr/local/include /sw/include"
-	ruli_libdirs="/usr/lib64 /usr/lib /usr/local/lib64 /usr/local/lib /sw/lib"
+	ruli_incdirs="/usr/include /usr/local/include /sw/include /opt/include /opt/local/include"
+	ruli_libdirs="/usr/lib64 /usr/lib /usr/local/lib64 /usr/local/lib /sw/lib /opt/lib /opt/local/lib"
 	ruli_libexten=".so .dylib .a"
 
 	for dir in $ruli_incdirs; do
@@ -296,7 +296,7 @@ AC_DEFUN([CHECK_PROG_DISTCC],
     AC_ARG_ENABLE([distcc],
         AC_HELP_STRING([--enable-distcc], [compile in parallel with distcc]),
         [
-			distcc_dirs="/ /usr /usr/local /usr/local/gnu /usr/gnu"
+			distcc_dirs="/ /usr /usr/local /usr/local/gnu /usr/gnu /opt /opt/local"
             for dir in $distcc_dirs; do
                 if test -x "$dir/bin/distcc"; then
                     found_distcc=yes;
