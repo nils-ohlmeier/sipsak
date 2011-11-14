@@ -262,7 +262,7 @@ static const unsigned char *skip_query(const unsigned char *aptr, const unsigned
 	return aptr;
 }
 
-static void cares_callback(void *arg, int status, unsigned char *abuf, int alen) {
+static void cares_callback(void *arg, int status, int timeouts, unsigned char *abuf, int alen) {
 	int i;
 	unsigned int ancount, nscount, arcount;
 	const unsigned char *aptr;
