@@ -506,12 +506,12 @@ void get_fqdn() {
 	memset(&hlp, 0, sizeof(hlp));
 
 	if (hostname) {
-		strncpy(fqdn, hostname, FQDN_SIZE);
-		strncpy(hname, hostname, 100);
+		strncpy(fqdn, hostname, FQDN_SIZE-1);
+		strncpy(hname, hostname, sizeof(hname)-1);
 	}
 	else {
 		if ((uname(&un))==0) {
-			strncpy(hname, un.nodename, 100);
+			strncpy(hname, un.nodename, sizeof(hname)-1);
 		}
 		else {
 			if (gethostname(&hname[0], namelen) < 0) {
@@ -530,7 +530,7 @@ void get_fqdn() {
 				snprintf(fqdn, FQDN_SIZE, "%s.%s", hname, dname);
 		}
 		else {
-			strncpy(fqdn, hname, FQDN_SIZE);
+			strncpy(fqdn, hname, FQDN_SIZE-1);
 		}
 #endif
 	}
@@ -539,15 +539,15 @@ void get_fqdn() {
 		he=gethostbyname(hname);
 		if (he) {
 			if (numeric == 1) {
-				snprintf(hlp, 15, "%s", inet_ntoa(*(struct in_addr *) he->h_addr_list[0]));
-				strncpy(fqdn, hlp, FQDN_SIZE);
+				snprintf(hlp, sizeof(hlp), "%s", inet_ntoa(*(struct in_addr *) he->h_addr_list[0]));
+				strncpy(fqdn, hlp, FQDN_SIZE-1);
 			}
 			else {
 				if ((strchr(he->h_name, '.'))!=NULL && (strchr(hname, '.'))==NULL) {
-					strncpy(fqdn, he->h_name, FQDN_SIZE);
+					strncpy(fqdn, he->h_name, FQDN_SIZE-1);
 				}
 				else {
-					strncpy(fqdn, hname, FQDN_SIZE);
+					strncpy(fqdn, hname, FQDN_SIZE-1);
 				}
 			}
 		}
@@ -559,7 +559,7 @@ void get_fqdn() {
 	if ((strchr(fqdn, '.'))==NULL) {
 		if (hostname) {
 			fprintf(stderr, "warning: %s is not resolvable... continouing anyway\n", fqdn);
-			strncpy(fqdn, hostname, FQDN_SIZE);
+			strncpy(fqdn, hostname, FQDN_SIZE-1);
 		}
 		else {
 			fprintf(stderr, "error: this FQDN or IP is not valid: %s\n", fqdn);
