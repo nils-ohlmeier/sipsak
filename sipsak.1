@@ -75,7 +75,7 @@ operates similarly to IP-layer utility
 .IP "- message mode (-M)"
 Sends a short message (similar to SMS from the mobile phones) to a given target. With the option
 .BR -B
-the content of the MESSAGE can be set. Usefull might be the options
+the content of the MESSAGE can be set. Useful might be the options
 .BR -c
 and
 .BR -O
@@ -83,7 +83,7 @@ in this mode.
 .IP "- usrloc mode (-U)"
 Stress mode for SIP registrar. 
 .B sipsak
-keeps registering to a SIP server at high pace. Additionaly the registrar
+keeps registering to a SIP server at high pace. Additionally the registrar
 can be stressed with the 
 .BR -I
 or the
@@ -161,7 +161,7 @@ will be used in the From header if
 .B sipsak
 runs in the message mode (initiated with the
 .BR -M
-option). This is helpfull to present the receiver of a MESSAGE a meaningfull
+option). This is helpful to present the receiver of a MESSAGE a meaningfull
 and usable address to where maybe even responses can be send.
 
 .IP "-C, --contact SIPURI"
@@ -170,7 +170,7 @@ to insert forwards like for mail. For example you can insert the uri of
 your first SIP account at a second account, thus all calls to the second
 account will be forwarded to the first account.
 As the argument to this option will not be enclosed in brackets you can
-give also multiple contacts in the raw format as comma seperated list.
+give also multiple contacts in the raw format as comma separated list.
 The special words 
 .B empty
 or
@@ -186,7 +186,7 @@ bindings by using expires value 0 together with this Contact.
 
 .IP "-d, --ignore-redirects"
 If this option is set all redirects will be ignored. By default without this 
-option received redirects will be respected. This option is automaticly 
+option received redirects will be respected. This option is automatically 
 activated in the randtrash mode and in the flood mode.
 
 .IP "-D, --timeout-factor NUMBER"
@@ -223,7 +223,7 @@ to de-activate this function). If the filename is equal to
 .I -
 the file is read from standard input, e.g. from the keyboard or a pipe.
 Please note that the manipulation functions (e.g. inserting Via header)
-are only tested with RFC conform requests. Additionaly special strings
+are only tested with RFC conform requests. Additionally special strings
 within the file can be replaced with some local or given values (see 
 .BR -g
 and
@@ -241,18 +241,18 @@ Prints out a simple usage help message. If the long option
 is available it will print out a help message with the available long options.
 
 .IP "-g, --replace-string STRING"
-Activates the replacement of $replace$ within the request (usualy read 
+Activates the replacement of $replace$ within the request (usually read 
 in from a file) with the
 .I STRING.
 Alternatively you can also specify a list of attribute and values.
 This list has to start and end with a non alpha-numeric character. The
-same character has to be used also as seperator between the attribute and
+same character has to be used also as separator between the attribute and
 the value and between new further attribute value pairs. The string
 "$attribute$" will be replaced with the value string in the message.
 
 .IP "-G, --replace"
 Activates the automatic replacement of the following variables in the
-request (usualy read in from a file):
+request (usually read in from a file):
 .B $dsthost$ 
 will be replaced by with the host or domainname which is given
 by the
@@ -307,7 +307,7 @@ The
 .BR string
 will be added as one or more additional headers to the request. The string
 "\\n" (note: two characters) will be replaced with CRLF and thus result
-in two  seperate headers. That way more then one header can be added.
+in two separate headers. That way more then one header can be added.
 
 .IP "-J, --autohash STRING"
 The
@@ -348,7 +348,7 @@ This activates the Messages cycles within the usrloc mode (known from
 versions pre 0.8.0 within the normal usrloc test). This option should be
 combined with
 .BR -U
-so that a succesful registration will be tested with a test message to the user
+so that a successful registration will be tested with a test message to the user
 and replied with 200 OK. But this option can also be used without the
 .BR -U
 option.
