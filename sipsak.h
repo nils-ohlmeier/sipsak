@@ -329,7 +329,7 @@ int file_b, uri_b, trace, via_ins, usrloc, redirects, rand_rem, replace_b;
 int empty_contact, nagios_warn, fix_crlf, timing, outbound_proxy;
 int timer_t1, timer_t2, timer_final, sysl;
 char *username, *domainname, *password, *replace_str, *hostname, *contact_uri;
-char *mes_body, *con_dis, *auth_username, *from_uri, *headers, *authhash;
+char *mes_body, *con_dis, *auth_username, *from_uri, *headers, *authhash, *local_ip;
 char fqdn[FQDN_SIZE];
 char target_dot[INET_ADDRSTRLEN], source_dot[INET_ADDRSTRLEN];
 char *req, *rep, *rec, *transport_str;
