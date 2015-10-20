@@ -159,6 +159,7 @@ void print_long_help() {
 		"  --timer-t1=NUMBER          timeout T1 in ms (default: %i)\n"
 		"  --transport=STRING         specify transport to be used\n"
 		"  --headers=STRING           adds additional headers to the request\n"
+		"  --local-ip=STRING          specify local ip address to be used\n"
 		"  --authhash=STRING          ha1 hash for authentication instead of password\n"
 		"  --sylog=NUMBER             log exit message to syslog with given log level\n"
 		, DEFAULT_TIMEOUT
@@ -241,6 +242,7 @@ void print_help() {
 		"  -E STRING         specify transport to be used\n"
 		"  -j STRING         adds additional headers to the request\n"
 		"  -J STRING         ha1 hash for authentication instead of password\n"
+		"  -k STRING         specify local ip address to be used\n"
 		"  -K NUMBER         log exit message to syslog with given log level\n"
 		, DEFAULT_TIMEOUT
 		);
@@ -307,6 +309,7 @@ int main(int argc, char *argv[])
 		{"transport", 1, 0, 'E'},
 		{"headers", 1, 0, 'j'},
 		{"authhash", 1, 0, 'J'},
+		{"local-ip", 1, 0, 'k'},
 		{"syslog", 1, 0, 'K'},
 #ifdef WITH_TLS_TRANSP
 		{"tls-ca-cert", 1, 0, 0},
@@ -328,7 +331,7 @@ int main(int argc, char *argv[])
 #endif
 	via_ins=redirects=fix_crlf=processes = 1;
 	username=password=replace_str=hostname=contact_uri=mes_body = NULL;
-	con_dis=auth_username=from_uri=headers=authhash = NULL;
+	con_dis=auth_username=from_uri=headers=authhash=local_ip = NULL;
 	scheme = user = host = backup = req = rep = rec = NULL;
 	re = NULL;
 	address= 0;
@@ -360,9 +363,9 @@ int main(int argc, char *argv[])
 
 	/* lots of command line switches to handle*/
 #ifdef HAVE_GETOPT_LONG
-	while ((c=getopt_long(argc, argv, "a:A:b:B:c:C:dD:e:E:f:Fg:GhH:iIj:J:K:l:Lm:MnNo:O:p:P:q:r:Rs:St:Tu:UvVwW:x:z:Z:", l_opts, &option_index)) != EOF){
+	while ((c=getopt_long(argc, argv, "a:A:b:B:c:C:dD:e:E:f:Fg:GhH:iIj:J:k:K:l:Lm:MnNo:O:p:P:q:r:Rs:St:Tu:UvVwW:x:z:Z:", l_opts, &option_index)) != EOF){
 #else
-	while ((c=getopt(argc, argv, "a:A:b:B:c:C:dD:e:E:f:Fg:GhH:iIj:J:K:l:Lm:MnNo:O:p:P:q:r:Rs:St:Tu:UvVwW:x:z:Z:")) != EOF){
+	while ((c=getopt(argc, argv, "a:A:b:B:c:C:dD:e:E:f:Fg:GhH:iIj:J:k:K:l:Lm:MnNo:O:p:P:q:r:Rs:St:Tu:UvVwW:x:z:Z:")) != EOF){
 #endif
 		switch(c){
 #ifdef HAVE_GETOPT_LONG
@@ -574,6 +577,9 @@ int main(int argc, char *argv[])
 					exit_code(2, __PRETTY_FUNCTION__, "authhash string is too short");
 				}
 				authhash=optarg;
+				break;
+			case 'k':
+				local_ip=optarg;
 				break;
 			case 'K':
 				sysl=str_to_int(0, optarg);

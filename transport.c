@@ -564,7 +564,11 @@ void create_sockets(struct sipsak_con_data *cd) {
 
 	memset(&(cd->adr), 0, sizeof(struct sockaddr_in));
 	cd->adr.sin_family = AF_INET;
-	cd->adr.sin_addr.s_addr = htonl( INADDR_ANY);
+	if(local_ip) {	
+		cd->adr.sin_addr.s_addr = inet_addr(local_ip);
+	} else {
+		cd->adr.sin_addr.s_addr = htonl( INADDR_ANY);
+	}
 	cd->adr.sin_port = htons((short)lport);
 
 	if (transport == SIP_UDP_TRANSPORT) {
