@@ -41,7 +41,7 @@ AC_HEADER_TIME
 
 SIPSAK_IP_UDP
 SIPSAK_ICMP
-AC_CHECK_HEADERS([cygwin/icmp.h],,,)
+SIPSAK_RAW_SUPPORT
 
 # Checks for typedefs, structures, and compiler characteristics.
 AC_TYPE_SIZE_T
