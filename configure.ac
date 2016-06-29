@@ -45,7 +45,6 @@ AC_CHECK_HEADERS([cygwin/icmp.h],,,)
 
 # Checks for typedefs, structures, and compiler characteristics.
 AC_TYPE_SIZE_T
-AC_HEADER_TIME
 
 # Checks for library functions.
 AC_FUNC_MALLOC
