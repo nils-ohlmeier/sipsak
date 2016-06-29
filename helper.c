@@ -303,7 +303,7 @@ static void cares_callback(void *arg, int status, int timeouts, unsigned char *a
 	}
 }
 
-inline unsigned long srv_ares(char *host, int *port, char *srv) {
+static inline unsigned long srv_ares(char *host, int *port, char *srv) {
 	int nfds, count, srvh_len;
 	char *srvh;
 	fd_set read_fds, write_fds;
@@ -356,7 +356,7 @@ inline unsigned long srv_ares(char *host, int *port, char *srv) {
 #endif // HAVE_CARES_H
 
 #ifdef HAVE_RULI_H
-inline unsigned long srv_ruli(char *host, int *port, char *srv) {
+static inline unsigned long srv_ruli(char *host, int *port, char *srv) {
 	int srv_code;
 	int ruli_opts = RULI_RES_OPT_SEARCH | RULI_RES_OPT_SRV_NOINET6 | RULI_RES_OPT_SRV_NOSORT6 | RULI_RES_OPT_SRV_NOFALL;
 #ifdef RULI_RES_OPT_SRV_CNAME

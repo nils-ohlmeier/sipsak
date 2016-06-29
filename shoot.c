@@ -71,7 +71,7 @@ struct sipsak_delay delays;
  * reply matching is enabled and no match occured
  */
 
-inline static void on_success(char *rep)
+static inline void on_success(char *rep)
 {
 	if ((rep != NULL) && re && regexec(re, rep, 0, 0, 0) == REG_NOMATCH) {
 		log_message(req);
