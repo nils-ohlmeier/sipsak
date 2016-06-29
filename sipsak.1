@@ -114,7 +114,7 @@ If libruli (http://www.nongnu.org/ruli/) or c-ares
 (http://daniel.haxx.se/projects/c-ares/) support is compiled into the
 .B sipsak
 binary, then first a SRV lookup for _sip._tcp.hostname is made. If that
-fails a SRV llokup for _sip._udp.hostname is made. And if this
+fails a SRV lookup for _sip._udp.hostname is made. And if this
 lookup fails a normal A lookup is made. If a port was given in the target
 URI the SRV lookup is omitted. Failover, load distribution and other 
 transports are not supported yet.
@@ -286,7 +286,7 @@ In this combination
 .B sipsak 
 first registeres a user, and then simulates an 
 invitation to this user. First an Invite is sent, this is replied with 200 OK
-and finaly an ACK is sent. This option can also be used without
+and finally an ACK is sent. This option can also be used without
 .BR -U
 , but you should be sure to NOT invite real UAs with this option. In the case
 of a missing 
@@ -333,8 +333,8 @@ option for details how sipsak sends and receives messages.
 
 .IP "-L, --no-crlf"
 De-activates the insertion of carriage returns (\\r) before all line feeds
-(\\n) (which is not allready proceeded by carraige return) if the input
-is comming from a file (
+(\\n) (which is not already proceeded by carraige return) if the input
+is coming from a file (
 .BR -f
 ). Without this option also an empty line will be appended to the request
 if required.
@@ -392,7 +392,7 @@ part of the request uri. The hostname is resolved via DNS SRV if supported
 .IP "-P, --processes NUMBER"
 Start
 .BR NUMBER
-of processes in parallel to do the send and reply checking. Makes only sence
+of processes in parallel to do the send and reply checking. Only makes sense
 if a higher number for 
 .BR -e
 is given in the usrloc, message or invite mode.
@@ -401,7 +401,7 @@ is given in the usrloc, message or invite mode.
 match replies against 
 .BR REGEXP
 and return false if no match
-occured. Useful for example to detect server name in Server header field.
+occurred. Useful for example to detect server name in Server header field.
 
 .IP "-r, --remote-port PORT"
 Instead of the default sip port 5060 the 

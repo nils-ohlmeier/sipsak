@@ -257,7 +257,7 @@ void verify_certificate_chain(gnutls_session_t session, const char *hostname,
 				cert[cert_chain_length -1]) > 0 && cert_chain_length > 0) {
 		cert_chain_length--;
 	}
-	/* now verify the certificates against ther issuers in the chain */
+	/* now verify the certificates against other issuers in the chain */
 	for (i = 1; i < cert_chain_length; i++) {
 		verify_cert2(cert[i - 1], cert[i], crl_list, crl_list_size);
 	}
@@ -285,7 +285,7 @@ int verify_certificate_simple(gnutls_session_t session, const char *hostname) {
 	gnutls_x509_crt_t cert;
 
 	// this verification function usese the trusted CAs in the credentials
-	// stucture. so you must have installed on or more CA certificates.
+	// structure. so you must have installed on or more CA certificates.
 	ret = gnutls_certificate_verify_peers2(session, &status);
 
 	if (ret < 0) {
@@ -904,7 +904,7 @@ int check_for_message(char *recv, int size, struct sipsak_con_data *cd,
 	}
 #endif
 	else {
-		printf("\nselect returned succesfuly, nothing received\n");
+		printf("\nselect returned successfully, nothing received\n");
 		return -1;
 	}
 	return ret;
@@ -1081,7 +1081,7 @@ int recv_message(char *buf, int size, int inv_trans,
 				ret = -1;
 			}
 		}
-		/* store the biggest delay if one occured */
+		/* store the biggest delay if one occurred */
 		if (srt->delaytime.tv_sec != 0) {
 			tmp_delay = deltaT(&(srt->delaytime), &(srt->recvtime));
 			if (tmp_delay > sd->big_delay)
@@ -1230,7 +1230,7 @@ int set_target(struct sockaddr_in *adr, unsigned long target, int port, int sock
 						printf("TLS connect: %d\n", err);
 						if (!err) {
 							if (ret == 0) {
-								perror("Unexpected EOF occured while performing TLS connect\n");
+								perror("Unexpected EOF occurred while performing TLS connect\n");
 							}
 							else {
 								printf("IO error: (%d) %s\n", errno, strerror(errno));

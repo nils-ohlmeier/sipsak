@@ -18,7 +18,7 @@ START_TEST (test_is_number) {
 	fail_unless(is_number("p2q") == 0, "is_number(\"p2q\") returned %d, instead of 0", is_number("p2q"));
 	fail_unless(is_number("1b3") == 0, "is_number(\"1b3\") returned %d, instead of 0", is_number("1b3"));
 
-	/* sucess cases */
+	/* success cases */
 	fail_unless(is_number("1") == 1, "is_number(\"1\") returned %d, instead of 1", is_number("1"));
 	fail_unless(is_number("10") == 1, "is_number(\"10\") returned %d, instead of 1", is_number("10"));
 }
