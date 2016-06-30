@@ -26,6 +26,7 @@
 
 #define SIPSAK_ALGO_MD5 1
 #define SIPSAK_ALGO_SHA1 2
+#define SIPSAK_ALGO_SHA256 3
 
 /* converts a hash into hex output
    taken from the RFC 2617 */
@@ -57,13 +58,14 @@ void insert_auth(char *message, char *authreq)
 	char *auth, *begin, *end, *insert, *backup, *realm, *usern, *nonce;
 	char *method, *uri;
 	char *qop_tmp = NULL;
-	unsigned char ha1[SIPSAK_HASHLEN], ha2[SIPSAK_HASHLEN], resp[SIPSAK_HASHLEN]; 
+	unsigned char ha1[SIPSAK_HASHLEN], ha2[SIPSAK_HASHLEN], resp[SIPSAK_HASHLEN];
 	unsigned char ha1_hex[SIPSAK_HASHHEXLEN+1], ha2_hex[SIPSAK_HASHHEXLEN+1], resp_hex[SIPSAK_HASHHEXLEN+1];
 	int qop_auth=0, proxy_auth=0, algo=0;
 	unsigned int cnonce;
 	MD5_CTX Md5Ctx;
 #ifdef HAVE_OPENSSL_SHA1
 	SHA_CTX Sha1Ctx;
+	SHA256_CTX Sha256Ctx;
 #endif
 
 	auth=begin=end=insert=backup=realm=usern=nonce=method=uri = NULL;
@@ -83,7 +85,7 @@ void insert_auth(char *message, char *authreq)
 			"received 40[1|7], see above\n", message, authreq);
 		exit_code(2, __PRETTY_FUNCTION__, "failed to add auth header, because request contained already one");
 	}
-	/* make a backup of all except the request line because for 
+	/* make a backup of all except the request line because for
 	   simplicity we insert the auth header direct behind the request line */
 	insert=strchr(message, '\n');
 	if (!insert) {
@@ -122,8 +124,11 @@ void insert_auth(char *message, char *authreq)
 				algo = SIPSAK_ALGO_MD5;
 			}
 #ifdef HAVE_OPENSSL_SHA1
-			else if ((STRNCASECMP(begin, "SHA1", 3))==0 || (STRNCASECMP(begin, "\"SHA1\"", 5))==0) {
+			else if ((STRNCASECMP(begin, "SHA1", 4))==0 || (STRNCASECMP(begin, "\"SHA1\"", 6))==0) {
 				algo = SIPSAK_ALGO_SHA1;
+			}
+			else if ((STRNCASECMP(begin, "SHA-256", 7))==0 || (STRNCASECMP(begin, "\"SHA-256\"", 9))==0) {
+				algo = SIPSAK_ALGO_SHA256;
 			}
 #endif
 			else {
@@ -179,6 +184,10 @@ void insert_auth(char *message, char *authreq)
 		else if (algo == SIPSAK_ALGO_SHA1) {
 			snprintf(insert, SHA1_STR_LEN+1, SHA1_STR);
 			insert+=SHA1_STR_LEN;
+		}
+		else if (algo == SIPSAK_ALGO_SHA256) {
+			snprintf(insert, SHA256_STR_LEN+1, SHA256_STR);
+			insert+=SHA256_STR_LEN;
 		}
 #endif
 		/* search for the realm, copy it to request and extract it for hash*/
@@ -330,6 +339,40 @@ void insert_auth(char *message, char *authreq)
 			SHA1_Final(&resp[0], &Sha1Ctx);
 			cvt_hex(&resp[0], &resp_hex[0], SIPSAK_HASHLEN_SHA1);
 		}
+		else if (algo == SIPSAK_ALGO_SHA256) {
+			if (authhash) {
+				strncpy((char*)&ha1_hex[0], authhash, SIPSAK_HASHHEXLEN_SHA256);
+			}
+			else {
+				SHA256_Init(&Sha256Ctx);
+				SHA256_Update(&Sha256Ctx, usern, (unsigned int)strlen(usern));
+				SHA256_Update(&Sha256Ctx, ":", 1);
+				SHA256_Update(&Sha256Ctx, realm, (unsigned int)strlen(realm));
+				SHA256_Update(&Sha256Ctx, ":", 1);
+				SHA256_Update(&Sha256Ctx, password, (unsigned int)strlen(password));
+				SHA256_Final(&ha1[0], &Sha256Ctx);
+				cvt_hex(&ha1[0], &ha1_hex[0], SIPSAK_HASHLEN_SHA256);
+			}
+
+			SHA256_Init(&Sha256Ctx);
+			SHA256_Update(&Sha256Ctx, method, (unsigned int)strlen(method));
+			SHA256_Update(&Sha256Ctx, ":", 1);
+			SHA256_Update(&Sha256Ctx, uri, (unsigned int)strlen(uri));
+			SHA256_Final(&ha2[0], &Sha256Ctx);
+			cvt_hex(&ha2[0], &ha2_hex[0], SIPSAK_HASHLEN_SHA256);
+
+			SHA256_Init(&Sha256Ctx);
+			SHA256_Update(&Sha256Ctx, &ha1_hex, SIPSAK_HASHHEXLEN_SHA256);
+			SHA256_Update(&Sha256Ctx, ":", 1);
+			SHA256_Update(&Sha256Ctx, nonce, (unsigned int)strlen(nonce));
+			SHA256_Update(&Sha256Ctx, ":", 1);
+			if (qop_auth == 1) {
+				SHA256_Update(&Sha256Ctx, qop_tmp, (unsigned int)strlen(qop_tmp));
+			}
+			SHA256_Update(&Sha256Ctx, &ha2_hex, SIPSAK_HASHHEXLEN_SHA256);
+			SHA256_Final(&resp[0], &Sha256Ctx);
+			cvt_hex(&resp[0], &resp_hex[0], SIPSAK_HASHLEN_SHA256);
+		}
 #endif
 
 		snprintf(insert, RESPONSE_STR_LEN+1, RESPONSE_STR);
@@ -344,16 +387,16 @@ void insert_auth(char *message, char *authreq)
 			" in the 401 response above\n",	authreq);
 		exit_code(3, __PRETTY_FUNCTION__, "missing authentication header in reply");
 	}
-	if (verbose>1) 
+	if (verbose>1)
 		printf("authorizing\n");
 	/* hopefully we free all here */
 	free(backup);
 	free(auth);
 	free(method);
-	free(uri); 
+	free(uri);
 	free(realm);
-	free(nonce); 
-	if (auth_username == NULL) free(usern); 
+	free(nonce);
+	if (auth_username == NULL) free(usern);
 	if (qop_auth == 1) free(qop_tmp);
 }
 
