@@ -1,6 +1,4 @@
 /*
- * $Id$
- *
  * Copyright (C) 2002-2004 Fhg Fokus
  * Copyright (C) 2004-2005 Nils Ohlmeier
  *
@@ -887,7 +885,7 @@ int main(int argc, char *argv[])
 			exit_code(2, __PRETTY_FUNCTION__, "trace mode can't be combined with other modes");
 		}
 		if (!uri_b) {
-			fprintf(stderr, "error: for trace mode a SIPURI is realy needed\n");
+			fprintf(stderr, "error: for trace mode a SIPURI is really needed\n");
 			exit_code(2, __PRETTY_FUNCTION__, "missing URI for trace mode");
 		}
 		if (file_b) {
@@ -953,7 +951,7 @@ int main(int argc, char *argv[])
 		}
 		if (via_ins) {
 			if (verbose > 1) {
-				fprintf(stderr, "warning: Deactivated Via insertion in usrloc mode.\n         Please use option -i to surpress this warning.\n");
+				fprintf(stderr, "warning: Deactivated Via insertion in usrloc mode.\n         Please use option -i to suppress this warning.\n");
 			}
 			via_ins=0;
 		}

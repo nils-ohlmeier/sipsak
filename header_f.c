@@ -1,6 +1,4 @@
 /*
- * $Id$
- *
  * Copyright (C) 2002-2004 Fhg Fokus
  * Copyright (C) 2004-2005 Nils Ohlmeier
  *
@@ -353,7 +351,7 @@ void cpy_rr(char* src, char *dst, int route) {
 }
 
 /* build an ACK from the given invite and reply.
- * NOTE: space has to be allocated allready for the ACK */
+ * NOTE: space has to be allocated already for the ACK */
 void build_ack(char *invite, char *reply, char *dest, 
 			struct sipsak_regexp *reg) {
 	char *tmp;

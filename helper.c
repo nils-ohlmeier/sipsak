@@ -1,6 +1,4 @@
 /*
- * $Id$
- *
  * Copyright (C) 2002-2004 Fhg Fokus
  * Copyright (C) 2004-2005 Nils Ohlmeier
  *
@@ -87,7 +85,7 @@ int is_ip(char *str) {
 		dotcount++;
 	}
 
-	/* three dots with upto three digits in before, between and after ? */
+	/* three dots with up to three digits in before, between and after ? */
 	if (*str == '\0' && dotcount == 3 && i > 0 && i <= 3)
 		return 1;
 	else
@@ -97,7 +95,7 @@ int is_ip(char *str) {
 /* take either a dot.decimal string of ip address or a 
 domain name and returns a NETWORK ordered long int containing
 the address. i chose to internally represent the address as long for speedier
-comparisions.
+comparisons.
 
 any changes to getaddress have to be patched back to the net library.
 contact: farhan@hotfoon.com
@@ -120,7 +118,7 @@ unsigned long getaddress(char *host) {
 
 	/* try the system's own resolution mechanism for dns lookup:
 	 required only for domain names.
-	 inspite of what the rfc2543 :D Using SRV DNS Records recommends,
+	 in spite of what the rfc2543 :D Using SRV DNS Records recommends,
 	 we are leaving it to the operating system to do the name caching.
 
 	 this is an important implementational issue especially in the light
@@ -595,7 +593,7 @@ void replace_string(char *mess, char *search, char *replacement) {
 }
 
 /* checks if the strings contains special double marks and then
- * replace all occurences of this strings in the message */
+ * replace all occurrences of this strings in the message */
 void replace_strings(char *mes, char *strings) {
 	char *pos, *atr, *val, *repl, *end;
 	char sep;
@@ -640,7 +638,7 @@ void replace_strings(char *mes, char *strings) {
 	dbg("mes:\n'%s'\n", mes);
 }
 
-/* insert \r in front of all \n if it is not present allready
+/* insert \r in front of all \n if it is not present already
  * and and a trailing \r\n is not present */
 void insert_cr(char *mes) {
 	char *lf, *pos, *backup;

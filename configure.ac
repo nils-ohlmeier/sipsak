@@ -45,7 +45,6 @@ SIPSAK_RAW_SUPPORT
 
 # Checks for typedefs, structures, and compiler characteristics.
 AC_TYPE_SIZE_T
-AC_HEADER_TIME
 
 # Checks for library functions.
 AC_FUNC_MALLOC

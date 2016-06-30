@@ -1,6 +1,4 @@
 /*
- * $Id$
- *
  * Copyright (C) 2002-2004 Fhg Fokus
  * Copyright (C) 2004-2005 Nils Ohlmeier
  *
@@ -67,8 +65,8 @@ struct sipsak_con_data cdata;
 struct sipsak_counter counters;
 struct sipsak_delay delays;
 
-/* if a reply was received successfuly, return success, unless 
- * reply matching is enabled and no match occured
+/* if a reply was received successfully, return success, unless
+ * reply matching is enabled and no match occurred
  */
 
 static inline void on_success(char *rep)

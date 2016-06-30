@@ -1,6 +1,4 @@
 /*
- * $Id:$
- *
  * Copyright (C) 2005 Nils Ohlmeier
  *
  * This file belongs to sipsak, a free sip testing tool.
