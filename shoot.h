@@ -24,16 +24,6 @@
 # include "config.h"
 #endif
 
-#ifdef HAVE_NETINET_IP_H
-# ifdef HAVE_NETINET_IP_ICMP_H
-#  ifdef HAVE_NETINET_UDP_H
-#   ifndef HAVE_CYGWIN_ICMP_H
-#    define RAW_SUPPORT
-#   endif
-#  endif
-# endif
-#endif
-
 #define LPORT_STR_LEN 6
 
 struct sipsak_regexp {

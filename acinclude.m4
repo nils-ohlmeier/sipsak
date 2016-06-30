@@ -23,6 +23,27 @@ AC_DEFUN([SIPSAK_ICMP],
 	]])
 ])
 
+AC_DEFUN([SIPSAK_RAW_SUPPORT],
+[
+	AC_REQUIRE([SIPSAK_IP_UDP])
+	AC_REQUIRE([SIPSAK_ICMP])
+	AC_CHECK_HEADERS([cygwin/icmp.h])
+	AC_ARG_ENABLE([raw-support],
+	  AS_HELP_STRING([--disable-raw-support], [compile without raw socket support]),
+	  [sipsak_raw_support=$enable_raw_support],
+	  [sipsak_raw_support=yes])
+	AC_MSG_CHECKING([raw socket support])
+	AS_IF([test "X$ac_cv_header_netinet_ip_h" = "Xno" ||
+	       test "X$ac_cv_header_netinet_ip_icmp_h" = "Xno" ||
+	       test "X$ac_cv_header_cygwin_icmp_h" = "Xyes"], [
+	  sipsak_raw_support=no
+	])
+	AS_IF([test "X$sipsak_raw_support" = "Xyes"], [
+	  AC_DEFINE([RAW_SUPPORT], [1], [Define to 1 to use raw socket support])
+	])
+	AC_MSG_RESULT([$sipsak_raw_support])
+])
+
 AC_DEFUN([SIPSAK_TIMER],
 [
 	# Check for T1 timer value
