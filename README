@@ -23,6 +23,7 @@
 
  The usual
 
+   autoreconf --install
    ./configure
    make
 
