@@ -754,7 +754,7 @@ void check_socket_error(int socket, int size) {
 	sockerr.events=POLLERR;
 	ret = poll(&sockerr, 1, 10);
 	if (ret==1) {
-		if (sockerr.revents && POLLERR) {
+		if (sockerr.revents & POLLERR) {
 			recvfrom(socket, recv, size, 0, NULL, 0);
 			if (verbose)
 				printf("\n");
