@@ -53,36 +53,40 @@ AC_CHECK_FUNCS([getchar gethostbyname gethostname getopt getpid gettimeofday mem
 AC_CHECK_FUNCS([calloc getdomainname getopt_long inet_ntop strncasecmp strcasestr syslog])
 
 # Check if the check unit test framework is available
-AM_PATH_CHECK([0.9.3])
+PKG_CHECK_MODULES([CHECK], [check >= 0.9.3], [
+  AC_DEFINE([HAVE_CHECK_H], [1], [Has check.h])
+])
 
-AM_PATH_SIPSAK_LIBGNUTLS([1.0.0],
+PKG_CHECK_MODULES([LIBGNUTLS], [gnutls >= 1.0.0], [
   AC_DEFINE([HAVE_GNUTLS], [1], [Has gnutls])
   LIBS="$LIBS $LIBGNUTLS_LIBS -lgnutls-openssl"
   CFLAGS="$CFLAGS $LIBGNUTLS_CFLAGS"
-)
+], [
+  AC_CHECK_HEADERS([openssl/md5.h], [
+    AC_SEARCH_LIB([MD5_Init], [crypto], [
+      AC_DEFINE([HAVE_CRYPTO_WITH_MD5], [1], [The crypto lib has MD5 functions])
+    ])
+  ])
 
-if test "X$LIBGNUTLS_LIBS" = "X";then
-  AC_CHECK_HEADERS([openssl/md5.h],
-    AC_CHECK_LIB(crypto, MD5_Init,
-	  AC_DEFINE([HAVE_CRYPTO_WITH_MD5], [1], [The crypto lib has MD5 functions])
-      LIBS="$LIBS -lcrypto"
-    )
-  )
-fi
+  AC_CHECK_HEADERS([openssl/sha.h], [
+    AC_SEARCH_LIB([SHA1_Init], [crypto], [
+      AC_DEFINE([HAVE_CRYPTO_WITH_SHA1], [1], [The crpyto lib has SHA1 functions])
+    ])
+  ])
+])
 
-AC_CHECK_HEADERS([openssl/sha.h],
-  AC_CHECK_LIB(crypto, SHA1_Init,
-    AC_DEFINE([HAVE_CRYPTO_WITH_SHA1], [1], [The crpyto lib has SHA1 functions])
-    LIBS="$LIBS -lcrypto"
-  )
-)
-
-CHECK_LIB_CARES
-if test "X$SIPSAK_HAVE_ARES" = "X"; then
-  CHECK_LIB_RULI
-else
+PKG_CHECK_MODULES([CARES], [libcares], [
+  AC_DEFINE([HAVE_CARES_H], [1], [Has cares.h])
+  LIBS="$LIBS $CARES_LIBS"
+  CFLAGS="$CFLAGS $CARES_CFLAGS"
   AC_CHECK_HEADERS([arpa/nameser.h])
-fi
+], [
+  AC_CHECK_HEADERS([ruli.h], [
+    AC_SEARCH_LIBS([ruli_sync_query], [ruli], [
+      AC_DEFINE([HAVE_RULI_H], [1], [Has ruli.h])
+    ])
+  ])
+])
 
 # FIXME: this has to replaced with a real check
 # LIBS="$LIBS -lssl"
