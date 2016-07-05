@@ -643,7 +643,7 @@ void create_sockets(struct sipsak_con_data *cd) {
 			// put the X509 credentials to the session
 			gnutls_credentials_set(tls_session, GNUTLS_CRD_CERTIFICATE, xcred);
 			// add the FD to the session
-			gnutls_transport_set_ptr(tls_session, (gnutls_transport_ptr_t) cd->csock);
+			gnutls_transport_set_ptr(tls_session, (gnutls_transport_ptr_t)(intptr_t)cd->csock);
 #else /* USE_GNUTLS */
 # ifdef USE_OPENSSL
 			create_tls_ctx();
