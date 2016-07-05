@@ -75,7 +75,7 @@
 
    // needed for anonymous auth
    //const int kx_prio[] = { GNUTLS_KX_ANON_DH, 0 };
-   const int cert_type_priority[2] = { GNUTLS_CRT_X509, 0 };
+   //const int cert_type_priority[2] = { GNUTLS_CRT_X509, 0 };
 # else
 #  ifdef USE_OPENSSL
 #   define _BSD_SOURCE 1
@@ -639,7 +639,7 @@ void create_sockets(struct sipsak_con_data *cd) {
 			//gnutls_credentials_set(tls_session, GNUTLS_CRD_ANON, anoncred);
 			// use default priorities
 			gnutls_set_default_priority(tls_session);
-			gnutls_certificate_type_set_priority(tls_session, cert_type_priority);
+			//gnutls_certificate_type_set_priority(tls_session, cert_type_priority);
 			// put the X509 credentials to the session
 			gnutls_credentials_set(tls_session, GNUTLS_CRD_CERTIFICATE, xcred);
 			// add the FD to the session
