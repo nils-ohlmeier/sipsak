@@ -107,7 +107,7 @@ contact: farhan@hotfoon.com
 
 unsigned long getaddress(char *host) {
 	struct hostent* pent;
-	long l, *lp;
+	long addr;
 
 	if (strlen(host) == 0) {
 		return 0;
@@ -133,9 +133,8 @@ unsigned long getaddress(char *host) {
 		printf("'%s' is unresolveable\n", host);
 		exit_code(2, __PRETTY_FUNCTION__, "hostname is not resolveable");
 	}
-	lp = (long *) (pent->h_addr);
-	l = *lp;
-	return l;
+	addr = *(uint32_t *) (pent->h_addr);
+	return addr;
 }
 
 #ifdef HAVE_CARES_H
