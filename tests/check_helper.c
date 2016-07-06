@@ -1,8 +1,9 @@
 #include "../config.h"
 
+#include <stdlib.h>
+
 #ifdef HAVE_CHECK_H
 
-#include <stdlib.h>
 #include <check.h>
 #include "../helper.h"
 
@@ -177,7 +178,7 @@ int main(void) {
 #include <stdio.h>
 int main(void) {
 	printf("check_helper: !!! missing check unit test framework !!!\n");
-	return 0;
+	return EXIT_FAILURE;
 }
 
 #endif /* HAVE_CHECK_H */
