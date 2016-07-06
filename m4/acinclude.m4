@@ -60,7 +60,7 @@ AC_DEFUN([SIPSAK_OLD_FQDN],
 [
     AC_MSG_CHECKING([oldstyle numeric])
     AC_ARG_ENABLE([ips],
-       AC_HELP_STRING([--disbale-ips], [compile with oldstyle --numeric behavior]),
+       AS_HELP_STRING([--disbale-ips], [compile with oldstyle --numeric behavior]),
        [
         AC_MSG_RESULT([yes])
         AC_DEFINE([OLDSTYLE_FQDN], [1], [Oldstyle FQDN behavior])
@@ -73,7 +73,7 @@ AC_DEFUN([SIPSAK_TLS],
 [
     AC_MSG_CHECKING([disable TLS])
     AC_ARG_ENABLE([tls],
-       AC_HELP_STRING([--disable-tls], [compile without TLS transport]),
+       AS_HELP_STRING([--disable-tls], [compile without TLS transport]),
        [
         AC_MSG_RESULT([yes])
         AC_DEFINE([SIPSAK_NO_TLS], [1], [Skip TLS transport])
@@ -86,7 +86,7 @@ AC_DEFUN([SIPSAK_DBG_PRINT],
 [
     AC_MSG_CHECKING([enable debug messages])
     AC_ARG_ENABLE([debug],
-       AC_HELP_STRING([--enable-debug], [compile extra debug messages]),
+       AS_HELP_STRING([--enable-debug], [compile extra debug messages]),
        [
         AC_MSG_RESULT([yes])
         AC_DEFINE([SIPSAK_PRINT_DBG], [1], [Enable debug messages])
@@ -151,7 +151,7 @@ AC_DEFUN([CHECK_PROG_DISTCC],
 [
     AC_MSG_CHECKING([for distcc])
     AC_ARG_ENABLE([distcc],
-        AC_HELP_STRING([--enable-distcc], [compile in parallel with distcc]),
+        AS_HELP_STRING([--enable-distcc], [compile in parallel with distcc]),
         [
 			distcc_dirs="/ /usr /usr/local /usr/local/gnu /usr/gnu /opt /opt/local"
             for dir in $distcc_dirs; do
