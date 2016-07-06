@@ -777,14 +777,10 @@ int main(int argc, char *argv[])
 #ifdef HAVE_GETOPT_LONG
 				printf(", LONG_OPTS");
 #endif
-#ifdef HAVE_GNUTLS
-				printf(", GNUTLS_MD5");
-#else
-# ifdef HAVE_FULL_OPENSSL
+#ifdef HAVE_FULL_OPENSSL
 				printf(", OPENSSL_MD5");
-# else
+#else
 				printf(", INTERNAL_MD5");
-# endif
 #endif
 #ifdef HAVE_OPENSSL_SHA1
 				printf(", OPENSSL_SHA1");

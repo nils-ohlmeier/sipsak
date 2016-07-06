@@ -30,12 +30,8 @@ documentation and/or software.
 
 #include "sipsak.h"
 
-#ifdef HAVE_GNUTLS
-# include <gnutls/openssl.h>
-#else
-# ifdef HAVE_FULL_OPENSSL
-#  include <openssl/md5.h>
-# endif
+#ifdef HAVE_FULL_OPENSSL
+# include <openssl/md5.h>
 #endif
 
 #ifdef HAVE_EXTERNAL_MD5

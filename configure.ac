@@ -55,16 +55,19 @@ AC_CHECK_FUNCS([calloc getdomainname getopt_long inet_ntop strncasecmp strcasest
 # Check if the check unit test framework is available
 AM_PATH_CHECK([0.9.3])
 
-AM_PATH_SIPSAK_LIBGNUTLS([1.0.0],
+PKG_PROG_PKG_CONFIG()
+
+PKG_CHECK_MODULES([GNUTLS], [gnutls >= 1.0.0], [
   AC_DEFINE([HAVE_GNUTLS], [1], [Has gnutls])
-  LIBS="$LIBS $LIBGNUTLS_LIBS -lgnutls-openssl"
-  CFLAGS="$CFLAGS $LIBGNUTLS_CFLAGS"
+  LIBS="${LIBS} ${GNUTLS_LIBS}"
+  CFLAGS="${CFLAGS} ${GNUTLS_CFLAGS}"
+  ], []
 )
 
 if test "X$LIBGNUTLS_LIBS" = "X";then
   AC_CHECK_HEADERS([openssl/md5.h],
     AC_CHECK_LIB(crypto, MD5_Init,
-	  AC_DEFINE([HAVE_CRYPTO_WITH_MD5], [1], [The crypto lib has MD5 functions])
+    AC_DEFINE([HAVE_CRYPTO_WITH_MD5], [1], [The crypto lib has MD5 functions])
       LIBS="$LIBS -lcrypto"
     )
   )

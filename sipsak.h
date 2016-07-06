@@ -70,7 +70,6 @@
 #endif
 
 #ifdef HAVE_GNUTLS
-# define HAVE_EXTERNAL_MD5
 # define USE_GNUTLS
 # ifndef SIPSAK_NO_TLS
 #  define WITH_TLS_TRANSP 1

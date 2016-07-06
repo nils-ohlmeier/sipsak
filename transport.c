@@ -436,7 +436,7 @@ void print_x509_certificate_info(gnutls_session_t session) {
 		// print the fingerprint of the cert
 		size = sizeof(dn);
 		// FIXME
-		if (gnutls_x509_crt_get_fingerprint(cert, GNUTLS_MAC_SHA1, dn, &size) == 0) {
+		if (gnutls_x509_crt_get_fingerprint(cert, GNUTLS_DIG_SHA1, dn, &size) == 0) {
 			printf("\tFingerprint of the certificate: %s\n", dn);
 		}
 
@@ -635,15 +635,12 @@ void create_sockets(struct sipsak_con_data *cd) {
 #ifdef USE_GNUTLS
 			// initialixe the TLS session
 			gnutls_init(&tls_session, GNUTLS_CLIENT);
-			//gnutls_kx_set_priority(tls_session, kx_prio);
-			//gnutls_credentials_set(tls_session, GNUTLS_CRD_ANON, anoncred);
 			// use default priorities
 			gnutls_set_default_priority(tls_session);
-			gnutls_certificate_type_set_priority(tls_session, cert_type_priority);
 			// put the X509 credentials to the session
 			gnutls_credentials_set(tls_session, GNUTLS_CRD_CERTIFICATE, xcred);
 			// add the FD to the session
-			gnutls_transport_set_ptr(tls_session, (gnutls_transport_ptr_t) cd->csock);
+			gnutls_transport_set_int(tls_session, cd->csock);
 #else /* USE_GNUTLS */
 # ifdef USE_OPENSSL
 			create_tls_ctx();
@@ -1156,6 +1153,7 @@ int set_target(struct sockaddr_in *adr, unsigned long target, int port, int sock
 #ifdef WITH_TLS_TRANSP
 		if (transport == SIP_TLS_TRANSPORT) {
 # ifdef USE_GNUTLS
+			gnutls_handshake_set_timeout(tls_session, GNUTLS_DEFAULT_HANDSHAKE_TIMEOUT);
 			ret = gnutls_handshake(tls_session);
 			if (ret < 0) {
 				dbg("TLS Handshake FAILED!!!\n");
