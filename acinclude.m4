@@ -95,62 +95,6 @@ AC_DEFUN([SIPSAK_DBG_PRINT],
        ])
 ])
 
-AC_DEFUN([CHECK_LIB_CARES],
-[
-	AC_MSG_CHECKING([for ares_version.h])
-
-	ares_incdir=NONE
-	ares_libdir=NONE
-	ares_libcall=NONE
-	ares_incdirs="/usr/include /usr/local/include /sw/include /opt/include /opt/local/include"
-	ares_libdirs="/usr/lib64 /usr/lib /usr/local/lib64 /usr/local/lib /sw/lib /opt/lib /opt/local/lib"
-	ares_libexten=".so .dylib .a"
-
-	for dir in $ares_incdirs; do
-		try="$dir/ares_version.h"
-		if test -f $try; then
-			ares_incdir=$dir;
-			break;
-		fi
-	done
-
-	if test "$ares_incdir" = "NONE"; then
-		AC_MSG_RESULT([not found])
-	else
-		AC_MSG_RESULT([found at $ares_incdir])
-
-		AC_MSG_CHECKING([for c-ares lib])
-
-		for dir in $ares_libdirs; do
-			for extension in $ares_libexten; do
-				try="$dir/libcares$extension"
-				if test -f $try; then
-					ares_libdir=$dir;
-					ares_libcall=cares;
-					break;
-				fi
-			done
-			if test "$ares_libdir" != "NONE"; then
-				break;
-			fi
-		done
-
-		if test "$ares_libdir" = "NONE"; then
-			AC_MSG_RESULT([not found])
-		else
-			AC_MSG_RESULT([found at $ares_libdir])
-		fi
-
-		AC_CHECK_LIB(cares, ares_version,
-		  AC_DEFINE([HAVE_CARES_H], [1], [Has cares.h])
-		  LIBS="$LIBS -L$ares_libdir -l$ares_libcall"
-		  CFLAGS="$CFLAGS -I$ares_incdir"
-		  SIPSAK_HAVE_ARES="1"
-		  AC_SUBST(SIPSAK_HAVE_ARES)
-		)
-	fi
-])
-
 AC_DEFUN([CHECK_LIB_RULI],
 [
 	AC_MSG_CHECKING([for ruli.h])

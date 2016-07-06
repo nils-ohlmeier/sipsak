@@ -83,12 +83,14 @@ AC_CHECK_HEADERS([openssl/sha.h],
   )
 )
 
-CHECK_LIB_CARES
-if test "X$SIPSAK_HAVE_ARES" = "X"; then
-  CHECK_LIB_RULI
-else
+PKG_CHECK_MODULES([CARES], [libcares], [
+  AC_DEFINE([HAVE_CARES_H], [1], [Has cares.h])
+  LIBS="$LIBS $CARES_LIBS"
+  CFLAGS="$CFLAGS $CARES_CFLAGS"
   AC_CHECK_HEADERS([arpa/nameser.h])
-fi
+], [
+  CHECK_LIB_RULI
+])
 
 # FIXME: this has to replaced with a real check
 # LIBS="$LIBS -lssl"
