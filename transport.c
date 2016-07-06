@@ -72,10 +72,6 @@
 #  include <unistd.h>
 #  include <gnutls/gnutls.h>
 #  include <gnutls/x509.h>
-
-   // needed for anonymous auth
-   //const int kx_prio[] = { GNUTLS_KX_ANON_DH, 0 };
-   const int cert_type_priority[2] = { GNUTLS_CRT_X509, 0 };
 # else
 #  ifdef USE_OPENSSL
 #   define _BSD_SOURCE 1
