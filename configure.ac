@@ -93,7 +93,11 @@ PKG_CHECK_MODULES([CARES], [libcares], [
   CFLAGS="$CFLAGS $CARES_CFLAGS"
   AC_CHECK_HEADERS([arpa/nameser.h])
 ], [
-  CHECK_LIB_RULI
+  AC_CHECK_HEADERS([ruli.h], [
+    AC_SEARCH_LIBS([ruli_sync_query], [ruli], [
+      AC_DEFINE([HAVE_RULI_H], [1], [Has ruli.h])
+    ])
+  ])
 ])
 
 # FIXME: this has to replaced with a real check
