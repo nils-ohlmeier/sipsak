@@ -60,7 +60,7 @@ AC_DEFUN([SIPSAK_OLD_FQDN],
 [
     AC_MSG_CHECKING([oldstyle numeric])
     AC_ARG_ENABLE([ips],
-       AC_HELP_STRING([--disbale-ips], [compile with oldstyle --numeric behavior]),
+       AS_HELP_STRING([--disbale-ips], [compile with oldstyle --numeric behavior]),
        [
         AC_MSG_RESULT([yes])
         AC_DEFINE([OLDSTYLE_FQDN], [1], [Oldstyle FQDN behavior])
@@ -73,7 +73,7 @@ AC_DEFUN([SIPSAK_TLS],
 [
     AC_MSG_CHECKING([disable TLS])
     AC_ARG_ENABLE([tls],
-       AC_HELP_STRING([--disable-tls], [compile without TLS transport]),
+       AS_HELP_STRING([--disable-tls], [compile without TLS transport]),
        [
         AC_MSG_RESULT([yes])
         AC_DEFINE([SIPSAK_NO_TLS], [1], [Skip TLS transport])
@@ -86,7 +86,7 @@ AC_DEFUN([SIPSAK_DBG_PRINT],
 [
     AC_MSG_CHECKING([enable debug messages])
     AC_ARG_ENABLE([debug],
-       AC_HELP_STRING([--enable-debug], [compile extra debug messages]),
+       AS_HELP_STRING([--enable-debug], [compile extra debug messages]),
        [
         AC_MSG_RESULT([yes])
         AC_DEFINE([SIPSAK_PRINT_DBG], [1], [Enable debug messages])
@@ -95,78 +95,14 @@ AC_DEFUN([SIPSAK_DBG_PRINT],
        ])
 ])
 
-AC_DEFUN([CHECK_LIB_RULI],
-[
-	AC_MSG_CHECKING([for ruli.h])
-
-	ruli_incdir=NONE
-	ruli_libdir=NONE
-	ruli_incdirs="/usr/include /usr/local/include /sw/include /opt/include /opt/local/include"
-	ruli_libdirs="/usr/lib64 /usr/lib /usr/local/lib64 /usr/local/lib /sw/lib /opt/lib /opt/local/lib"
-	ruli_libexten=".so .dylib .a"
-
-	for dir in $ruli_incdirs; do
-		try="$dir/ruli.h"
-		if test -f $try; then
-			ruli_incdir=$dir;
-			break;
-		fi
-	done
-
-	if test "$ruli_incdir" = "NONE"; then
-		AC_MSG_RESULT([not found])
-	else
-		AC_MSG_RESULT([found at $ruli_incdir])
-
-		AC_MSG_CHECKING([for libruli])
-
-		for dir in $ruli_libdirs; do
-			for extension in $ruli_libexten; do
-				try="$dir/libruli$extension"
-				if test -f $try; then
-					ruli_libdir=$dir;
-					break;
-				fi
-			done
-			if test "$ruli_libdir" != "NONE"; then
-				break;
-			fi
-		done
-
-		if test "$ruli_libdir" = "NONE"; then
-			AC_MSG_RESULT([not found])
-		else
-			AC_MSG_RESULT([found at $ruli_libdir])
-		fi
-
-		AC_CHECK_LIB(ruli, ruli_sync_query,
-		  AC_DEFINE([HAVE_RULI_H], [1], [Has ruli.h])
-		  LIBS="$LIBS -L$ruli_libdir -lruli"
-		  CFLAGS="$CFLAGS -I$ruli_incdir"
-		)
-	fi
-])
-
 AC_DEFUN([CHECK_PROG_DISTCC],
 [
-    AC_MSG_CHECKING([for distcc])
+    AC_MSG_CHECKING([whether to use distcc])
     AC_ARG_ENABLE([distcc],
-        AC_HELP_STRING([--enable-distcc], [compile in parallel with distcc]),
+        AS_HELP_STRING([--enable-distcc], [compile in parallel with distcc]),
         [
-			distcc_dirs="/ /usr /usr/local /usr/local/gnu /usr/gnu /opt /opt/local"
-            for dir in $distcc_dirs; do
-                if test -x "$dir/bin/distcc"; then
-                    found_distcc=yes;
-                    DISTCC="$dir/bin/distcc"
-                    break;
-                fi
-            done
-            if test x_$found_distcc != x_yes; then
-                AC_MSG_ERROR([not found])
-            else
-                AC_MSG_RESULT([yes])
-                AC_SUBST([DISTCC])
-            fi
+          AC_MSG_RESULT([yes])
+          AC_CHECK_PROG([DISTCC], [distcc])
         ],
         [ AC_MSG_RESULT([not requested])
         ])
@@ -198,8 +134,8 @@ AC_DEFUN([SIPSAK_GCC_STACK_PROTECT_CC],[
     AC_MSG_CHECKING([whether ${CC} accepts -fstack-protector])
     ssp_old_cflags="$CFLAGS"
     CFLAGS="$CFLAGS -fstack-protector"
-    AC_TRY_COMPILE(,,, ssp_cc=no)
-    echo $ssp_cc
+    AC_COMPILE_IFELSE(,,, ssp_cc=no)
+    AC_MSG_RESULT([$ssp_cc])
     if test "X$ssp_cc" = "Xno"; then
       CFLAGS="$ssp_old_cflags"
     else

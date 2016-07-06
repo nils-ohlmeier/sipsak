@@ -3,7 +3,7 @@
 
 AC_PREREQ(2.59)
 AC_INIT([sipsak],[0.9.7pre],[nils@sipsak.org])
-AM_INIT_AUTOMAKE
+AM_INIT_AUTOMAKE([subdir-objects])
 AM_MAINTAINER_MODE
 AC_CONFIG_SRCDIR([sipsak.c])
 AC_CONFIG_HEADER([config.h])
@@ -51,7 +51,6 @@ AC_FUNC_MALLOC
 AC_FUNC_SELECT_ARGTYPES
 AC_CHECK_FUNCS([getchar gethostbyname gethostname getopt getpid gettimeofday memset ntohs regcomp select socket strchr strcmp strstr strtol uname],,[AC_MSG_ERROR([missing required function (see above)])])
 AC_CHECK_FUNCS([calloc getdomainname getopt_long inet_ntop strncasecmp strcasestr syslog])
-PKG_PROG_PKG_CONFIG()
 
 # Check if the check unit test framework is available
 PKG_CHECK_MODULES([CHECK], [check >= 0.9.3], [
@@ -59,29 +58,23 @@ PKG_CHECK_MODULES([CHECK], [check >= 0.9.3], [
   ], []
 )
 
-
 PKG_CHECK_MODULES([GNUTLS], [gnutls >= 1.0.0], [
     AC_DEFINE([HAVE_GNUTLS], [1], [Has gnutls])
     LIBS="${LIBS} ${GNUTLS_LIBS}"
     CFLAGS="${CFLAGS} ${GNUTLS_CFLAGS}"
-  ], []
-)
+], [
+    AC_CHECK_HEADERS([openssl/md5.h], [
+      AC_SEARCH_LIBS([MD5_Init], [crypto], [
+        AC_DEFINE([HAVE_CRYPTO_WITH_MD5], [1], [The crypto lib has MD5 functions])
+      ])
+    ])
 
-if test "X$LIBGNUTLS_LIBS" = "X";then
-  AC_CHECK_HEADERS([openssl/md5.h],
-    AC_CHECK_LIB(crypto, MD5_Init,
-    AC_DEFINE([HAVE_CRYPTO_WITH_MD5], [1], [The crypto lib has MD5 functions])
-      LIBS="$LIBS -lcrypto"
-    )
-  )
-fi
-
-AC_CHECK_HEADERS([openssl/sha.h],
-  AC_CHECK_LIB(crypto, SHA1_Init,
-    AC_DEFINE([HAVE_CRYPTO_WITH_SHA1], [1], [The crpyto lib has SHA1 functions])
-    LIBS="$LIBS -lcrypto"
-  )
-)
+    AC_CHECK_HEADERS([openssl/sha.h], [
+      AC_SEARCH_LIBS([SHA1_Init], [crypto], [
+        AC_DEFINE([HAVE_CRYPTO_WITH_SHA1], [1], [The crpyto lib has SHA1 functions])
+      ])
+    ])
+])
 
 PKG_CHECK_MODULES([CARES], [libcares], [
   AC_DEFINE([HAVE_CARES_H], [1], [Has cares.h])
@@ -89,7 +82,11 @@ PKG_CHECK_MODULES([CARES], [libcares], [
   CFLAGS="$CFLAGS $CARES_CFLAGS"
   AC_CHECK_HEADERS([arpa/nameser.h])
 ], [
-  CHECK_LIB_RULI
+  AC_CHECK_HEADERS([ruli.h], [
+    AC_SEARCH_LIBS([ruli_sync_query], [ruli], [
+      AC_DEFINE([HAVE_RULI_H], [1], [Has ruli.h])
+    ])
+  ])
 ])
 
 # FIXME: this has to replaced with a real check
