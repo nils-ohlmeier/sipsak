@@ -636,7 +636,11 @@ void create_sockets(struct sipsak_con_data *cd) {
 			// put the X509 credentials to the session
 			gnutls_credentials_set(tls_session, GNUTLS_CRD_CERTIFICATE, xcred);
 			// add the FD to the session
+# ifdef HAVE_GNUTLS_319
 			gnutls_transport_set_int(tls_session, cd->csock);
+# else
+			gnutls_transport_set_ptr(tls_session, (gnutls_transport_ptr_t)(intptr_t)cd->csock);
+# endif
 #else /* USE_GNUTLS */
 # ifdef USE_OPENSSL
 			create_tls_ctx();
@@ -1149,7 +1153,9 @@ int set_target(struct sockaddr_in *adr, unsigned long target, int port, int sock
 #ifdef WITH_TLS_TRANSP
 		if (transport == SIP_TLS_TRANSPORT) {
 # ifdef USE_GNUTLS
+#  ifdef HAVE_GNUTLS_319
 			gnutls_handshake_set_timeout(tls_session, GNUTLS_DEFAULT_HANDSHAKE_TIMEOUT);
+#  endif
 			ret = gnutls_handshake(tls_session);
 			if (ret < 0) {
 				dbg("TLS Handshake FAILED!!!\n");
