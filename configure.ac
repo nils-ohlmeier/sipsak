@@ -64,9 +64,10 @@ PKG_CHECK_MODULES([GNUTLS], [gnutls >= 1.0.0], [
     AC_DEFINE([HAVE_GNUTLS], [1], [Has gnutls >= 1.0.0])
     LIBS="${LIBS} ${GNUTLS_LIBS}"
     CFLAGS="${CFLAGS} ${GNUTLS_CFLAGS}"
-    PKG_CHECK_MODULES([GNUTLS319], [gnutls >= 3.1.9], [
-      AC_DEFINE([HAVE_GNUTLS_319], [1], [Has gntuls >= 3.1.9])
-    ], [])
+  ], []
+)
+PKG_CHECK_MODULES([GNUTLS319], [gnutls >= 3.1.9], [
+    AC_DEFINE([HAVE_GNUTLS_319], [1], [Has gntuls >= 3.1.9])
   ], []
 )
 
