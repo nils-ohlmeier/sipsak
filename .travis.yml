@@ -1,3 +1,6 @@
+before_install:
+  - sudo apt-get update -qq
+  - sudo apt-get install -qq check
 install: autoreconf --install
 script: ./configure && make
 language: c
