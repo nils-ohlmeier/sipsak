@@ -1,4 +1,5 @@
 install: autoreconf --install
+script: ./configure && make
 language: c
 compiler:
   - clang
