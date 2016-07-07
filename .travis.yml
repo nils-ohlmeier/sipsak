@@ -7,3 +7,6 @@ language: c
 compiler:
   - clang
   - gcc
+os:
+  - linux
+  - osx
