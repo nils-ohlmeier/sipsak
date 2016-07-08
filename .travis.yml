@@ -5,6 +5,7 @@ os:
 compiler:
   - clang
   - gcc
+sudo: false
 addons:
   apt:
     packages:
