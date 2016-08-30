@@ -198,7 +198,7 @@ AC_DEFUN([SIPSAK_GCC_STACK_PROTECT_CC],[
     AC_MSG_CHECKING([whether ${CC} accepts -fstack-protector])
     ssp_old_cflags="$CFLAGS"
     CFLAGS="$CFLAGS -fstack-protector"
-    AC_COMPILE_IFELSE(,,, ssp_cc=no)
+    AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[]], [[]])], [], [], [ssp_cc=no])
     AC_MSG_RESULT([$ssp_cc])
     if test "X$ssp_cc" = "Xno"; then
       CFLAGS="$ssp_old_cflags"
