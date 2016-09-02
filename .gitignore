@@ -1,6 +1,7 @@
 # Autotools
 *~
 .deps/
+.dirstamp
 INSTALL
 Makefile
 Makefile.in

@@ -3,7 +3,7 @@
 
 AC_PREREQ(2.59)
 AC_INIT([sipsak],[0.9.7pre],[nils@sipsak.org])
-AM_INIT_AUTOMAKE
+AM_INIT_AUTOMAKE([subdir-objects])
 AM_MAINTAINER_MODE
 AC_CONFIG_SRCDIR([sipsak.c])
 AC_CONFIG_HEADER([config.h])
