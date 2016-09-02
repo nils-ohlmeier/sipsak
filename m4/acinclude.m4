@@ -95,58 +95,6 @@ AC_DEFUN([SIPSAK_DBG_PRINT],
        ])
 ])
 
-AC_DEFUN([CHECK_LIB_RULI],
-[
-	AC_MSG_CHECKING([for ruli.h])
-
-	ruli_incdir=NONE
-	ruli_libdir=NONE
-	ruli_incdirs="/usr/include /usr/local/include /sw/include /opt/include /opt/local/include"
-	ruli_libdirs="/usr/lib64 /usr/lib /usr/local/lib64 /usr/local/lib /sw/lib /opt/lib /opt/local/lib"
-	ruli_libexten=".so .dylib .a"
-
-	for dir in $ruli_incdirs; do
-		try="$dir/ruli.h"
-		if test -f $try; then
-			ruli_incdir=$dir;
-			break;
-		fi
-	done
-
-	if test "$ruli_incdir" = "NONE"; then
-		AC_MSG_RESULT([not found])
-	else
-		AC_MSG_RESULT([found at $ruli_incdir])
-
-		AC_MSG_CHECKING([for libruli])
-
-		for dir in $ruli_libdirs; do
-			for extension in $ruli_libexten; do
-				try="$dir/libruli$extension"
-				if test -f $try; then
-					ruli_libdir=$dir;
-					break;
-				fi
-			done
-			if test "$ruli_libdir" != "NONE"; then
-				break;
-			fi
-		done
-
-		if test "$ruli_libdir" = "NONE"; then
-			AC_MSG_RESULT([not found])
-		else
-			AC_MSG_RESULT([found at $ruli_libdir])
-		fi
-
-		AC_CHECK_LIB(ruli, ruli_sync_query,
-		  AC_DEFINE([HAVE_RULI_H], [1], [Has ruli.h])
-		  LIBS="$LIBS -L$ruli_libdir -lruli"
-		  CFLAGS="$CFLAGS -I$ruli_incdir"
-		)
-	fi
-])
-
 AC_DEFUN([CHECK_PROG_DISTCC],
 [
     AC_MSG_CHECKING([whether to use distcc])
