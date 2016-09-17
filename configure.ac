@@ -58,32 +58,26 @@ PKG_CHECK_MODULES([CHECK], [check >= 0.9.3], [
   ], []
 )
 
-
 PKG_CHECK_MODULES([GNUTLS], [gnutls >= 1.0.0], [
     AC_DEFINE([HAVE_GNUTLS], [1], [Has gnutls >= 1.0.0])
     LIBS="${LIBS} ${GNUTLS_LIBS}"
     CFLAGS="${CFLAGS} ${GNUTLS_CFLAGS}"
-  ], []
-)
+  ], [
+    AC_CHECK_HEADERS([openssl/md5.h], [
+      AC_SEARCH_LIBS([MD5_Init], [crypto], [
+        AC_DEFINE([HAVE_CRYPTO_WITH_MD5], [1], [The crypto lib has MD5 functions])
+      ])
+    ])
+
+    AC_CHECK_HEADERS([openssl/sha.h], [
+      AC_SEARCH_LIBS([SHA1_Init], [crypto], [
+        AC_DEFINE([HAVE_CRYPTO_WITH_SHA1], [1], [The crpyto lib has SHA1 functions])
+      ])
+    ])
+])
 PKG_CHECK_MODULES([GNUTLS319], [gnutls >= 3.1.9], [
     AC_DEFINE([HAVE_GNUTLS_319], [1], [Has gntuls >= 3.1.9])
   ], []
-)
-
-if test "X$GNUTLS_LIBS" = "X";then
-  AC_CHECK_HEADERS([openssl/md5.h],
-    AC_CHECK_LIB(crypto, MD5_Init,
-    AC_DEFINE([HAVE_CRYPTO_WITH_MD5], [1], [The crypto lib has MD5 functions])
-      LIBS="$LIBS -lcrypto"
-    )
-  )
-fi
-
-AC_CHECK_HEADERS([openssl/sha.h],
-  AC_CHECK_LIB(crypto, SHA1_Init,
-    AC_DEFINE([HAVE_CRYPTO_WITH_SHA1], [1], [The crpyto lib has SHA1 functions])
-    LIBS="$LIBS -lcrypto"
-  )
 )
 
 PKG_CHECK_MODULES([CARES], [libcares], [
