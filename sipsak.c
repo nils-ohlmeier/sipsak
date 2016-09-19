@@ -677,7 +677,6 @@ int main(int argc, char *argv[])
 				};
 				break;
 			case 'r':
-				port = 0;
 				port=str_to_int(0, optarg);
 				if (rport) {
 					fprintf(stderr, "warning: you are overwritting the destination port with the r argument\n");
@@ -1026,7 +1025,7 @@ int main(int argc, char *argv[])
 			transport_str = TRANSPORT_UDP_STR;
 			break;
 		default:
-			fprintf(stderr, "unknown transport: %i\n", transport);
+			fprintf(stderr, "unknown transport: %u\n", transport);
 			exit_code(2, __PRETTY_FUNCTION__, "unknown transport");
 	}
 

@@ -388,7 +388,7 @@ void print_x509_certificate_info(gnutls_session_t session) {
 	}
 
 	cert_list = gnutls_certificate_get_peers(session, &cert_list_size);
-	printf("Peer provided %d certificate(s)\n", cert_list_size);
+	printf("Peer provided %u certificate(s)\n", cert_list_size);
 
 	if (cert_list_size > 0) {
 		// print only informations about the first cert
@@ -694,7 +694,7 @@ void close_sockets(struct sipsak_con_data *cd) {
 void send_message(char* mes, struct sipsak_con_data *cd,
 			struct sipsak_counter *sc, struct sipsak_sr_time *srt) {
 	struct timezone tz;
-	int ret;
+	int ret = -1;
 
 	if (cd->dontsend == 0) {
 		if (verbose > 2) {
