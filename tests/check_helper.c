@@ -96,13 +96,17 @@ START_TEST (test_is_ip) {
 END_TEST
 
 START_TEST (test_getaddress) {
+	uint32_t localaddr;
+
 	/* failure case */
 	fail_unless(getaddress("") == 0, "getaddress(\"\") returned %lu, instead of 0", getaddress(""));
 
+	localaddr = htonl(0x7f000001L);
+
 	/* success cases */
-	fail_unless(getaddress("127.0.0.1") == 16777343, "getaddress(\"127.0.0.1\") returned %lu, instead of 16777343", getaddress("127.0.0.1"));
+	fail_unless(getaddress("127.0.0.1") == localaddr, "getaddress(\"127.0.0.1\") returned %lu, instead of %lu", getaddress("127.0.0.1"), localaddr);
 	/* this should work also without DNS */
-	fail_unless(getaddress("localhost") == 16777343, "getaddress(\"localhost\") returned %lu, instead of 16777343", getaddress("localhost"));
+	fail_unless(getaddress("localhost") == localaddr, "getaddress(\"localhost\") returned %lu, instead of %lu", getaddress("localhost"), localaddr);
 }
 END_TEST
 
