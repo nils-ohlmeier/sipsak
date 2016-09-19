@@ -144,6 +144,9 @@ static const unsigned char *parse_rr(const unsigned char *aptr, const unsigned c
 	int status, type, dnsclass, dlen;
 	struct in_addr addr;
 
+	if (aptr == NULL) {
+		return NULL;
+	}
 	dbg("ca_tmpname: %s\n", ca_tmpname);
 	status = ares_expand_name(aptr, abuf, alen, &name, &len);
 	if (status != ARES_SUCCESS) {
@@ -236,8 +239,14 @@ static const unsigned char *skip_rr(const unsigned char *aptr, const unsigned ch
 	long len;
 	char *name;
 
+	if (aptr == NULL) {
+		return NULL;
+	}
 	dbg("skipping rr section...\n");
 	status = ares_expand_name(aptr, abuf, alen, &name, &len);
+	if (status != ARES_SUCCESS) {
+		return NULL;
+	}
 	aptr += len;
 	dlen = DNS_RR_LEN(aptr);
 	aptr += NS_RRFIXEDSZ;
@@ -251,8 +260,14 @@ static const unsigned char *skip_query(const unsigned char *aptr, const unsigned
 	long len;
 	char *name;
 
+	if (aptr == NULL) {
+		return NULL;
+	}
 	dbg("skipping query section...\n");
 	status = ares_expand_name(aptr, abuf, alen, &name, &len);
+	if (status != ARES_SUCCESS) {
+		return NULL;
+	}
 	aptr += len;
 	aptr += NS_QFIXEDSZ;
 	free(name);
@@ -283,15 +298,18 @@ static void cares_callback(void *arg, int status, int timeouts, unsigned char *a
 	aptr = abuf + NS_HFIXEDSZ;
 
 	aptr = skip_query(aptr, abuf, alen);
+	if (aptr == NULL) {
+		return;
+	}
 
-	for (i = 0; i < ancount && caadr == 0; i++) {
+	for (i = 0; i < ancount && caadr == 0 && aptr != NULL; i++) {
 		if (ca_tmpname == NULL)
 			aptr = parse_rr(aptr, abuf, alen);
 		else
 			aptr = skip_rr(aptr, abuf, alen);
 	}
 	if (caadr == 0 && aptr != NULL) {
-		for (i = 0; i < nscount; i++) {
+		for (i = 0; i < nscount && aptr != NULL; i++) {
 			aptr = skip_rr(aptr, abuf, alen);
 		}
 		for (i = 0; i < arcount && caadr == 0; i++) {
