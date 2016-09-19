@@ -867,7 +867,7 @@ void shoot(char *buf, int buff_size)
 	if (replace_str)
 		replace_strings(req, replace_str);
 
-	/* set all regular expression to simplfy the result code indetification */
+	/* set all regular expression to simplfy the result code identification */
 	regcomp(&(regexps.replyexp), "^SIP/[0-9]\\.[0-9] [1-6][0-9][0-9]", 
 		REG_EXTENDED|REG_NOSUB|REG_ICASE); 
 	regcomp(&(regexps.proexp), "^SIP/[0-9]\\.[0-9] 1[0-9][0-9] ", 
