@@ -51,7 +51,7 @@ START_TEST (test_md5_quick_brown_fox) {
 }
 END_TEST
 
-Suite *helper_suite(void) {
+Suite *md5_suite(void) {
 	Suite *s = suite_create("MD5");
 
 	TCase *tc_md5_empty = tcase_create("test_md5_empty");
@@ -69,7 +69,7 @@ Suite *helper_suite(void) {
 
 int main(void) {
 	int number_failed;
-	Suite *s = helper_suite();
+	Suite *s = md5_suite();
 	SRunner *sr = srunner_create(s);
 	srunner_run_all(sr, CK_VERBOSE);
 	number_failed = srunner_ntests_failed(sr);
@@ -81,7 +81,7 @@ int main(void) {
 
 #include <stdio.h>
 int main(void) {
-	printf("check_helper: !!! missing check unit test framework !!!\n");
+	printf("check_md5: !!! missing check unit test framework !!!\n");
 	return EXIT_FAILURE;
 }
 
