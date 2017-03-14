@@ -29,4 +29,5 @@ test-driver
 # Programs and objects
 *.o
 check_helper
+check_md5
 sipsak
