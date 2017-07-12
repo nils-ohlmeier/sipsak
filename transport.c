@@ -1059,7 +1059,7 @@ int recv_message(char *buf, int size, int inv_trans,
 		*(buf+ ret) = '\0';
 		if (transport != SIP_UDP_TRANSPORT) {
 			if (verbose > 0)
-				printf("\nchecking message for completness...\n");
+				printf("\nchecking message for completeness...\n");
 			if (complete_mes(buf, ret) == 1) {
 				cd->buf_tmp = NULL;
 				ret += cd->buf_tmp_size;
