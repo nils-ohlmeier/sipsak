@@ -123,12 +123,12 @@ transports are not supported yet.
 .IP "-a, --password PASSWORD"
 With the given 
 .I PASSWORD
-an authentication will be tryed on received '401 Unauthorized'. Authorization
-will be tryed on time. If this option is omitted an authorization with an
-empty password ("") will be tryed. If the password is equal to 
+an authentication will be tried on received '401 Unauthorized'. Authorization
+will be tried on time. If this option is omitted an authorization with an
+empty password ("") will be tried. If the password is equal to 
 .I -
 the password will be read from the standard input (e.g. the keyboard). This
-prevents other users on the same host from seeing the password the password
+prevents other users on the same host from seeing the password
 in the process list.
 .B NOTE:
 the password still can be read from the memory if other users have access to
@@ -161,8 +161,8 @@ will be used in the From header if
 .B sipsak
 runs in the message mode (initiated with the
 .BR -M
-option). This is helpful to present the receiver of a MESSAGE a meaningfull
-and usable address to where maybe even responses can be send.
+option). This is helpful to present the receiver of a MESSAGE a meaningful
+and usable address to where maybe even responses can be sent.
 
 .IP "-C, --contact SIPURI"
 This is the content of the Contact header in the usrloc mode. This allows
@@ -200,7 +200,7 @@ waits for the resulting amount of time for a final response until it gives up.
 The ending number which is appended to the user name in the usrloc mode.
 This number is increased until it reaches this ending
 .I number.
-In the flood mode this is the maximum number of messages which will be send. 
+In the flood mode this is the maximum number of messages which will be sent. 
 If omitted the default value is 2^31 (2147483647) in the flood mode.
 
 .IP "-E, --transport STRING"
@@ -231,7 +231,7 @@ and
 for details).
 
 .IP "-F, --flood-mode"
-This options activates the flood mode. In this mode OPTIONS requests with
+This option activates the flood mode. In this mode OPTIONS requests with
 increasing CSeq numbers are sent to the server. Replies are ignored --
 source port 9 (discard) of localhost is advertised in topmost Via.
 
@@ -244,7 +244,7 @@ is available it will print out a help message with the available long options.
 Activates the replacement of $replace$ within the request (usually read 
 in from a file) with the
 .I STRING.
-Alternatively you can also specify a list of attribute and values.
+Alternatively you can also specify a list of attributes and values.
 This list has to start and end with a non alpha-numeric character. The
 same character has to be used also as separator between the attribute and
 the value and between new further attribute value pairs. The string
@@ -254,7 +254,7 @@ the value and between new further attribute value pairs. The string
 Activates the automatic replacement of the following variables in the
 request (usually read in from a file):
 .B $dsthost$ 
-will be replaced by with the host or domainname which is given
+will be replaced with the host or domainname which is given
 by the
 .B -s
 parameter.
@@ -284,7 +284,7 @@ with
 .BR -U.
 In this combination 
 .B sipsak 
-first registeres a user, and then simulates an 
+first registers a user, and then simulates an 
 invitation to this user. First an Invite is sent, this is replied with 200 OK
 and finally an ACK is sent. This option can also be used without
 .BR -U
@@ -300,7 +300,7 @@ run with a fixed local port before, a run with
 and the same fixed local port can be successful.
 .B Warning: sipsak 
 is no real UA and invitations to real UAs can result in unexpected 
-behaivior.
+behaviour.
 
 .IP "-j, --headers STRING"
 The
@@ -385,7 +385,7 @@ option there will be no Content-Disposition header in the request.
 
 .IP "-p, --outbound-proxy HOSTNAME[:PORT]"
 the address of the hostname is the target where the request will be sent to 
-(outgoing proxy). Use this if the destination host is different then the host
+(outgoing proxy). Use this if the destination host is different from the host
 part of the request uri. The hostname is resolved via DNS SRV if supported
 (see description for SRV resolving) and no port is given.
 
@@ -412,7 +412,7 @@ the
 parameter.
 
 .IP "-R, --random-mode"
-This activates the randtrash mode. In this mode OPTIONS requests will be send
+This activates the randtrash mode. In this mode OPTIONS requests will be sent
 to server with increasing numbers of randomly crashed characters within this
 request. The position within the request and the replacing character are 
 randomly chosen. Any other response than Bad request (4xx) will stop this
@@ -422,7 +422,7 @@ parameter the maximum of trashed characters can be given.
 
 .IP "-s, --sip-uri SIPURI"
 This mandatory option sets the destination of the request. It depends on the
-mode if only the server name or also an user name is mandatory. Example for a
+mode if only the server name or also a user name is mandatory. Example for a
 full 
 .BR SIPURI
 : 
@@ -462,16 +462,16 @@ will be set to the length of the request.
 .IP "-T, --traceroute-mode"
 This activates the traceroute mode. This mode works like the well known
 .BR traceroute(8) 
-command expect that not the number of network hops are counted rather
-the number of server on the way to the destination user. Also the round trip
+command expect that not the number of network hops is counted rather
+the number of servers on the way to the destination user. Also the round trip
 time of each request is printed out, but due to a limitation within the
-sip protocol the identity (IP or name) can only determined and printed
+sip protocol the identity (IP or name) can only be determined and printed
 out if the response from the server contains a warning header field. In this
 mode on each outgoing request the value of the Max-Forwards header field is
-increased, starting with one. The maximum of the Max-Forwards header will 255
+increased, starting with one. The maximum of the Max-Forwards header will be 255
 if no other value is given by the 
 .BR -m
-parameter. Any other response than 483 or 1xx are treated as a final response
+parameter. Any other response than 483 or 1xx is treated as a final response
 and will terminate this mode.
 
 .IP "-u, --auth-username STRING"
@@ -486,12 +486,12 @@ This activates the usrloc mode. Without the
 or the
 .BR -M
 option, this only registers users at a registrar. With one of the above
-options the previous registered user will also be probed ether with a
+options the previous registered user will also be probed, wether with a
 simulated call flow (invite, 200, ack) or with an instant message 
 (message, 200). One password for all users accounts within the usrloc test 
 can be given with the 
 .BR -a
-option. An user name is mandatory for this mode in the 
+option. A user name is mandatory for this mode in the 
 .BR -s
 parameter. The number starting from the 
 .BR -b
@@ -501,7 +501,7 @@ parameter is appended the user name. If the
 .BR -b
 and the
 .BR -e
-parameter are omitted, only one runs with the given username, but without 
+parameter are omitted, only one run with the given username, but without 
 append number to the usernames is done.
 
 .IP "-v, --verbose"
@@ -527,7 +527,7 @@ Sets the value of the Expires header to the given number.
 
 .IP "-z, --remove-bindings"
 Activates the randomly removing of old bindings in the usrloc mode. How many 
-per cent of the bindings will be removed, is determined by the 
+percent of the bindings will be removed, is determined by the 
 USRLOC_REMOVE_PERCENT define within the code (set it before compilation).
 Multiple removing of bindings is possible, and cannot be prevented.
 
@@ -539,7 +539,7 @@ transport. Default value is 500 if not changed via the configure option
 
 .SH RETURN VALUES
 The return value 0 means that a 200 was received. 1 means something else 
-then 1xx or 2xx was received.
+than 1xx or 2xx was received.
 2 will be returned on local errors like non resolvable names or
 wrong options combination. 3 will be returned on remote errors like socket 
 errors (e.g. icmp error), redirects without a contact header or simply 
