@@ -293,6 +293,9 @@
 #define USRLOC_EXP_DEF 15
 #define FLOOD_METH "OPTIONS"
 
+
+#define OPTIONS_STRING "a:A:b:B:c:C:dD:e:E:f:Fg:GhH:iIj:J:k:K:l:Lm:MnNo:O:p:P:q:r:Rs:St:Tu:XUvVwW:x:z:Z:"
+
 #define SIPSAK_HASHLEN_MD5 16
 #define SIPSAK_HASHHEXLEN_MD5 2 * SIPSAK_HASHLEN_MD5
 #ifdef HAVE_OPENSSL_SHA1
@@ -328,6 +331,7 @@ int sleep_ms, processes, cseq_counter;
 int verbose, nameend, namebeg, expires_t, flood, warning_ext, invite, message;
 int maxforw, lport, rport, randtrash, trashchar, numeric, symmetric;
 int file_b, uri_b, trace, via_ins, usrloc, redirects, rand_rem, replace_b;
+int monitor_mode;
 int empty_contact, nagios_warn, fix_crlf, timing, outbound_proxy;
 int timer_t1, timer_t2, timer_final, sysl;
 char *username, *domainname, *password, *replace_str, *hostname, *contact_uri;

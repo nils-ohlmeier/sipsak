@@ -78,6 +78,7 @@ void print_version() {
 	printf(
 		" shoot  : sipsak [-f FILE] [-L] -s SIPURI\n"
 		" trace  : sipsak -T -s SIPURI\n"
+		" monitor: sipsak -X [-Z timeout ] -s SIPURI\n\n"
 		" usrloc : sipsak -U [-I|M] [-b NUMBER] [-e NUMBER] [-x NUMBER] [-z NUMBER] -s SIPURI\n"
 		" usrloc : sipsak -I|M [-b NUMBER] [-e NUMBER] -s SIPURI\n"
 		" usrloc : sipsak -U [-C SIPURI] [-x NUMBER] -s SIPURI\n"
@@ -104,6 +105,7 @@ void print_long_help() {
 		"  --sip-uri=SIPURI           the destination server uri in form\n"
 		"                               sip:[user@]servername[:port]\n"
 		"  --traceroute               activates the traceroute mode\n"
+		"  --monitor                  activates the monitor  mode\n"
 		);
 	printf("  --usrloc-mode              activates the usrloc mode\n"
 		"  --invite-mode              simulates a successful calls with itself\n"
@@ -184,6 +186,7 @@ void print_help() {
 		"  -s SIPURI         the destination server uri in form\n"
 		"                      sip:[user@]servername[:port]\n"
 		"  -T                activates the traceroute mode\n"
+		"  -X                activates the monitor mode\n"
 		"  -U                activates the usrloc mode\n"
 		"  -I                simulates a successful calls with itself\n"
 		"  -M                sends messages to itself\n"
@@ -266,6 +269,7 @@ int main(int argc, char *argv[])
 		{"filename", 1, 0, 'f'},
 		{"sip-uri", 1, 0, 's'},
 		{"traceroute-mode", 0, 0, 'T'},
+		{"monitor-mode", 0, 0, 'X'},
 		{"usrloc-mode", 0, 0, 'U'},
 		{"invite-mode", 0, 0, 'I'},
 		{"message-mode", 0, 0, 'M'},
@@ -322,6 +326,7 @@ int main(int argc, char *argv[])
 	warning_ext=rand_rem=nonce_count=replace_b=invite=message=sysl = 0;
 	sleep_ms=empty_contact=nagios_warn=timing=outbound_proxy=symmetric = 0;
 	namebeg=nameend=maxforw= -1;
+	monitor_mode=0;
 #ifdef OLDSTYLE_FQDN
 	numeric = 0;
 #else
@@ -361,9 +366,9 @@ int main(int argc, char *argv[])
 
 	/* lots of command line switches to handle*/
 #ifdef HAVE_GETOPT_LONG
-	while ((c=getopt_long(argc, argv, "a:A:b:B:c:C:dD:e:E:f:Fg:GhH:iIj:J:k:K:l:Lm:MnNo:O:p:P:q:r:Rs:St:Tu:UvVwW:x:z:Z:", l_opts, &option_index)) != EOF){
+	while ((c=getopt_long(argc, argv, OPTIONS_STRING, l_opts, &option_index)) != EOF){
 #else
-	while ((c=getopt(argc, argv, "a:A:b:B:c:C:dD:e:E:f:Fg:GhH:iIj:J:k:K:l:Lm:MnNo:O:p:P:q:r:Rs:St:Tu:UvVwW:x:z:Z:")) != EOF){
+	while ((c=getopt(argc, argv, OPTIONS_STRING)) != EOF){
 #endif
 		switch(c){
 #ifdef HAVE_GETOPT_LONG
@@ -754,6 +759,9 @@ int main(int argc, char *argv[])
 			case 'T':
 				trace=1;
 				break;
+			case 'X':
+				monitor_mode=1;
+				break;
 			case 'U':
 				usrloc=1;
 				break;
@@ -873,6 +881,21 @@ int main(int argc, char *argv[])
 			insert_header(buff, headers, 1);
 	}
 	/* lots of conditions to check */
+	if (monitor_mode) {
+		if (usrloc || flood || randtrash ) {
+			fprintf(stderr, "error: monitor can't be combined with usrloc, random or "
+				"flood\n");
+			exit_code(2, __PRETTY_FUNCTION__, "monitor mode can't be combined with other modes");
+		}
+		if (!uri_b) {
+			fprintf(stderr, "error: for monitor mode a SIPURI is really needed\n");
+			exit_code(2, __PRETTY_FUNCTION__, "missing URI for trace mode");
+		}
+		if (!via_ins){
+			fprintf(stderr, "warning: Via-Line is needed for tracing. Ignoring -i\n");
+			via_ins=1;
+		}
+	}	
 	if (trace) {
 		if (usrloc || flood || randtrash) {
 			fprintf(stderr, "error: trace can't be combined with usrloc, random or "

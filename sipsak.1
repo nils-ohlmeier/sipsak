@@ -5,7 +5,7 @@
 .SH NAME
 sipsak \- a utility for various tests on sip servers and user agents
 .SH SYNOPSIS
-.B sipsak [-dFGhiILnNMRSTUVvwz] [-a
+.B sipsak [-dFGhiILnNMRSTUVvwzX] [-a
 .I PASSWORD
 .B ] [-b
 .I NUMBER 
@@ -108,6 +108,10 @@ parser.
 Stress mode for SIP servers.
 .B sipsak 
 keeps sending requests to a SIP server at high pace.
+. IP "- monitor mode (-X)"
+Monitoring mode for SIP servers.
+.B sipsak
+keeps sending messages as long as the server keeps responding.
 
 .PP
 If libruli (http://www.nongnu.org/ruli/) or c-ares 
@@ -525,6 +529,12 @@ success was above the given number.
 .IP "-x, --expires NUMBER"
 Sets the value of the Expires header to the given number.
 
+.IP "-X, --monitor-mode"
+Activates the monitoring mode.
+.B sipsak
+keeps sending messages as long as the target keeps responding. Useful to find
+out unresponsive destination.
+
 .IP "-z, --remove-bindings"
 Activates the randomly removing of old bindings in the usrloc mode. How many 
 percent of the bindings will be removed, is determined by the 
@@ -536,6 +546,7 @@ Sets the amount of milliseconds for the SIP timer T1. It determines the
 length of the gaps between two retransmissions of a request on a unreliable
 transport. Default value is 500 if not changed via the configure option
 --enable-timeout.
+
 
 .SH RETURN VALUES
 The return value 0 means that a 200 was received. 1 means something else 
@@ -567,6 +578,9 @@ inserts forwarding from work to home for one hour.
 .IP "sipsak -f bye.sip -g '!FTAG!345.af23!TTAG!1208.12!' -s sip:myproxy"
 reads the file bye.sip, replaces $FTAG$ with 345.af23 and $TTAG$ with
 1208.12 and finally send this message to myproxy
+.IP "sipsak -s sip:foo@bar.com -X -Z 250 -D 5"
+pings in a loop up to five times a SIP URI in 250 ms interval until an
+erroc occurs.
 
 .SH LIMITATIONS / NOT IMPLEMENTED
 Many servers may decide NOT to include SIP "Warning" header fields.

@@ -765,6 +765,19 @@ void check_socket_error(int socket, int size) {
 	}
 }
 
+
+/* set retry time according to RFC3261 */
+void reset_timer(struct sipsak_delay *sd) 
+{
+	if (monitor_mode) {
+		/* don't change timer -- keep runing at constant pace */
+	} else if ((inv_trans) || (sd->retryAfter *2 < timer_t2)) {
+		sd->retryAfter = sd->retryAfter * 2;
+	} else {
+		sd->retryAfter = timer_t2;
+	}
+}
+
 int check_for_message(char *recv, int size, struct sipsak_con_data *cd,
 			struct sipsak_sr_time *srt, struct sipsak_counter *count,
 			struct sipsak_delay *sd) {
@@ -800,8 +813,13 @@ int check_for_message(char *recv, int size, struct sipsak_con_data *cd,
 	if (count->send_counter==1) {
 		memcpy(&(srt->firstsendt), &(srt->sendtime), sizeof(struct timeval));
 	}
-	if (sd->retryAfter == timer_t1) {
-		memcpy(&(srt->starttime), &(srt->sendtime), sizeof(struct timeval));
+	if (monitor_mode) {
+		if (count->send_counter==1) 
+			memcpy(&(srt->starttime), &(srt->sendtime), sizeof(struct timeval));
+	} else {
+		if (sd->retryAfter == timer_t1) {
+			memcpy(&(srt->starttime), &(srt->sendtime), sizeof(struct timeval));
+		}
 	}
 	if (ret == 0)
 	{
@@ -847,29 +865,19 @@ int check_for_message(char *recv, int size, struct sipsak_con_data *cd,
 				log_message(req);
 				exit_code(3, __PRETTY_FUNCTION__, "timeout (no final response)");
 			}
-			else {
-				timing--;
-				count->run++;
-				sd->all_delay += senddiff;
-				sd->big_delay = senddiff;
-				new_transaction(req, rep);
-				sd->retryAfter = timer_t1;
-				if (timing == 0) {
-					printf("%.3f/%.3f/%.3f ms\n", sd->small_delay, sd->all_delay / count->run, sd->big_delay);
-					log_message(req);
-					exit_code(3, __PRETTY_FUNCTION__, "timeout (no final response)");
-				}
+			timing--;
+			count->run++;
+			sd->all_delay += senddiff;
+			sd->big_delay = senddiff;
+			new_transaction(req, rep);
+			sd->retryAfter = timer_t1;
+			if (timing == 0) {
+				printf("%.3f/%.3f/%.3f ms\n", sd->small_delay, sd->all_delay / count->run, sd->big_delay);
+				log_message(req);
+				exit_code(3, __PRETTY_FUNCTION__, "timeout (no final response)");
 			}
 		}
-		else {
-			/* set retry time according to RFC3261 */
-			if ((inv_trans) || (sd->retryAfter *2 < timer_t2)) {
-				sd->retryAfter = sd->retryAfter * 2;
-			}
-			else {
-				sd->retryAfter = timer_t2;
-			}
-		}
+		else reset_timer(sd);
 		(count->retrans_s_c)++;
 		if (srt->delaytime.tv_sec == 0)
 			memcpy(&(srt->delaytime), &(srt->sendtime), sizeof(struct timeval));
