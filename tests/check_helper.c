@@ -5,7 +5,7 @@
 #ifdef HAVE_CHECK_H
 
 #include <check.h>
-#include "../helper.h"
+#include "../src/helper.h"
 
 #define RUNNING_CHECK 1
 

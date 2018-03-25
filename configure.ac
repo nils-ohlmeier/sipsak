@@ -5,7 +5,7 @@ AC_PREREQ(2.59)
 AC_INIT([sipsak],[0.9.7pre],[nils@sipsak.org])
 AM_INIT_AUTOMAKE([subdir-objects])
 AM_MAINTAINER_MODE
-AC_CONFIG_SRCDIR([sipsak.c])
+AC_CONFIG_SRCDIR([src/sipsak.c])
 AC_CONFIG_HEADER([config.h])
 
 # Checks for programs.
@@ -101,6 +101,5 @@ SIPSAK_OLD_FQDN
 SIPSAK_TLS
 SIPSAK_DBG_PRINT
 
-AC_CONFIG_FILES([Makefile
-                 tests/Makefile])
+AC_CONFIG_FILES([Makefile])
 AC_OUTPUT
