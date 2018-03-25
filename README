@@ -33,6 +33,18 @@
 
  if the binary should be available for all users on that host.
 
+    TESTS
+    =====
+
+ Running tests can be done with
+
+   make check
+
+ be sure to have check -- unit test framework for C -- installed
+
+   apt-get install check
+   yum install check
+
     USAGE
     =====
 

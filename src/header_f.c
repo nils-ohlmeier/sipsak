@@ -421,7 +421,7 @@ int cseq(char *message)
 		num=str_to_int(1, cseq);
 		if (num < 1) {
 			if (verbose > 2)
-				printf("CSeq found but not convertable\n");
+				printf("CSeq found but not convertible\n");
 			return 0;
 		}
 		return num;

@@ -13,6 +13,6 @@ addons:
       - libc-ares-dev
 before_install:
   - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then brew update ; fi
-  - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then brew install check c-ares gnutls ; fi
+  - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then brew install check c-ares ; fi
 install: autoreconf --install
 script: ./configure && make && make check
