@@ -5,7 +5,7 @@
 #ifdef HAVE_CHECK_H
 
 #include <check.h>
-#include "../md5.h"
+#include "../src/md5.h"
 
 #define RUNNING_CHECK 1
 
