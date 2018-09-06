@@ -199,7 +199,7 @@ static const unsigned char *parse_rr(const unsigned char *aptr, const unsigned c
 	else if (type == CARES_TYPE_CNAME) {
 		if ((ca_tmpname != NULL) &&
 				(STRNCASECMP(ca_tmpname, name, strlen(ca_tmpname)) == 0)) {
-			ca_tmpname = malloc(strlen(name));
+			ca_tmpname = malloc(strlen(name) + 1);
 			if (ca_tmpname == NULL) {
 				printf("error: failed to allocate memory\n");
 				exit_code(2, __PRETTY_FUNCTION__, "memory allocation failure");
