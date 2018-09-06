@@ -118,8 +118,8 @@ void check_alert(gnutls_session_t session, int ret) {
 }
 
 /* all the available CRLs */
-gnutls_x509_crl_t *crl_list;
-int crl_list_size;
+gnutls_x509_crl_t *global_crl_list;
+int global_crl_list_size;
 
 /* all the available  trusted CAs */
 gnutls_x509_crt_t *ca_list;
@@ -255,13 +255,13 @@ void verify_certificate_chain(gnutls_session_t session, const char *hostname,
 	}
 	/* now verify the certificates against other issuers in the chain */
 	for (i = 1; i < cert_chain_length; i++) {
-		verify_cert2(cert[i - 1], cert[i], crl_list, crl_list_size);
+		verify_cert2(cert[i - 1], cert[i], global_crl_list, global_crl_list_size);
 	}
 	/* here we must verify the last certificate in the chain against our 
 	 * trusted CA list
 	 */
-	verify_last_cert(cert[cert_chain_length - 1], ca_list, ca_list_size, 
-			crl_list, crl_list_size);
+	verify_last_cert(cert[cert_chain_length - 1], ca_list, ca_list_size,
+			global_crl_list, global_crl_list_size);
 	/* check if the name in the first certificate matches our destination */
 	if (!gnutls_x509_crt_check_hostname(cert[0], hostname)) {
 		printf("The certificate's owner does not match hostname '%s'\n", 

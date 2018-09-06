@@ -24,6 +24,9 @@ These notices must be retained in any copies of any part of this
 documentation and/or software.
  */
 
+#ifndef SIPSAK_MD5_H
+#define SIPSAK_MD5_H
+
 #ifdef HAVE_CONFIG_H
 # include "config.h"
 #endif
@@ -55,4 +58,5 @@ void MD5Init PROTO_LIST ((MD5_CTX *));
 void MD5Update PROTO_LIST
   ((MD5_CTX *, unsigned char *, unsigned int));
 void MD5Final PROTO_LIST ((unsigned char [16], MD5_CTX *));
+#endif
 #endif
