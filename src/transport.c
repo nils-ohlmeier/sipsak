@@ -757,8 +757,8 @@ void check_socket_error(int socket, int size) {
 				printf("\n");
 			perror("send failure");
 			if (randtrash == 1) {
-				printf ("last message before send failure:\n%s\n", req);
-				log_message(req);
+				printf ("last message before send failure:\n%s\n", request);
+				log_message(request);
 			}
 			exit_code(3, __PRETTY_FUNCTION__, "send failure");
 		}
@@ -823,13 +823,13 @@ int check_for_message(char *recv, int size, struct sipsak_con_data *cd,
 			}
 		}
 		if (randtrash == 1) {
-			printf("did not get a response on this request:\n%s\n", req);
+			printf("did not get a response on this request:\n%s\n", request);
 			if (cseq_counter < nameend) {
 				if (count->randretrys == 2) {
 					printf("sended the following message three "
 							"times without getting a response:\n%s\n"
-							"give up further retransmissions...\n", req);
-					log_message(req);
+							"give up further retransmissions...\n", request);
+					log_message(request);
 					exit_code(3, __PRETTY_FUNCTION__, "too many retransmissions, giving up...");
 				}
 				else {
@@ -844,7 +844,7 @@ int check_for_message(char *recv, int size, struct sipsak_con_data *cd,
 			if (timing == 0) {
 				if (verbose>0)
 					printf("*** giving up, no final response after %.3f ms\n", senddiff);
-				log_message(req);
+				log_message(request);
 				exit_code(3, __PRETTY_FUNCTION__, "timeout (no final response)");
 			}
 			else {
@@ -852,11 +852,11 @@ int check_for_message(char *recv, int size, struct sipsak_con_data *cd,
 				count->run++;
 				sd->all_delay += senddiff;
 				sd->big_delay = senddiff;
-				new_transaction(req, rep);
+				new_transaction(request, response);
 				sd->retryAfter = timer_t1;
 				if (timing == 0) {
 					printf("%.3f/%.3f/%.3f ms\n", sd->small_delay, sd->all_delay / count->run, sd->big_delay);
-					log_message(req);
+					log_message(request);
 					exit_code(3, __PRETTY_FUNCTION__, "timeout (no final response)");
 				}
 			}
@@ -1039,7 +1039,7 @@ int recv_message(char *buf, int size, int inv_trans,
 #else
 				printf("\n");
 #endif // HAVE_INET_NTOP
-				log_message(req);
+				log_message(request);
 				exit_code(3, __PRETTY_FUNCTION__, "received ICMP error");
 			}
 			else {

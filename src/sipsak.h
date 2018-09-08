@@ -334,7 +334,7 @@ char *username, *domainname, *password, *replace_str, *hostname, *contact_uri;
 char *mes_body, *con_dis, *auth_username, *from_uri, *headers, *authhash, *local_ip;
 char fqdn[FQDN_SIZE];
 char target_dot[INET_ADDRSTRLEN], source_dot[INET_ADDRSTRLEN];
-char *req, *rep, *rec, *transport_str;
+char *request, *response, *received, *transport_str;
 regex_t* re;
 
 #endif
