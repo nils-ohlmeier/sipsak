@@ -330,7 +330,7 @@ int main(int argc, char *argv[])
 	via_ins=redirects=fix_crlf=processes = 1;
 	username=password=replace_str=hostname=contact_uri=mes_body = NULL;
 	con_dis=auth_username=from_uri=headers=authhash=local_ip = NULL;
-	scheme = user = host = backup = req = rep = rec = NULL;
+	scheme = user = host = backup = request = response = received = NULL;
 	re = NULL;
 	address= 0;
 	transport=tsp = 0;
