@@ -672,25 +672,6 @@ void create_sockets(struct sipsak_con_data *cd) {
 	}
 }
 
-void close_sockets(struct sipsak_con_data *cd) {
-	if (transport == SIP_UDP_TRANSPORT) {
-	}
-	else {
-#ifdef WITH_TLS_TRANSP
-		if (transport == SIP_TLS_TRANSPORT) {
-# ifdef USE_GNUTLS
-			gnutls_bye(tls_session, GNUTLS_SHUT_RDWR);
-# else /* USE_GNUTLS */
-#  ifdef USE_OPENSSL
-#  endif /* USE_OPENSSL */
-# endif /* USE_GNUTLS */
-		}
-#endif /* WITH_TLS_TRANSP */
-		shutdown(cd->csock, SHUT_RDWR);
-	}
-	dbg("sockets closed\n");
-}
-
 void send_message(char* mes, struct sipsak_con_data *cd,
 			struct sipsak_counter *sc, struct sipsak_sr_time *srt) {
 	struct timezone tz;
