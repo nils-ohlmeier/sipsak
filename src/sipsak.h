@@ -335,6 +335,6 @@ char *mes_body, *con_dis, *auth_username, *from_uri, *headers, *authhash, *local
 char fqdn[FQDN_SIZE];
 char target_dot[INET_ADDRSTRLEN], source_dot[INET_ADDRSTRLEN];
 char *request, *response, *received, *transport_str;
-regex_t* re;
+regex_t* regex;
 
 #endif
