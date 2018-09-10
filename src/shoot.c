@@ -971,6 +971,9 @@ void shoot(char *buf, int buff_size)
 			rand_tmp = rand();
 			sleep_ms_s.tv_sec = rand_tmp / 1000;
 			sleep_ms_s.tv_nsec = (rand_tmp % 1000) * 1000;
+		} else if (sleep_ms != 0) {
+			sleep_ms_s.tv_sec = sleep_ms;
+			sleep_ms_s.tv_nsec = 0;
 		}
 		if (sleep_ms != 0) {
 			dbg("sleeping for %li s + %li ns\n", sleep_ms_s.tv_sec, sleep_ms_s.tv_nsec);
