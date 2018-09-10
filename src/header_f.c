@@ -413,7 +413,7 @@ void warning_extract(char *message)
 int cseq(char *message)
 {
 	char *cseq;
-	int num=-1;
+	int num;
 
 	cseq=STRCASESTR(message, CSEQ_STR);
 	if (cseq) {
