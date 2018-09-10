@@ -71,7 +71,8 @@ struct sipsak_delay delays;
 
 static inline void on_success(char *_response)
 {
-	if ((_response != NULL) && re && regexec(re, _response, 0, 0, 0) == REG_NOMATCH) {
+	if ((_response != NULL) && regex &&
+			regexec(regex, _response, 0, 0, 0) == REG_NOMATCH) {
 		log_message(request);
 		fprintf(stderr, "error: RegExp failed\n");
 		exit_code(32, __PRETTY_FUNCTION__, "regular expression failed");

@@ -33,9 +33,9 @@
 void cvt_hex(unsigned char *_b, unsigned char *_h, int length)
 {
         unsigned short i;
-        unsigned char j;
 
         for (i = 0; i < length; i++) {
+                unsigned char j;
                 j = (_b[i] >> 4) & 0xf;
                 if (j <= (unsigned char)9) {
                         _h[i * 2] = (j + (unsigned char)'0');
@@ -61,7 +61,6 @@ void insert_auth(char *message, char *authreq)
 	unsigned char ha1[SIPSAK_HASHLEN], ha2[SIPSAK_HASHLEN], resp[SIPSAK_HASHLEN];
 	unsigned char ha1_hex[SIPSAK_HASHHEXLEN+1], ha2_hex[SIPSAK_HASHHEXLEN+1], resp_hex[SIPSAK_HASHHEXLEN+1];
 	int qop_auth=0, proxy_auth=0, algo=0;
-	unsigned int cnonce;
 	MD5_CTX Md5Ctx;
 #ifdef HAVE_OPENSSL_SHA1
 	SHA_CTX Sha1Ctx;
@@ -254,6 +253,7 @@ void insert_auth(char *message, char *authreq)
 		}
 		/* if qop is supported we need som additional header */
 		if (qop_auth == 1) {
+			unsigned int cnonce;
 			snprintf(insert, QOP_STR_LEN+QOPAUTH_STR_LEN+3, "%s%s, ", QOP_STR, QOPAUTH_STR);
 			insert+=strlen(insert);
 			nonce_count++;

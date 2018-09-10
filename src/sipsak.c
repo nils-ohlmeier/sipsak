@@ -331,7 +331,7 @@ int main(int argc, char *argv[])
 	username=password=replace_str=hostname=contact_uri=mes_body = NULL;
 	con_dis=auth_username=from_uri=headers=authhash=local_ip = NULL;
 	scheme = user = host = backup = request = response = received = NULL;
-	re = NULL;
+	regex = NULL;
 	address= 0;
 	transport=tsp = 0;
 	rport = port = 0;
@@ -660,18 +660,18 @@ int main(int argc, char *argv[])
 				processes=str_to_int(0, optarg);
 				break;
 			case 'q':
-				if (re) {
+				if (regex) {
 					/* previously allocated -- free */
-					regfree(re);
+					regfree(regex);
 				} else {
 					/* never tried -- allocate */
-					re=malloc(sizeof(regex_t));
+					regex=malloc(sizeof(regex_t));
 				};
-				if (!re) {
+				if (!regex) {
 					fprintf(stderr, "Error: can't allocate RE\n");
 					exit_code(2, __PRETTY_FUNCTION__, "failed to allocate memory for regualr expression");
 				};
-				if (regcomp(re, optarg, REG_EXTENDED|REG_ICASE|REG_NEWLINE )!=0) {
+				if (regcomp(regex, optarg, REG_EXTENDED|REG_ICASE|REG_NEWLINE )!=0) {
 					fprintf(stderr, "Error: compiling RE: %s\n", optarg );
 					exit_code(2, __PRETTY_FUNCTION__, "failed to compile regular expression");
 				};
