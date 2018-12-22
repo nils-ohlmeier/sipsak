@@ -556,6 +556,10 @@ void tls_dump_cert_info(char* s, X509* cert) {
 void create_sockets(struct sipsak_con_data *cd) {
 	socklen_t slen;
 
+#ifdef RAW_SUPPORT
+	rawsock = -1;
+#endif
+
 	memset(&(cd->adr), 0, sizeof(struct sockaddr_in));
 	cd->adr.sin_family = AF_INET;
 	if(local_ip) {	
@@ -762,12 +766,12 @@ int check_for_message(char *recv, int size, struct sipsak_con_data *cd,
 
 		FD_ZERO(&fd);
 		if (cd->usock != -1)
-			FD_SET(cd->usock, &fd); 
+			FD_SET(cd->usock, &fd);
 		if (cd->csock != -1)
-			FD_SET(cd->csock, &fd); 
+			FD_SET(cd->csock, &fd);
 #ifdef RAW_SUPPORT
 		if (rawsock != -1)
-			FD_SET(rawsock, &fd); 
+			FD_SET(rawsock, &fd);
 #endif
 
 		ret = select(FD_SETSIZE, &fd, NULL, NULL, &tv);
