@@ -55,13 +55,9 @@ AC_CHECK_FUNCS([calloc getdomainname getopt_long inet_ntop strncasecmp strcasest
 PKG_PROG_PKG_CONFIG
 
 # Check if the check unit test framework is available
-AC_MSG_CHECKING([for check >= 0.9.3])
-if $PKG_CONFIG --atleast-version=0.9.3 check; then
-  AC_DEFINE([HAVE_CHECK_H], [1], [Has check.h])
-  AC_MSG_RESULT([yes])
-else
-  AC_MSG_RESULT([no])
-fi
+PKG_CHECK_MODULES([CHECK], [check >= 0.9.3], [
+    AC_DEFINE([HAVE_CHECK_H], [1], [Has check.h])
+  ],:)
 
 PKG_CHECK_MODULES([GNUTLS], [gnutls >= 1.0.0], [
     AC_DEFINE([HAVE_GNUTLS], [1], [Has gnutls >= 1.0.0])
@@ -80,13 +76,9 @@ PKG_CHECK_MODULES([GNUTLS], [gnutls >= 1.0.0], [
       ])
     ])
 ])
-AC_MSG_CHECKING([for gnutls >= 3.1.9])
-if $PKG_CONFIG --atleast-version=3.1.9 gnutls; then
-  AC_DEFINE([HAVE_GNUTLS_319], [1], [Has gntuls >= 3.1.9])
-  AC_MSG_RESULT([yes])
-else
-  AC_MSG_RESULT([no])
-fi
+PKG_CHECK_MODULES([GNUTLS319], [gnutls >= 3.1.9], [
+    AC_DEFINE([HAVE_GNUTLS_319], [1], [Has gntuls >= 3.1.9])
+  ],:)
 
 PKG_CHECK_MODULES([CARES], [libcares], [
   AC_DEFINE([HAVE_CARES_H], [1], [Has cares.h])
