@@ -52,11 +52,12 @@ AC_FUNC_SELECT_ARGTYPES
 AC_CHECK_FUNCS([getchar gethostbyname gethostname getopt getpid gettimeofday memset ntohs regcomp select socket strchr strcmp strstr strtol uname],,[AC_MSG_ERROR([missing required function (see above)])])
 AC_CHECK_FUNCS([calloc getdomainname getopt_long inet_ntop strncasecmp strcasestr syslog])
 
+PKG_PROG_PKG_CONFIG
+
 # Check if the check unit test framework is available
 PKG_CHECK_MODULES([CHECK], [check >= 0.9.3], [
     AC_DEFINE([HAVE_CHECK_H], [1], [Has check.h])
-  ], []
-)
+  ],:)
 
 PKG_CHECK_MODULES([GNUTLS], [gnutls >= 1.0.0], [
     AC_DEFINE([HAVE_GNUTLS], [1], [Has gnutls >= 1.0.0])
@@ -77,8 +78,7 @@ PKG_CHECK_MODULES([GNUTLS], [gnutls >= 1.0.0], [
 ])
 PKG_CHECK_MODULES([GNUTLS319], [gnutls >= 3.1.9], [
     AC_DEFINE([HAVE_GNUTLS_319], [1], [Has gntuls >= 3.1.9])
-  ], []
-)
+  ],:)
 
 PKG_CHECK_MODULES([CARES], [libcares], [
   AC_DEFINE([HAVE_CARES_H], [1], [Has cares.h])
