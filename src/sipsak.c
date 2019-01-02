@@ -55,7 +55,7 @@
 #ifdef HAVE_SYSLOG_H
 # include <syslog.h>
 #endif
-#include <iconv.h> // FIX: add check for iconv lib to configure
+#include <iconv.h>
 
 #include "helper.h"
 #include "header_f.h"
