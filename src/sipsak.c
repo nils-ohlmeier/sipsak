@@ -55,6 +55,7 @@
 #ifdef HAVE_SYSLOG_H
 # include <syslog.h>
 #endif
+#include <iconv.h> // FIX: add check for iconv lib to configure
 
 #include "helper.h"
 #include "header_f.h"
@@ -424,14 +425,24 @@ int main(int argc, char *argv[])
 				namebeg=str_to_int(0, optarg);
 				break;
 			case 'B':
-				mes_body=str_alloc(strlen(optarg) + 1);
-				strncpy(mes_body, optarg, strlen(optarg));
+			{
+				iconv_t cd;
+				char *inbuf = optarg, *outbuf;
+				size_t inbytes = strlen(optarg), outbytes = inbytes * 2;
+				mes_body = malloc(sizeof(struct bytearray));
+				mes_body->data = outbuf = str_alloc(outbytes);
+				mes_body->len = outbytes;
+				cd = iconv_open("UCS-2BE", "UTF-8"); // FIX: source charset should be picked from locale
+				iconv(cd, &inbuf, &inbytes, &outbuf, &outbytes);
+				iconv_close(cd);
+				mes_body->len -= outbytes; // some UTF-8 characters 1-byte long, some 2-byte long. All UCS-2 chars 2-byte long
 				break;
+			}
 			case 'c':
 				backup=str_alloc(strlen(optarg)+1);
 				strncpy(backup, optarg, strlen(optarg));
 				parse_uri(backup, &scheme, &user, &host, &port);
-				if (scheme  == NULL) {
+				if (scheme == NULL) {
 					fprintf(stderr, "error: missing scheme in From URI\n");
 					exit_code(2, __PRETTY_FUNCTION__, "missing scheme in From URI");
 				}
@@ -464,9 +475,9 @@ int main(int argc, char *argv[])
 					strncpy(backup, optarg, strlen(optarg));
 					parse_uri(backup, &scheme, &user, &host, &port);
 					if (scheme == NULL) {
-					    fprintf(stderr, "error: REGISTER Contact uri doesn't not contain "
-						   "sip:, sips:, *, or is not empty\n");
-				    	exit_code(2, __PRETTY_FUNCTION__, "unsupported Contact for registration");
+						fprintf(stderr, "error: REGISTER Contact uri doesn't not contain "
+							"sip:, sips:, *, or is not empty\n");
+						exit_code(2, __PRETTY_FUNCTION__, "unsupported Contact for registration");
 					}
 					/*else if (user == NULL) {
 						fprintf(stderr, "error: missing username in Contact uri\n");
@@ -1056,7 +1067,7 @@ int main(int argc, char *argv[])
 	srand(time(0) ^ (getpid() + (getpid() << 15)));
 	
 	if (processes > 1) {
-		if (signal(SIGCHLD , sigchld_handler)  == SIG_ERR ) {
+		if (signal(SIGCHLD , sigchld_handler) == SIG_ERR ) {
 			fprintf(stderr, "error: Could not install SIGCHLD handler\n");
 			exit_code(2, __PRETTY_FUNCTION__, "failed to install SIGCHLD handler");
 		}
@@ -1069,7 +1080,7 @@ int main(int argc, char *argv[])
 		}
 		
 		if (pid == 0){
-	    	/* child */
+			/* child */
 			upp = (nameend - namebeg + 1) / processes;
 			namebeg = namebeg + upp * i;
 			nameend = namebeg + upp;
