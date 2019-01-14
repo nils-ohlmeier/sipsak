@@ -454,10 +454,12 @@ void gnutls_session_info(gnutls_session_t session) {
 	// check the authentication type
 	cred = gnutls_auth_get_type(session);
 	switch(cred) {
+#ifdef HAVE_GNUTLS_SRP
 		case GNUTLS_CRD_SRP:
 			printf("SRP session with username %s\n",
 				gnutls_srp_server_get_username(session));
 			break;
+#endif // HAVE_GNUTLS_SRP
 		case GNUTLS_CRD_ANON:
 			printf("Anonymous DH using prime of %d bits\n", 
 				gnutls_dh_get_prime_bits(session));
