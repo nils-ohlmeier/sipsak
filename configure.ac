@@ -61,6 +61,7 @@ PKG_CHECK_MODULES([CHECK], [check >= 0.9.3], [
 
 PKG_CHECK_MODULES([GNUTLS], [gnutls >= 1.0.0], [
     AC_DEFINE([HAVE_GNUTLS], [1], [Has gnutls >= 1.0.0])
+    HAVE_GNUTLS=1
     LIBS="${LIBS} ${GNUTLS_LIBS}"
     CFLAGS="${CFLAGS} ${GNUTLS_CFLAGS}"
   ], [
@@ -79,6 +80,18 @@ PKG_CHECK_MODULES([GNUTLS], [gnutls >= 1.0.0], [
 PKG_CHECK_MODULES([GNUTLS319], [gnutls >= 3.1.9], [
     AC_DEFINE([HAVE_GNUTLS_319], [1], [Has gntuls >= 3.1.9])
   ],:)
+
+dnl ---
+dnl Check if GnuTLS has SRP support.
+dnl ---
+if test "$HAVE_GNUTLS" = "1"; then
+  AC_CHECK_LIB(gnutls, gnutls_srp_verifier,
+   [
+     AC_DEFINE(HAVE_GNUTLS_SRP, 1, [if you have the function gnutls_srp_verifier])
+     AC_SUBST(HAVE_GNUTLS_SRP, [1])
+   ])
+fi
+
 
 PKG_CHECK_MODULES([CARES], [libcares], [
   AC_DEFINE([HAVE_CARES_H], [1], [Has cares.h])
