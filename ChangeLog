@@ -1,3 +1,19 @@
+* version 0.9.7
+  - added new option -E which overrules SRV result
+  - added new option -J to take ha1 instead of password
+  - dont retransmit on reliable transports
+  - added --disable-ips configure option which allows to compile the oldstyle --numeric behavior
+  - added new option -k only available with TLS support
+  - added 'star' as special word for the contact option -C
+  - fixed overwritting of outbound proxy if domainname is an IP; thanks to Alexander Litvak
+  - added option -Z to modify SIP_T1 at run time
+  - added syslog support
+  - enabled -c parameter for Inivte mode
+  - added new options for TLS (ca-cert, client-cert, ignore-cert-failure)
+    Note: these options are only available as long options
+  - added option to ignore TLS certificate verification errors
+  - added option -k, --local-ip
+  - added SHA-256 as a possible algorithm for digest authentication
 * version 0.9.6
   - added new option -j to add a header
   - added support for multiple variable replacement (option -g)
