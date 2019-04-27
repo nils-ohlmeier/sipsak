@@ -6,10 +6,8 @@
 # PGP key ID and fingerprint (P), description (D), and snail-mail address (S).
 
 N: Nils Ohlmeier
-C: calrissian
 E: nils@sipsak.org
-W: http://www.ohlmeier.org
-P: BAD6CA40   B5E7 4FB0 800F 0A2C E3E9  4073 C7C3 F275 BAD6 CA40
+P: 6CC9F8A1   439A E69B 212C 01E2 2D95  9AAE 636A 3F56 6CC9 F8A1
 D: the original author and main developer
 
 N: Jan Janak
