@@ -198,12 +198,11 @@ void create_msg(int action, char *req_buff, char *repl_buff, char *username, int
 					FROM_STR, fqdn, lport, c);
 			}
 			req_buff += strlen(req_buff);
-			if (mes_body) {
-				len = strlen(mes_body);
-			}
-			else {
+			if (mes_body)
+				len = mes_body->len;
+			else
 				len = SIPSAK_MES_STR_LEN + strlen(username);
-			}
+			
 			sprintf(req_buff, "%s%u\r\n", CON_LEN_STR, len);
 			req_buff += strlen(req_buff);
 			if (con_dis) {
@@ -212,12 +211,7 @@ void create_msg(int action, char *req_buff, char *repl_buff, char *username, int
 			}
 			sprintf(req_buff, "\r\n");
 			req_buff += 2;
-			if (mes_body) {
-				sprintf(req_buff,
-					"%s",
-					mes_body);
-			}
-			else {
+			if (!mes_body) {
 				sprintf(req_buff, "%s%s", SIPSAK_MES_STR, username);
 				req_buff += strlen(req_buff) - 1;
 				*(req_buff) = '.';

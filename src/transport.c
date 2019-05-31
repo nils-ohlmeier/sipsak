@@ -681,23 +681,36 @@ void create_sockets(struct sipsak_con_data *cd) {
 void send_message(char* mes, struct sipsak_con_data *cd,
 			struct sipsak_counter *sc, struct sipsak_sr_time *srt) {
 	struct timezone tz;
-	int ret = -1;
-
+	int ret = -1, len = strlen(mes), flen = len;
+	char *tmsg;
+	
 	if (cd->dontsend == 0) {
-		if (verbose > 2) {
-			printf("\nrequest:\n%s", mes);
+		if (mes_body)
+			flen += mes_body->len;
+		
+		tmsg = str_alloc(flen);
+		memcpy(tmsg, mes, len);
+		
+		if (verbose > 2)
+			printf("\nrequest [%d bytes]:\n%s", flen, mes);
+		
+		if (mes_body) {
+			if (verbose > 2)
+				printf("<UCS-2BE encoded body>\n");
+			memcpy(tmsg + len, mes_body->data, mes_body->len);
 		}
+		
 		/* lets fire the request to the server and store when we did */
 		if (cd->csock == -1) {
 			dbg("\nusing un-connected socket for sending\n");
-			ret = sendto(cd->usock, mes, strlen(mes), 0, (struct sockaddr *) &(cd->adr), sizeof(struct sockaddr));
+			ret = sendto(cd->usock, tmsg, flen, 0, (struct sockaddr *) &(cd->adr), sizeof(struct sockaddr));
 		}
 		else {
 			dbg("\nusing connected socket for sending\n");
 #ifdef WITH_TLS_TRANSP
 			if (transport == SIP_TLS_TRANSPORT) {
 # ifdef USE_GNUTLS
-				ret = gnutls_record_send(tls_session, mes, strlen(mes));
+				ret = gnutls_record_send(tls_session, tmsg, flen);
 # else /* USE_GNUTLS */
 #  ifdef USE_OPENSSL
 #  endif /* USE_OPENSSL */
@@ -705,11 +718,13 @@ void send_message(char* mes, struct sipsak_con_data *cd,
 			}
 			else {
 #endif /* TLS_TRANSP */
-				ret = send(cd->csock, mes, strlen(mes), 0);
+				ret = send(cd->csock, tmsg, flen, 0);
 #ifdef WITH_TLS_TRANSP
 			}
 #endif /* TLS_TRANSP */
 		}
+		free(tmsg);
+		
 		(void)gettimeofday(&(srt->sendtime), &tz);
 		if (ret==-1) {
 			if (verbose)
@@ -719,8 +734,8 @@ void send_message(char* mes, struct sipsak_con_data *cd,
 		}
 #ifdef HAVE_INET_NTOP
 		if (verbose > 2) {
-			printf("\nsend to: %s:%s:%i\n", transport_str, target_dot, rport);
-    }
+			printf("\nsend to: %s:%s:%i [%d bytes]\n", transport_str, target_dot, rport, ret);
+		}
 #endif
 		sc->send_counter++;
 	}
@@ -938,6 +953,7 @@ int recv_message(char *buf, int size, int inv_trans,
 	int ret = 0;
 	int sock = 0;
 	double tmp_delay;
+	char *ehp;
 #ifdef HAVE_INET_NTOP
 	struct sockaddr_in peer_adr;
 	socklen_t psize = sizeof(peer_adr);
@@ -1044,6 +1060,11 @@ int recv_message(char *buf, int size, int inv_trans,
 #endif // RAW_SUPPORT
 	if (ret > 0) {
 		*(buf+ ret) = '\0';
+		
+		// Cut off binary message body
+		if (mes_body && (ehp = strstr(buf, "\r\n\r\n")))
+			ehp[4] = 0;
+		
 		if (transport != SIP_UDP_TRANSPORT) {
 			if (verbose > 0)
 				printf("\nchecking message for completeness...\n");
@@ -1085,8 +1106,8 @@ int recv_message(char *buf, int size, int inv_trans,
 		}
 #ifdef HAVE_INET_NTOP
 		if ((verbose > 2) && (getpeername(sock, (struct sockaddr *)&peer_adr, &psize) == 0) && (inet_ntop(peer_adr.sin_family, &peer_adr.sin_addr, &source_dot[0], INET_ADDRSTRLEN) != NULL)) {
-			printf("\nreceived from: %s:%s:%i\n", transport_str, 
-						source_dot, ntohs(peer_adr.sin_port));
+			printf("\nreceived from: %s:%s:%i [%d bytes]\n", transport_str,
+						source_dot, ntohs(peer_adr.sin_port), ret);
 		}
 		else if (verbose > 1 && trace == 0 && usrloc == 0)
 			printf(":\n");
