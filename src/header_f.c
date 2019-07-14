@@ -25,8 +25,10 @@
 
 /* add the given header(s) below the request line */
 void insert_header(char *mes, char *header, int first) {
-	char *ins, *backup;
-
+	char *ins, *backup, *hp, *dhp, *ehp;
+	int max_headers = 100, hcount = 0, c, i;
+	struct hline **hlist = malloc(sizeof(struct hline *) * max_headers);
+	
 	if (first) {
 		ins = strchr(mes, '\n');
 		if (ins == NULL) {
@@ -43,6 +45,69 @@ void insert_header(char *mes, char *header, int first) {
 	strncpy(ins, header, strlen(header));
 	strncpy(ins + strlen(header), backup, strlen(backup)+1);
 	free(backup);
+	
+	// deduplicate headers
+	hp = strstr(mes, "\r\n");
+	if (hp)
+		hp += 2;
+	
+	while (hp && *hp) {
+		if (hcount == max_headers) {
+			max_headers *= 2;
+			hlist = realloc(hlist, sizeof(struct hline *) * max_headers);
+		}
+		c = i = hcount++;
+		
+		hlist[i] = malloc(sizeof(struct hline));
+		hlist[i]->begin = hp;
+		
+		ehp = strstr(hp, "\r\n");
+		if (ehp) {
+			if (ehp == hp) {
+				hp = NULL;
+				continue;
+			}
+			*ehp = 0;
+			hlist[i]->len = ehp - hp + 2;
+		}
+		else
+			hlist[i]->len = hp - mes + strlen(mes);
+		
+		dhp = strchr(hp, ':');
+		if (dhp)
+			hlist[i]->namelen = dhp - hp;
+		else
+			hlist[i]->namelen = 0;
+		
+		if (ehp) {
+			*ehp = 0x0D;
+			hp = ehp + 2;
+		}
+		else
+			hp = NULL;
+		
+		i = 0;
+		while (i < c) {
+			if ((hlist[i]->namelen == hlist[c]->namelen) && !strncmp(hlist[i]->begin, hlist[c]->begin, hlist[c]->namelen)) {
+				if (hp) {
+					memmove(hlist[c]->begin, hp, hp - mes + strlen(mes) + 1);
+					hp = hlist[c]->begin;
+				}
+				else
+					strcpy(hlist[c]->begin, "\r\n\0");
+				
+				--hcount;
+				free(hlist[c]);
+				i = c;
+			}
+			else
+				++i;
+		}
+	}
+	
+	for (i = 0; i < hcount; i++)
+		free(hlist[i]);
+	free(hlist);
 }
 
 /* add a Via Header Field in the message. */

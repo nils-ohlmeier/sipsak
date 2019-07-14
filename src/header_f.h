@@ -20,6 +20,12 @@
 
 #include "shoot.h"
 
+struct hline
+{
+	char *begin;
+	int namelen, len;
+};
+
 void insert_header(char *mes, char *header, int first);
 
 void add_via(char *mes);
