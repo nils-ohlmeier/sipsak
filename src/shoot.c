@@ -482,11 +482,11 @@ void handle_usrloc()
 				}
 				else {
 					fprintf(stderr, "received:\n%s\nerror: did not "
-								"received the '200 OK' that was sent "
+								"receive the '200 OK' that was sent "
 								"as the reply on the INVITE (see "
 								"above). aborting\n", received);
 					log_message(request);
-					exit_code(1, __PRETTY_FUNCTION__, "did not received our own 200 reply");
+					exit_code(1, __PRETTY_FUNCTION__, "did not receive our own 200 reply");
 				}
 				break;
 			case INV_ACK_RECV:
@@ -572,11 +572,11 @@ void handle_usrloc()
 				} /* STRNCASECMP */
 				else {
 					fprintf(stderr, "received:\n%s\nerror: did not "
-								"received the 'ACK' that was sent "
+								"receive the 'ACK' that was sent "
 								"as the reply on the '200 OK' (see "
 								"above). aborting\n", received);
 					log_message(request);
-					exit_code(1, __PRETTY_FUNCTION__, "missing ACK that was send by myself");
+					exit_code(1, __PRETTY_FUNCTION__, "missing ACK that was sent by myself");
 				}
 				break;
 			case MES_RECV:
@@ -598,10 +598,10 @@ void handle_usrloc()
 				}
 				else {
 					fprintf(stderr, "received:\n%s\nerror: did not "
-								"received the 'MESSAGE' that was sent "
+								"receive the 'MESSAGE' that was sent "
 								"(see above). aborting\n", received);
 					log_message(request);
-					exit_code(1, __PRETTY_FUNCTION__, "did not received my own MESSAGE request");
+					exit_code(1, __PRETTY_FUNCTION__, "did not receive my own MESSAGE request");
 				}
 				break;
 			case MES_OK_RECV:
@@ -686,13 +686,13 @@ void handle_usrloc()
 					if (verbose>0) {
 						if (mes_body) {
 							fprintf(stderr, "received:\n%s\nerror: did"
-										" not received 200 for the "
+										" not receive 200 for the "
 										"MESSAGE (see above)\n",
 										received);
 						}
 						else {
 							fprintf(stderr, "received:\n%s\nerror: did"
-										" not received the '200 OK' "
+										" not receive the '200 OK' "
 										"that was sent as the reply on"
 										" the MESSAGE (see above). "
 										"aborting\n", received);
@@ -730,7 +730,7 @@ void handle_usrloc()
 				}
 				else {
 					fprintf(stderr, "received:\n%s\nerror: did not "
-								"received the expected 200 on the "
+								"receive the expected 200 on the "
 								"remove bindings request for %s%i (see"
 								" above). aborting\n", received, username, 
 								namebeg);
@@ -1100,7 +1100,7 @@ void shoot(char *buf, int buff_size)
 	if (randtrash == 1) {
 		exit_code(0, __PRETTY_FUNCTION__, NULL);
 	}
-	printf("** give up retransmissioning....\n");
+	printf("** give up further retransmissions....\n");
 	if (counters.retrans_r_c>0 && (verbose > 1)) {
 		printf("%i retransmissions received during test\n", counters.retrans_r_c);
 	}

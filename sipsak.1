@@ -141,7 +141,7 @@ was given. If one or more
 .BR -v 
 were given this option will be ignored.
 
-.IP "-b, --apendix-begin NUMBER"
+.IP "-b, --appendix-begin NUMBER"
 The starting number which is appended to the user name in the usrloc mode.
 This 
 .I NUMBER
@@ -333,7 +333,7 @@ option for details how sipsak sends and receives messages.
 
 .IP "-L, --no-crlf"
 De-activates the insertion of carriage returns (\\r) before all line feeds
-(\\n) (which is not already proceeded by carraige return) if the input
+(\\n) (which is not already proceeded by carriage return) if the input
 is coming from a file (
 .BR -f
 ). Without this option also an empty line will be appended to the request
@@ -358,14 +358,14 @@ option.
 .B Warning:
 using without 
 .BR -U
-can cause unexpected behaivor.
+can cause unexpected behavior.
 
 .IP "-n, --numeric"
 Instead of the full qualified domain name in the Via line the IP of the
 local host will be used. This option is now on by default.
 
 .IP "-N, --nagios-code"
-Use Nagios comliant return codes instead of the normal sipsak ones. This means
+Use Nagios compliant return codes instead of the normal sipsak ones. This means
 .B sipsak 
 will return 0 if everything was ok and 2 in case of any error (local or remote).
 

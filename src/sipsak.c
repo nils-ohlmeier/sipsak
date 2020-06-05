@@ -101,22 +101,22 @@ void print_long_help() {
 		"  --filename=FILE            the file which contains the SIP message to send\n"
 		"                               use - for standard input\n"
 		"  --no-crlf                  de-activate CR (\\r) insertion\n"
-		"  --sip-uri=SIPURI           the destination server uri in form\n"
+		"  --sip-uri=SIPURI           the destination server URI in form\n"
 		"                               sip:[user@]servername[:port]\n"
 		"  --traceroute               activates the traceroute mode\n"
 		);
 	printf("  --usrloc-mode              activates the usrloc mode\n"
 		"  --invite-mode              simulates a successful calls with itself\n"
 		"  --message-mode             sends messages to itself\n"
-		"  --contact=SIPURI           use the given uri as Contact in REGISTER\n"
+		"  --contact=SIPURI           use the given URI as Contact in REGISTER\n"
 		"  --appendix-begin=NUMBER    the starting number appendix to the user name (default: 0)\n"
-		"  --appendix-end=NUMBER      the ending numer of the appendix to the user name\n"
+		"  --appendix-end=NUMBER      the ending number of the appendix to the user name\n"
 		"  --sleep=NUMBER             sleep number ms before sending next request\n"
 		);
 	printf("  --expires=NUMBER           the expires header field value (default: 15)\n"
 		"  --remove-bindings=NUMBER   activates randomly removing of user bindings\n"
 		"  --flood-mode               activates the flood mode\n"
-		"  --random-mode              activates the random modues (dangerous)\n"
+		"  --random-mode              activates the random mode (dangerous)\n"
 		"  --trash-chars=NUMBER       the maximum number of trashed character in random mode\n"
 		"                               (default: request length)\n"
 		);
@@ -148,10 +148,10 @@ void print_long_help() {
 		"  --message-body=STRING      send a message with string as body\n"
 		"  --disposition=STRING       Content-Disposition value\n"
 		"  --search=REGEXP            search for a RegExp in replies and return error\n"
-		"                             on failfure\n"
+		"                             on failure\n"
 		"  --timing=NUMBER            number of test runs and print just the timings\n"
 		"  --symmetric                send and received on the same port\n"
-		"  --from=SIPURI              use the given uri as From in MESSAGE\n"
+		"  --from=SIPURI              use the given URI as From in MESSAGE\n"
 		"  --timeout-factor=NUMBER    timeout multiplier for INVITE transactions\n"
 		"                             on non-reliable transports (default: 64)\n"
 		"  --timer-t1=NUMBER          timeout T1 in ms (default: %i)\n"
@@ -181,7 +181,7 @@ void print_help() {
 		"  -f FILE           the file which contains the SIP message to send\n"
 		"                      use - for standard input\n"
 		"  -L                de-activate CR (\\r) insertion in files\n"
-		"  -s SIPURI         the destination server uri in form\n"
+		"  -s SIPURI         the destination server URI in form\n"
 		"                      sip:[user@]servername[:port]\n"
 		"  -T                activates the traceroute mode\n"
 		"  -U                activates the usrloc mode\n"
@@ -189,7 +189,7 @@ void print_help() {
 		"  -M                sends messages to itself\n"
 		);
 	printf(
-		"  -C SIPURI         use the given uri as Contact in REGISTER\n"
+		"  -C SIPURI         use the given URI as Contact in REGISTER\n"
 		"  -b NUMBER         the starting number appendix to the user name (default: 0)\n"
 		"  -e NUMBER         the ending numer of the appendix to the user name\n"
 		"  -o NUMBER         sleep number ms before sending next request\n"
@@ -198,7 +198,7 @@ void print_help() {
 		"  -F                activates the flood mode\n"
 		);
 	printf(
-		"  -R                activates the random modues (dangerous)\n"
+		"  -R                activates the random mode (dangerous)\n"
 		"  -t NUMBER         the maximum number of trashed character in random mode\n"
 		"                      (default: request length)\n"
 		"  -l PORT           the local port to use (default: any)\n"
@@ -233,13 +233,13 @@ void print_help() {
 		"  -P NUMBER         Number of processes to start\n"
 		"  -A NUMBER         number of test runs and print just timings\n"
 		"  -S                use same port for receiving and sending\n"
-		"  -c SIPURI         use the given uri as From in MESSAGE\n"
+		"  -c SIPURI         use the given URI as From in MESSAGE\n"
 		"  -D NUMBER         timeout multiplier for INVITE transactions\n"
 		"                    on non-reliable transports (default: 64)\n"
 		"  -Z NUMBER         timeout T1 in ms (default: %i)\n"
 		"  -E STRING         specify transport to be used\n"
 		"  -j STRING         adds additional headers to the request\n"
-		"  -J STRING         ha1 hash for authentication instead of password\n"
+		"  -J STRING         sha1 hash for authentication instead of password\n"
 		"  -k STRING         specify local ip address to be used\n"
 		"  -K NUMBER         log exit message to syslog with given log level\n"
 		, DEFAULT_TIMEOUT
@@ -464,7 +464,7 @@ int main(int argc, char *argv[])
 					strncpy(backup, optarg, strlen(optarg));
 					parse_uri(backup, &scheme, &user, &host, &port);
 					if (scheme == NULL) {
-					    fprintf(stderr, "error: REGISTER Contact uri doesn't not contain "
+					    fprintf(stderr, "error: REGISTER Contact URI doesn't not contain "
 						   "sip:, sips:, *, or is not empty\n");
 				    	exit_code(2, __PRETTY_FUNCTION__, "unsupported Contact for registration");
 					}
@@ -473,7 +473,7 @@ int main(int argc, char *argv[])
 						exit_code(2);
 					}*/
 					else if (host == NULL) {
-						fprintf(stderr, "error: missing host in Contact uri\n");
+						fprintf(stderr, "error: missing host in Contact URI\n");
 						exit_code(2, __PRETTY_FUNCTION__, "missing host in Contact");
 					}
 					else {
@@ -689,7 +689,7 @@ int main(int argc, char *argv[])
 			case 's':
 				parse_uri(optarg, &scheme, &user, &host, &port);
 				if (scheme == NULL) {
-					fprintf(stderr, "error: missing scheme in sip uri\n");
+					fprintf(stderr, "error: missing scheme in SIP URI\n");
 					exit_code(2, __PRETTY_FUNCTION__, "missing scheme in target SIP URI");
 				}
 				if (strlen(optarg) == 4 && STRNCASECMP(optarg,"sips",4) == 0){
@@ -697,7 +697,7 @@ int main(int argc, char *argv[])
 					exit_code(2, __PRETTY_FUNCTION__, "unsupported scheme SIPS in target URI");
 				}
 				else if (strlen(optarg) != 3 || STRNCASECMP(optarg,"sip",3) != 0){
-					fprintf(stderr, "error: scheme of sip uri has to be sip\n");
+					fprintf(stderr, "error: scheme of SIP URI has to be sip\n");
 					exit_code(2, __PRETTY_FUNCTION__, "unsupported scheme in target URI");
 				}
 				if (user != NULL) {
@@ -707,7 +707,7 @@ int main(int argc, char *argv[])
 					domainname = host;
 				}
 				else {
-					fprintf(stderr, "error: missing hostname in sip uri\n");
+					fprintf(stderr, "error: missing hostname in SIP URI\n");
 					exit_code(2, __PRETTY_FUNCTION__, "missing host name in target URI");
 				}
 				if (port && !rport) {
@@ -930,7 +930,7 @@ int main(int argc, char *argv[])
 		}
 		if (contact_uri!=NULL) {
 			if (invite || message) {
-				fprintf(stderr, "error: Contact uri is not support for invites or "
+				fprintf(stderr, "error: Contact URI is not support for invites or "
 					"messages\n");
 				exit_code(2, __PRETTY_FUNCTION__, "Contact URI not supported for INVITE or MESSAGE mode");
 			}
@@ -962,12 +962,12 @@ int main(int argc, char *argv[])
 			exit_code(2, __PRETTY_FUNCTION__, "flood mode can't be combined with other modes");
 		}
 		if (!uri_b) {
-			fprintf(stderr, "error: we need at least a sip uri for flood\n");
+			fprintf(stderr, "error: we need at least a SIP URI for flood\n");
 			exit_code(2, __PRETTY_FUNCTION__, "missing target URI");
 		}
 		if (redirects) {
 			fprintf(stderr, "warning: redirects are not expected in flood. "
-				"disableing\n");
+				"disabling\n");
 			redirects=0;
 		}
 	}
@@ -978,7 +978,7 @@ int main(int argc, char *argv[])
 			exit_code(2, __PRETTY_FUNCTION__, "random mode can't be combined with other modes");
 		}
 		if (!uri_b) {
-			fprintf(stderr, "error: need at least a sip uri for random\n");
+			fprintf(stderr, "error: need at least a SIP URI for random\n");
 			exit_code(2, __PRETTY_FUNCTION__, "missing target URI");
 		}
 		if (redirects) {
@@ -997,7 +997,7 @@ int main(int argc, char *argv[])
 			message=1;
 		}
 		if (!uri_b) {
-			fprintf(stderr, "error: need at least a sip uri to send a meesage\n");
+			fprintf(stderr, "error: need at least a SIP URI to send a meesage\n");
 			exit_code(2, __PRETTY_FUNCTION__, "missing target SIP URI");
 		}
 		if (nameend==-1)
@@ -1007,7 +1007,7 @@ int main(int argc, char *argv[])
 	}
 	else {
 		if (!uri_b) {
-			fprintf(stderr, "error: a spi uri is needed at least\n");
+			fprintf(stderr, "error: a SIP URI is needed at least\n");
 			exit_code(2, __PRETTY_FUNCTION__, "missing target SIP URI");
 		}
 	}

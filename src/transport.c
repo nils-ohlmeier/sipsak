@@ -170,7 +170,7 @@ static void verify_cert2(gnutls_x509_crt_t crt, gnutls_x509_crt_t issuer,
 
 	/* Now check the expiration dates */
 	if (gnutls_x509_crt_get_activation_time(crt) > now) {
-		printf("Certificate not yet activated!\n");
+		printf("Certificate is not yet valid!\n");
 	}
 	if (gnutls_x509_crt_get_expiration_time(crt) < now) {
 		printf("Certificate expired!\n");
@@ -204,7 +204,7 @@ static void verify_last_cert(gnutls_x509_crt_t crt, gnutls_x509_crt_t *ca_list,
 	gnutls_x509_crt_verify(crt, ca_list, ca_list_size, 
 			GNUTLS_VERIFY_ALLOW_X509_V1_CA_CRT, &output);
 	if (output & GNUTLS_CERT_INVALID) {
-		printf("Certificate not truested!\n");
+		printf("Certificate not trusted!\n");
 		if (output & GNUTLS_CERT_SIGNER_NOT_CA) {
 			printf(": Issuer is not a CA\n");
 		}
@@ -215,7 +215,7 @@ static void verify_last_cert(gnutls_x509_crt_t crt, gnutls_x509_crt_t *ca_list,
 
 	/* Now check the expiration dates */
 	if (gnutls_x509_crt_get_activation_time(crt) > now) {
-		printf("Certificate now yet activated!\n");
+		printf("Certificate is not yet valid!\n");
 	}
 	if (gnutls_x509_crt_get_expiration_time(crt) < now) {
 		printf("Certificate expired!\n");
@@ -236,7 +236,7 @@ void verify_certificate_chain(gnutls_session_t session, const char *hostname,
 
 	cert = malloc(sizeof(*cert) * cert_chain_length);
 	if (!cert) {
-		printf("gnutla: failed to allocate memory for cert chain verification'n");
+		printf("gnutls: failed to allocate memory for cert chain verification'n");
 		return;
 	}
 
@@ -303,7 +303,7 @@ int verify_certificate_simple(gnutls_session_t session, const char *hostname) {
 		}
 	}
 	if (status & GNUTLS_CERT_REVOKED) {
-		printf("The certificate has beend revoked.\n");
+		printf("The certificate has been revoked.\n");
 		ret = -16;
 	}
 	if (ret != 0 && ignore_ca_fail == 0) {
@@ -322,7 +322,7 @@ int verify_certificate_simple(gnutls_session_t session, const char *hostname) {
 
 	cert_list = gnutls_certificate_get_peers(session, &cert_list_size);
 	if (cert_list == NULL) {
-		printf("gnutls did not found a server certificate.\n");
+		printf("gnutls did not find a server certificate.\n");
 		return -128;
 	}
 
@@ -338,7 +338,7 @@ int verify_certificate_simple(gnutls_session_t session, const char *hostname) {
 		return -512;
 	}
 	if (gnutls_x509_crt_get_activation_time(cert) > time(0)) {
-		printf("The server certificate is not yet activated.\n");
+		printf("The server certificate is not yet valid.\n");
 		return -1024;
 	}
 	if (!gnutls_x509_crt_check_hostname(cert, hostname)) {
@@ -383,7 +383,7 @@ void print_x509_certificate_info(gnutls_session_t session) {
 
 	// check if we got a X.509 cert
 	if (gnutls_certificate_type_get(session) != GNUTLS_CRT_X509) {
-		printf("TLS session did not received a X.509 certificate\n");
+		printf("TLS session did not receive a X.509 certificate\n");
 		return;
 	}
 
@@ -391,7 +391,7 @@ void print_x509_certificate_info(gnutls_session_t session) {
 	printf("Peer provided %u certificate(s)\n", cert_list_size);
 
 	if (cert_list_size > 0) {
-		// print only informations about the first cert
+		// print only information about the first cert
 		gnutls_x509_crt_init(&cert);
 		gnutls_x509_crt_import(cert, &cert_list[0], GNUTLS_X509_FMT_DER);
 		printf("Certificate info:\n");
@@ -402,7 +402,7 @@ void print_x509_certificate_info(gnutls_session_t session) {
 		// print the serial number of the certificate
 		size = sizeof(serial);
 		gnutls_x509_crt_get_serial(cert, serial, &size);
-		printf("\tCertificate serail number: %s\n", bin2hex(serial, size));
+		printf("\tCertificate serial number: %s\n", bin2hex(serial, size));
 		// extract public key algorithm
 		algo = gnutls_x509_crt_get_pk_algorithm(cert, &bits);
 		printf("\tCertificate public key algorithm: %s\n", gnutls_pk_algorithm_get_name(algo));
@@ -449,7 +449,7 @@ void gnutls_session_info(gnutls_session_t session) {
 	// print the key exchange algorithm name
 	kx = gnutls_kx_get(session);
 	tmp = gnutls_kx_get_name(kx);
-	printf("Key Echange: %s\n", tmp);
+	printf("Key Exchange: %s\n", tmp);
 
 	// check the authentication type
 	cred = gnutls_auth_get_type(session);
@@ -467,7 +467,7 @@ void gnutls_session_info(gnutls_session_t session) {
 		case GNUTLS_CRD_CERTIFICATE:
 			// check if we have been using ephemeral DH
 			if (kx == GNUTLS_KX_DHE_RSA || kx == GNUTLS_KX_DHE_DSS) {
-				printf("Emphemeral DH using prime of %d bits\n",
+				printf("Ephemeral DH using prime of %d bits\n",
 					gnutls_dh_get_prime_bits(session));
 			}
 			// print certificate informations if available
@@ -813,7 +813,7 @@ int check_for_message(char *recv, int size, struct sipsak_con_data *cd,
 			printf("did not get a response on this request:\n%s\n", request);
 			if (cseq_counter < nameend) {
 				if (count->randretrys == 2) {
-					printf("sended the following message three "
+					printf("sent the following message three "
 							"times without getting a response:\n%s\n"
 							"give up further retransmissions...\n", request);
 					log_message(request);
@@ -1180,7 +1180,7 @@ int set_target(struct sockaddr_in *adr, unsigned long target, int port, int sock
 				if (cert != 0) {
 					tls_dump_cert_info("TLS connect: server certificate", cert);
 					if (SSL_get_verify_result(ssl) != X509_V_OK) {
-						perror("TLS connect: server certifcate verification failed!!!\n");
+						perror("TLS connect: server certificate verification failed!!!\n");
 						exit_code(3, __PRETTY_FUNCTION__, "TLS server certificate verification falied");
 					}
 					X509_free(cert);
@@ -1194,7 +1194,7 @@ int set_target(struct sockaddr_in *adr, unsigned long target, int port, int sock
 				err = SSL_get_error(ssl, ret);
 				switch (err) {
 					case SSL_ERROR_ZERO_RETURN:
-						perror("TLS handshakre failed cleanly'n");
+						perror("TLS handshake failed cleanly'n");
 						break;
 					case SSL_ERROR_WANT_READ:
 						perror("Need to get more data to finish TLS connect\n");
