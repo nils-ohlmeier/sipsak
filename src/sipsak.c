@@ -158,8 +158,8 @@ void print_long_help() {
 		"  --transport=STRING         specify transport to be used\n"
 		"  --headers=STRING           adds additional headers to the request\n"
 		"  --local-ip=STRING          specify local ip address to be used\n"
-		"  --authhash=STRING          ha1 hash for authentication instead of password\n"
-		"  --sylog=NUMBER             log exit message to syslog with given log level\n"
+		"  --authhash=STRING          HA1 hash for authentication instead of password\n"
+		"  --syslog=NUMBER            log exit message to syslog with given log level\n"
 		, DEFAULT_TIMEOUT
 		);
 #ifdef WITH_TLS_TRANSP
@@ -191,7 +191,7 @@ void print_help() {
 	printf(
 		"  -C SIPURI         use the given URI as Contact in REGISTER\n"
 		"  -b NUMBER         the starting number appendix to the user name (default: 0)\n"
-		"  -e NUMBER         the ending numer of the appendix to the user name\n"
+		"  -e NUMBER         the ending number of the appendix to the user name\n"
 		"  -o NUMBER         sleep number ms before sending next request\n"
 		"  -x NUMBER         the expires header field value (default: 15)\n"
 		"  -z NUMBER         activates randomly removing of user bindings\n"
@@ -239,7 +239,7 @@ void print_help() {
 		"  -Z NUMBER         timeout T1 in ms (default: %i)\n"
 		"  -E STRING         specify transport to be used\n"
 		"  -j STRING         adds additional headers to the request\n"
-		"  -J STRING         sha1 hash for authentication instead of password\n"
+		"  -J STRING         HA1 hash for authentication instead of password\n"
 		"  -k STRING         specify local ip address to be used\n"
 		"  -K NUMBER         log exit message to syslog with given log level\n"
 		, DEFAULT_TIMEOUT
