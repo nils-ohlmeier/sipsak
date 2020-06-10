@@ -155,7 +155,7 @@ void cpy_to(char *reply, char *dest) {
 		strcpy(dst_to+(tmp-src_to+1), backup);
 		free(backup);
 		if (verbose >2)
-			printf("reply with copyed To:\n%s\n", dest);
+			printf("reply with copied To:\n%s\n", dest);
 	}
 }
 

@@ -130,8 +130,8 @@ unsigned long getaddress(char *host) {
 	*/
 	pent = gethostbyname(host);
 	if (!pent) {
-		printf("'%s' is unresolveable\n", host);
-		exit_code(2, __PRETTY_FUNCTION__, "hostname is not resolveable");
+		printf("'%s' is unresolvable\n", host);
+		exit_code(2, __PRETTY_FUNCTION__, "hostname is not resolvable");
 	}
 	addr = *(uint32_t *) (pent->h_addr);
 	return addr;
@@ -573,7 +573,7 @@ void get_fqdn() {
 	}
 	if ((strchr(fqdn, '.'))==NULL) {
 		if (hostname) {
-			fprintf(stderr, "warning: %s is not resolvable... continouing anyway\n", fqdn);
+			fprintf(stderr, "warning: %s is not resolvable... continuing anyway\n", fqdn);
 			strncpy(fqdn, hostname, FQDN_SIZE-1);
 		}
 		else {
