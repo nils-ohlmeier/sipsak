@@ -64,11 +64,11 @@ unsigned long getaddress(char *host);
 
 unsigned long getsrvadr(char *host, int *port, unsigned int *transport);
 
-void get_fqdn();
+void get_fqdn(int numeric, char *hostname);
 
 void replace_string(char *mes, char *search, char *replacement);
 
-void replace_strings(char *mes, char *strings);
+void replace_strings(char *mes, char *strings, char *replace_str);
 
 void insert_cr(char *mes);
 

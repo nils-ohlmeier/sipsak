@@ -510,7 +510,7 @@ unsigned long getsrvadr(char *host, int *port, unsigned int *transport) {
 /* because the full qualified domain name is needed by many other
    functions it will be determined by this function.
 */
-void get_fqdn() {
+void get_fqdn(int numeric, char *hostname) {
 	char hname[100], dname[100], hlp[18];
 	size_t namelen=100;
 	struct hostent* he;
@@ -611,7 +611,7 @@ void replace_string(char *mess, char *search, char *replacement) {
 
 /* checks if the strings contains special double marks and then
  * replace all occurrences of this strings in the message */
-void replace_strings(char *mes, char *strings) {
+void replace_strings(char *mes, char *strings, char *replace_str) {
 	char *pos, *atr, *val, *repl, *end;
 	char sep;
 

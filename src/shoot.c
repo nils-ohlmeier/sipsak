@@ -65,11 +65,13 @@ struct sipsak_con_data cdata;
 struct sipsak_counter counters;
 struct sipsak_delay delays;
 
+struct sipsak_msg_data msg_data;
+
 /* if a reply was received successfully, return success, unless
  * reply matching is enabled and no match occurred
  */
 
-static inline void on_success(char *_response)
+static inline void on_success(char *_response, regex_t *regex)
 {
 	if ((_response != NULL) && regex &&
 			regexec(regex, _response, 0, 0, 0) == REG_NOMATCH) {
@@ -94,7 +96,9 @@ static inline void create_usern(char *target, char *username, int number)
 }
 
 /* tries to take care of a redirection */
-void handle_3xx(struct sockaddr_in *tadr)
+void handle_3xx(struct sockaddr_in *tadr, int warning_ext, int rport,
+    unsigned long address, unsigned int transport, int outbound_proxy,
+    char *domainname)
 {
 	char *uscheme, *uuser, *uhost, *contact;
 
@@ -139,7 +143,8 @@ void handle_3xx(struct sockaddr_in *tadr)
 		}
 		free(contact);
 		if (!outbound_proxy)
-			cdata.connected = set_target(tadr, address, rport, cdata.csock, cdata.connected);
+			cdata.connected = set_target(tadr, address, rport, cdata.csock,
+          cdata.connected, cdata.transport, domainname);
 	}
 	else {
 		fprintf(stderr, "error: cannot handle this redirect:"
@@ -149,7 +154,7 @@ void handle_3xx(struct sockaddr_in *tadr)
 }
 
 /* takes care of replies in the trace route mode */
-void trace_reply()
+void trace_reply(regex_t *regex, int namebeg, struct sipsak_sr_time *timers, struct sipsak_msg_data *msg_data)
 {
 	char *contact;
 
@@ -158,11 +163,11 @@ void trace_reply()
 		printf("%i: ", namebeg);
 		if (verbose > 2) {
 			printf("(%.3f ms)\n%s\n", 
-				deltaT(&(timers.sendtime), &(timers.recvtime)), received);
+				deltaT(&(timers->sendtime), &(timers->recvtime)), received);
 		}
 		else {
 			warning_extract(received);
-			printf("(%.3f ms) ", deltaT(&(timers.sendtime), &(timers.recvtime)));
+			printf("(%.3f ms) ", deltaT(&(timers->sendtime), &(timers->recvtime)));
 			print_message_line(received);
 		}
 		namebeg++;
@@ -176,11 +181,11 @@ void trace_reply()
 		printf("%i: ", namebeg);
 		if (verbose > 2) {
 			printf("(%.3f ms)\n%s\n", 
-				deltaT(&(timers.sendtime), &(timers.recvtime)), received);
+				deltaT(&(timers->sendtime), &(timers->recvtime)), received);
 		}
 		else {
 			warning_extract(received);
-			printf("(%.3f ms) ", deltaT(&(timers.sendtime), &(timers.recvtime)));
+			printf("(%.3f ms) ", deltaT(&(timers->sendtime), &(timers->recvtime)));
 			print_message_line(received);
 		}
 		delays.retryAfter = timer_t2;
@@ -192,7 +197,7 @@ void trace_reply()
 		   be treated as final */
 		printf("%i: ", namebeg);
 		warning_extract(received);
-		printf("(%.3f ms) ", deltaT(&(timers.sendtime), &(timers.recvtime)));
+		printf("(%.3f ms) ", deltaT(&(timers->sendtime), &(timers->recvtime)));
 		print_message_line(received);
 		if ((contact = STRCASESTR(received, CONT_STR)) != NULL ||
 				(contact = STRCASESTR(received, CONT_SHORT_STR)) != NULL) {
@@ -206,7 +211,7 @@ void trace_reply()
 			printf("\twithout Contact header\n");
 		}
 		if (regexec(&(regexps.okexp), received, 0, 0, 0) == REG_NOERROR) {
-			on_success(received);
+			on_success(received, regex);
 		} else {
 			log_message(request);
 			exit_code(1, __PRETTY_FUNCTION__, "received final non-2xx reply");
@@ -215,7 +220,7 @@ void trace_reply()
 }
 
 /* takes care of replies in the default mode */
-void handle_default()
+void handle_default(regex_t *regex, struct sipsak_sr_time *timers)
 {
 	/* in the normal send and reply case anything other 
 	   then 1xx will be treated as final response*/
@@ -224,12 +229,12 @@ void handle_default()
 			printf("%s\n\n", received);
 			printf("** reply received ");
 			if ((counters.send_counter == 1) || (STRNCASECMP(request, ACK_STR, ACK_STR_LEN) == 0)) {
-				printf("after %.3f ms **\n", deltaT(&(timers.firstsendt), &(timers.recvtime)));
+				printf("after %.3f ms **\n", deltaT(&(timers->firstsendt), &(timers->recvtime)));
 			}
 			else {
 				printf("%.3f ms after first send\n   and "
-						"%.3f ms after last send **\n", deltaT(&(timers.firstsendt), &(timers.recvtime)), 
-						deltaT(&(timers.sendtime), &(timers.recvtime)));
+						"%.3f ms after last send **\n", deltaT(&(timers->firstsendt),
+              &(timers->recvtime)), deltaT(&(timers->sendtime), &(timers->recvtime)));
 			}
 			printf("   ");
 			print_message_line(received);
@@ -237,10 +242,10 @@ void handle_default()
 					" waiting for a final response\n");
 		}
 		if (inv_trans) {
-			delays.retryAfter = timer_final;
+			delays.retryAfter = timers->timer_final;
 		}
 		else {
-			delays.retryAfter = timer_t2;
+			delays.retryAfter = timers->timer_t2;
 		}
 		cdata.dontsend = 1;
 		return;
@@ -250,12 +255,12 @@ void handle_default()
 			printf("%s\n\n", received);
 			printf("** reply received ");
 			if ((counters.send_counter == 1) || (STRNCASECMP(request, ACK_STR, ACK_STR_LEN) == 0)){
-				printf("after %.3f ms **\n", deltaT(&(timers.firstsendt), &(timers.recvtime)));
+				printf("after %.3f ms **\n", deltaT(&(timers->firstsendt), &(timers->recvtime)));
 			}
 			else {
 				printf("%.3f ms after first send\n   and "
-						"%.3f ms after last send **\n", deltaT(&(timers.firstsendt), &(timers.recvtime)), 
-						deltaT(&(timers.sendtime), &(timers.recvtime)));
+						"%.3f ms after last send **\n", deltaT(&(timers->firstsendt),
+              &(timers->recvtime)), deltaT(&(timers->sendtime), &(timers->recvtime)));
 			}
 			printf("   ");
 			print_message_line(received);
@@ -264,9 +269,9 @@ void handle_default()
 		else if (verbose>0) {
 			printf("%s\n", received);
 		}
-		if (timing > 0) {
-			timing--;
-			if (timing == 0) {
+		if (timers->timing > 0) {
+			timers->timing--;
+			if (timers->timing == 0) {
 				if (counters.run == 0) {
 					counters.run++;
 				}
@@ -275,12 +280,12 @@ void handle_default()
 			else {
 				counters.run++;
 				new_transaction(request, response);
-				delays.retryAfter = timer_t1;
+				delays.retryAfter = timers->timer_t1;
 			}
 		}
-		if (timing == 0) {
+		if (timers->timing == 0) {
 			if (regexec(&(regexps.okexp), received, 0, 0, 0) == REG_NOERROR) {
-				on_success(received);
+				on_success(received, regex);
 			}
 			else {
 				log_message(request);
@@ -291,7 +296,7 @@ void handle_default()
 }
 
 /* takes care of replies in the readntrash mode */
-void handle_randtrash()
+void handle_randtrash(int warning_ext, int nameend)
 {
 	/* in randomzing trash we are expexting 4?? error codes
 	   everything else should not be normal */
@@ -333,7 +338,9 @@ void handle_randtrash()
 }
 
 /* takes care of replies in the usrloc mode */
-void handle_usrloc()
+void handle_usrloc(regex_t *regex, int namebeg, int nameend, int rand_rem,
+    char *username, int nagios_warn, struct sipsak_sr_time *timers,
+    char *mes_body)
 {
 	char *crlf;
 	char ruri[11+12+20]; //FIXME: username length 20 should be dynamic
@@ -344,10 +351,10 @@ void handle_usrloc()
 			printf("ignoring provisional response\n\n");
 		}
 		if (inv_trans) {
-			delays.retryAfter = timer_final;
+			delays.retryAfter = timers->timer_final;
 		}
 		else {
-			delays.retryAfter = timer_t2;
+			delays.retryAfter = timers->timer_t2;
 		}
 		cdata.dontsend = 1;
 	}
@@ -378,7 +385,7 @@ void handle_usrloc()
 										" completed successful.\nreceived"
 										" last message %.3f ms after first"
 										" request (test duration).\n", 
-										deltaT(&(timers.firstsendt), &(timers.recvtime)));
+										deltaT(&(timers->firstsendt), &(timers->recvtime)));
 						}
 						if (delays.big_delay>0 && verbose>0) {
 							printf("biggest delay between "
@@ -399,11 +406,11 @@ void handle_usrloc()
 								exit_code(4, __PRETTY_FUNCTION__, "#retransmissions above nagios warn level");
 							}
 						}
-						if (timing) {
+						if (timers->timing) {
 							printf("%.3f ms\n",
-										deltaT(&(timers.firstsendt), &(timers.recvtime)));
+										deltaT(&(timers->firstsendt), &(timers->recvtime)));
 						}
-						on_success(received);
+						on_success(received, regex);
 					} /* namebeg == nameend */
 					/* lets see if we deceid to remove a 
 					   binding (case 6)*/
@@ -519,7 +526,8 @@ void handle_usrloc()
 							printf("\nAll usrloc tests completed "
 										"successful.\nreceived last message"
 										" %.3f ms after first request (test"
-										" duration).\n", deltaT(&(timers.firstsendt), &(timers.recvtime)));
+										" duration).\n", deltaT(&(timers->firstsendt),
+                      &(timers->recvtime)));
 						}
 						if (delays.big_delay>0) {
 							printf("biggest delay between "
@@ -540,7 +548,7 @@ void handle_usrloc()
 								exit_code(4, __PRETTY_FUNCTION__, "#retransmissions above nagios warn level");
 							}
 						}
-						on_success(received);
+						on_success(received, regex);
 					} /* namebeg == nameend */
 					if (usrloc == 1) {
 						/* lets see if we deceid to remove a 
@@ -631,7 +639,8 @@ void handle_usrloc()
 							printf("\nAll usrloc tests completed "
 										"successful.\nreceived last message"
 										" %.3f ms after first request (test"
-										" duration).\n", deltaT(&(timers.firstsendt), &(timers.recvtime)));
+										" duration).\n", deltaT(&(timers->firstsendt),
+                      &(timers->recvtime)));
 						}
 						if (delays.big_delay>0) {
 							printf("biggest delay between "
@@ -653,7 +662,7 @@ void handle_usrloc()
 								exit_code(4, __PRETTY_FUNCTION__, "#retransmissions above nagios warn level");
 							}
 						}
-						on_success(received);
+						on_success(received, regex);
 					} /* namebeg == nameend */
 					if (usrloc == 1) {
 						/* lets see if we deceid to remove a 
@@ -800,7 +809,7 @@ void before_sending()
 }
 
 /* this is the main function with the loops and modes */
-void shoot(char *buf, int buff_size)
+void shoot(char *buf, int buff_size, struct sipsak_options *options)
 {
 	struct timespec sleep_ms_s, sleep_rem;
 	int ret, cseqtmp, rand_tmp;
@@ -820,16 +829,21 @@ void shoot(char *buf, int buff_size)
 	/* initalize local vars */
 	cdata.dontsend=cdata.dontrecv=counters.retrans_r_c=counters.retrans_s_c= 0;
 	delays.big_delay=counters.send_counter=counters.run= 0;
-	timers.delaytime.tv_sec = 0;
-	timers.delaytime.tv_usec = 0;
 	usern = NULL;
 	/* initialize local arrays */
 	memset(buf2, 0, BUFSIZE);
 	memset(buf3, 0, BUFSIZE);
 	memset(lport_str, 0, LPORT_STR_LEN);
 
+	counters.namebeg = options->namebeg;
+	counters.nameend = options->nameend;
+
 	cdata.csock = cdata.usock = -1;
 	cdata.connected = 0;
+	cdata.transport = options->transport;
+	cdata.symmetric = options->symmetric;
+	cdata.lport = options->lport;
+	cdata.rport = options->rport;
 	cdata.buf_tmp = NULL;
 	cdata.buf_tmp_size = 0;
 
@@ -838,12 +852,30 @@ void shoot(char *buf, int buff_size)
 	memset(&(timers.firstsendt), 0, sizeof(timers.firstsendt));
 	memset(&(timers.starttime), 0, sizeof(timers.starttime));
 	memset(&(timers.delaytime), 0, sizeof(timers.delaytime));
+	timers.timer_t1 = options->timer_t1;
+	timers.timer_final = options->timer_final;
+	timers.timing = options->timing;
 
 	request = buf;
 	response = buf2;
 	received = buf3;
 
-	create_sockets(&cdata);
+	msg_data.cseq = options->cseq;
+	msg_data.lport = options->lport;
+	msg_data.expires_t = options->expires_t;
+	msg_data.empty_contact = options->empty_contact;
+	msg_data.transport = options->transport;
+	msg_data.req_buff = request;
+	msg_data.repl_buff = NULL;
+	msg_data.username = options->username;
+	msg_data.domainname = options->domainname;
+	msg_data.contact_uri = options->contact_uri;
+	msg_data.con_dis = options->con_dis;
+	msg_data.from_uri = options->from_uri;
+	msg_data.mes_body = options->mes_body;
+	msg_data.headers = options->headers;
+
+	create_sockets(&cdata, options->local_ip, options->verbose);
 
 	if (sleep_ms != 0) {
 		if (sleep_ms == -2) {
@@ -955,14 +987,15 @@ void shoot(char *buf, int buff_size)
 				inv_trans = 1;
 			}
 			if(via_ins == 1)
-				add_via(request);
+				add_via(request, options->lport);
 		}
 		/* delays.retryAfter = delays.retryAfter / 10; */
 		if(maxforw!=-1)
 			set_maxforw(request, maxforw);
 	}
 
-	cdata.connected = set_target(&(cdata.adr), address, rport, cdata.csock, cdata.connected);
+	cdata.connected = set_target(&(cdata.adr), address, rport, cdata.csock,
+      cdata.connected, cdata.transport, options->domainname);
 
 	/* here we go until someone decides to exit */
 	while(1) {
@@ -981,12 +1014,12 @@ void shoot(char *buf, int buff_size)
 			nanosleep(&sleep_ms_s, &sleep_rem);
 		}
 
-		send_message(request, &cdata, &counters, &timers);
+		send_message(request, &cdata, &counters, &timers, options->verbose);
 
 		/* in flood we are only interested in sending so skip the rest */
 		if (flood == 0) {
 			ret = recv_message(received, BUFSIZE, inv_trans, &delays, &timers,
-						&counters, &cdata, &regexps);
+						&counters, &cdata, &regexps, options->randtrash, options->verbose);
 			if(ret > 0)
 			{
 				if (usrlocstep == INV_OK_RECV) {
@@ -1000,7 +1033,7 @@ void shoot(char *buf, int buff_size)
 					cdata.dontsend = 0;
 					inv_trans = 0;
 					/* lets fire the ACK to the server */
-					send_message(response, &cdata, &counters, &timers);
+					send_message(response, &cdata, &counters, &timers, options->verbose);
 					inv_trans = 1;
 				}
 				/* check for old CSeq => ignore retransmission */
@@ -1036,7 +1069,8 @@ void shoot(char *buf, int buff_size)
 					}
 					/* prevents a strange error */
 					regcomp(&(regexps.authexp), "^SIP/[0-9]\\.[0-9] 40[17] ", REG_EXTENDED|REG_NOSUB|REG_ICASE);
-					insert_auth(request, received);
+					insert_auth(request, received, options->username, options->password,
+              options->auth_username, options->namebeg, options->nameend);
 					if (verbose > 2)
 						printf("\nreceived:\n%s\n", received);
 					new_transaction(request, response);

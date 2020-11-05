@@ -61,6 +61,8 @@
 #include "shoot.h"
 #include "exit_code.h"
 
+int verbose;
+
 static void sigchld_handler(int signo)
 {
 	int chld_status;
@@ -257,6 +259,7 @@ int main(int argc, char *argv[])
 	pid_t 	pid;
 	struct 	timespec ts;
 	int 	upp;
+  struct sipsak_options options;
 
 #ifdef HAVE_GETOPT_LONG
 	int option_index = 0;
@@ -318,23 +321,18 @@ int main(int argc, char *argv[])
 	};
 #endif
 	/* some initialisation to be safe */
-	file_b=uri_b=trace=lport=usrloc=flood=verbose=randtrash=trashchar = 0;
-	warning_ext=rand_rem=nonce_count=replace_b=invite=message=sysl = 0;
-	sleep_ms=empty_contact=nagios_warn=timing=outbound_proxy=symmetric = 0;
+	memset(&options, sizeof(struct sipsak_options), 0);
 	namebeg=nameend=maxforw= -1;
 #ifdef OLDSTYLE_FQDN
 	numeric = 0;
 #else
 	numeric = 1;
 #endif
+  verbose = 0;
 	via_ins=redirects=fix_crlf=processes = 1;
-	username=password=replace_str=hostname=contact_uri=mes_body = NULL;
-	con_dis=auth_username=from_uri=headers=authhash=local_ip = NULL;
-	scheme = user = host = backup = request = response = received = NULL;
-	regex = NULL;
 	address= 0;
 	transport=tsp = 0;
-	rport = port = 0;
+	port = 0;
 	expires_t = USRLOC_EXP_DEF;
 	timer_t1 = SIP_T1;
 	timer_t2 = 8;
@@ -517,7 +515,7 @@ int main(int argc, char *argv[])
 				}
 				break;
 			case 'F':
-				flood=1;
+				options.mode = SM_FLOOD;
 				break;
 			case 'f':
 				if (strlen(optarg) != 1 && STRNCASECMP(optarg, "-", 1) != 0) {
@@ -564,7 +562,7 @@ int main(int argc, char *argv[])
 				via_ins=0;
 				break;
 			case 'I':
-				invite=1;
+				options.mode = SM_INVITE;
 				break;
 			case 'j':
 				headers=optarg;
@@ -599,13 +597,13 @@ int main(int argc, char *argv[])
 				maxforw=str_to_int(0, optarg);
 				break;
 			case 'M':
-				message=1;
+				options.mode = SM_MESSAGE;
 				break;
 			case 'n':
 				numeric = 0;
 				break;
 			case 'N':
-				exit_mode=EM_NAGIOS;
+				exit_mode = EM_NAGIOS;
 				break;
 			case 'o':
 				sleep_ms = 0;
@@ -684,7 +682,7 @@ int main(int argc, char *argv[])
 				rport = port;
 				break;
 			case 'R':
-				randtrash=1;
+				options.mode = SM_RANDTRASH;
 				break;
 			case 's':
 				parse_uri(optarg, &scheme, &user, &host, &port);
@@ -752,10 +750,10 @@ int main(int argc, char *argv[])
 				trashchar=str_to_int(0, optarg);
 				break;
 			case 'T':
-				trace=1;
+				options.mode = SM_TRACE;
 				break;
 			case 'U':
-				usrloc=1;
+				options.mode = SM_USRLOC;
 				break;
 			case 'u':
 				auth_username=str_alloc(strlen(optarg) + 1);
@@ -873,12 +871,7 @@ int main(int argc, char *argv[])
 			insert_header(buff, headers, 1);
 	}
 	/* lots of conditions to check */
-	if (trace) {
-		if (usrloc || flood || randtrash) {
-			fprintf(stderr, "error: trace can't be combined with usrloc, random or "
-				"flood\n");
-			exit_code(2, __PRETTY_FUNCTION__, "trace mode can't be combined with other modes");
-		}
+	if (options.mode == SM_TRACE) {
 		if (!uri_b) {
 			fprintf(stderr, "error: for trace mode a SIPURI is really needed\n");
 			exit_code(2, __PRETTY_FUNCTION__, "missing URI for trace mode");
@@ -902,12 +895,9 @@ int main(int argc, char *argv[])
 		}
 		if (maxforw==-1) maxforw=255;
 	}
-	else if (usrloc || invite || message) {
-		if (trace || flood || randtrash) {
-			fprintf(stderr, "error: usrloc can't be combined with trace, random or "
-				"flood\n");
-			exit_code(2, __PRETTY_FUNCTION__, "usrloc mode can't be combined with other modes");
-		}
+	else if (options.mode == SM_USRLOC ||
+           options.mode == SM_INVITE ||
+           options.mode == SM_MESSAGE) {
 		if (!username || !uri_b) {
 			fprintf(stderr, "error: for the USRLOC mode you have to give a SIPURI with "
 				"a username\n       at least\n");
@@ -918,10 +908,6 @@ int main(int argc, char *argv[])
 				"number have to be specified\n");
 			exit_code(2, __PRETTY_FUNCTION__, "missing end number");
 		}
-		if (invite && message) {
-			fprintf(stderr, "error: invite and message tests are XOR\n");
-			exit_code(2, __PRETTY_FUNCTION__, "INVITE and MESSAGE tests are XOR");
-		}
 		if (!usrloc && invite && !lport) {
 			fprintf(stderr, "warning: Do NOT use the usrloc invite mode without "
 				"registering sipsak before.\n         See man page for "
@@ -929,7 +915,8 @@ int main(int argc, char *argv[])
 			exit_code(2, __PRETTY_FUNCTION__, "don't use usrloc INVITE mode without registerting before");
 		}
 		if (contact_uri!=NULL) {
-			if (invite || message) {
+			if (options.mode == SM_INVITE ||
+          options.mode == SM_MESSAGE) {
 				fprintf(stderr, "error: Contact URI is not support for invites or "
 					"messages\n");
 				exit_code(2, __PRETTY_FUNCTION__, "Contact URI not supported for INVITE or MESSAGE mode");
@@ -955,12 +942,7 @@ int main(int argc, char *argv[])
 		if (namebeg==-1)
 			namebeg=0;
 	}
-	else if (flood) {
-		if (trace || usrloc || randtrash) {
-			fprintf(stderr, "error: flood can't be combined with trace, random or "
-				"usrloc\n");
-			exit_code(2, __PRETTY_FUNCTION__, "flood mode can't be combined with other modes");
-		}
+	else if (options.mode == SM_FLOOD) {
 		if (!uri_b) {
 			fprintf(stderr, "error: we need at least a SIP URI for flood\n");
 			exit_code(2, __PRETTY_FUNCTION__, "missing target URI");
@@ -971,12 +953,7 @@ int main(int argc, char *argv[])
 			redirects=0;
 		}
 	}
-	else if (randtrash) {
-		if (trace || usrloc || flood) {
-			fprintf(stderr, "error: random can't be combined with trace, flood or "
-				"usrloc\n");
-			exit_code(2, __PRETTY_FUNCTION__, "random mode can't be combined with other modes");
-		}
+	else if (options.mode == SM_RANDTRASH) {
 		if (!uri_b) {
 			fprintf(stderr, "error: need at least a SIP URI for random\n");
 			exit_code(2, __PRETTY_FUNCTION__, "missing target URI");
@@ -992,9 +969,9 @@ int main(int argc, char *argv[])
 		}
 	}
 	else if (mes_body) {
-		if (!message) {
+		if (options.mode != SM_MESSAGE) {
 			fprintf(stderr, "warning: to send a message mode (-M) is required. activating\n");
-			message=1;
+			options.mode == SM_MESSAGE;
 		}
 		if (!uri_b) {
 			fprintf(stderr, "error: need at least a SIP URI to send a meesage\n");
@@ -1049,7 +1026,7 @@ int main(int argc, char *argv[])
 #endif /* WITH_TLS_TRANSP */
 
 	/* determine our hostname */
-	get_fqdn();
+	get_fqdn(options.numeric, options.hostname);
 	
 	/* this is not a cryptographic random number generator,
 	   but hey this is only a test-tool => should be satisfying*/
@@ -1095,7 +1072,7 @@ int main(int argc, char *argv[])
 		namebeg = namebeg + upp * i;
 		nameend = namebeg + upp;
 	}
-	shoot(&buff[0], sizeof(buff));
+	shoot(&buff[0], sizeof(buff), &options);
 
 	/* normaly we won't come back here, but to satisfy the compiler */
 	return 0;

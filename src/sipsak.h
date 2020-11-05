@@ -322,19 +322,63 @@ SSL* ssl;
 #endif
 
 /* lots of global variables. ugly but makes life easier. */
-unsigned long address;
-unsigned int nonce_count, transport;
-int sleep_ms, processes, cseq_counter;
-int verbose, nameend, namebeg, expires_t, flood, warning_ext, invite, message;
-int maxforw, lport, rport, randtrash, trashchar, numeric, symmetric;
-int file_b, uri_b, trace, via_ins, usrloc, redirects, rand_rem, replace_b;
-int empty_contact, nagios_warn, fix_crlf, timing, outbound_proxy;
-int timer_t1, timer_t2, timer_final, sysl;
-char *username, *domainname, *password, *replace_str, *hostname, *contact_uri;
-char *mes_body, *con_dis, *auth_username, *from_uri, *headers, *authhash, *local_ip;
+unsigned int nonce_count;
+int cseq_counter;
+int timer_t2;
 char fqdn[FQDN_SIZE];
 char target_dot[INET_ADDRSTRLEN], source_dot[INET_ADDRSTRLEN];
 char *request, *response, *received, *transport_str;
-regex_t* regex;
+
+extern int verbose;
+
+enum sipsak_modes { SM_UNDEFINED, SM_USRLOC, SM_INVITE, SM_MESSAGE, SM_FLOOD,
+  SM_TRACE, SM_RANDTRASH };
+
+struct sipsak_options {
+  int timing;
+  int namebeg;
+  int nameend;
+  int empty_contact;
+  int redirects;
+  int timer_final;
+  int file_b;
+  int replace_b;
+  int via_ins;
+  int sysl;
+  int lport;
+  int rport;
+  int fix_crlf;
+  int maxforw;
+  int numeric;
+  int sleep_ms;
+  int outbound_proxy;
+  int processes;
+  int randtrash;
+  int trashchar;
+  int uri_b;
+  int symmetric;
+  int warning_ext;
+  int nagios_warn;
+  int expires_t;
+  int rand_rem;
+  int timer_t1;
+  enum sipsak_modes mode;
+  char *password;
+  char *mes_body;
+  char *from_uri;
+  char *contact_uri;
+  char *replace_str;
+  char *hostname;
+  char *headers;
+  char *authhash;
+  char *local_ip;
+  char *con_dis;
+  char *username;
+  char *domainname;
+  char *auth_username;
+  unsigned int transport;
+  unsigned long address;
+  regex_t *regex;
+};
 
 #endif

@@ -53,7 +53,9 @@ void cvt_hex(unsigned char *_b, unsigned char *_h, int length)
 }
 
 /* check for, create and insert a auth header into the message */
-void insert_auth(char *message, char *authreq)
+void insert_auth(char *message, char *authreq, char *username,
+    char *password, char *auth_username, char *authhash,
+    int namebeg, int nameend)
 {
 	char *auth, *begin, *end, *insert, *backup, *realm, *usern, *nonce;
 	char *method, *uri;

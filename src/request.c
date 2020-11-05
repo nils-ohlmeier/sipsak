@@ -27,24 +27,24 @@
 #include "header_f.h"
 
 /* create a valid sip header for the different modes */
-void create_msg(int action, char *req_buff, char *repl_buff, char *username, int cseq){
+void create_msg(int action, struct sipsak_msg_data *msg_data){
 	unsigned int c, d, len;
-	char *req_buf_begin = req_buff;
+	char *req_buf_begin = msg_data->req_buff;
 
-	if(cseq == 0) {
+	if(msg_data->cseq == 0) {
 		fprintf(stderr, "error: CSeq 0 is not allowed\n");
 		exit_code(253, __PRETTY_FUNCTION__, "invalid CSeq 0");
 	}
-	if (req_buff == NULL)
+	if (msg_data->req_buff == NULL)
 		abort();
-	if (username == NULL)
-		username = "";
+	if (msg_data->username == NULL)
+		msg_data->username = "";
 	c=(unsigned int)rand();
-	c+=lport;
+	c+=msg_data->lport;
 	d=(unsigned int)rand();
 	switch (action){
 		case REQ_REG:
-			sprintf(req_buff, 
+			sprintf(msg_data->req_buff,
 				"%s sip:%s%s"
 				"%ssip:%s%s;tag=%x\r\n"
 				"%ssip:%s%s\r\n"
@@ -53,40 +53,40 @@ void create_msg(int action, char *req_buff, char *repl_buff, char *username, int
 				"%s0\r\n"
 				"%s70\r\n"
 				"%s%s\r\n",
-				REG_STR, domainname, SIP20_STR, 
-				FROM_STR, username, domainname, c,
-				TO_STR, username, domainname, 
-				CALL_STR, c, fqdn, 
-				CSEQ_STR, cseq, REG_STR, 
-				CON_LEN_STR, 
-				MAX_FRW_STR, 
+				REG_STR, msg_data->domainname, SIP20_STR,
+				FROM_STR, msg_data->username, msg_data->domainname, c,
+				TO_STR, msg_data->username, msg_data->domainname,
+				CALL_STR, c, fqdn,
+				CSEQ_STR, msg_data->cseq, REG_STR,
+				CON_LEN_STR,
+				MAX_FRW_STR,
 				UA_STR, UA_VAL_STR);
-			req_buff += strlen(req_buff);
-			if (contact_uri!=NULL) {
-				sprintf(req_buff, "%s%i\r\n"
+			msg_data->req_buff += strlen(msg_data->req_buff);
+			if (msg_data->contact_uri!=NULL) {
+				sprintf(msg_data->req_buff, "%s%i\r\n"
 					"%s%s\r\n\r\n",
-					EXP_STR, expires_t,
-					CONT_STR, contact_uri);
+					EXP_STR, msg_data->expires_t,
+					CONT_STR, msg_data->contact_uri);
 			}
-			else if (empty_contact == 0) {
-				sprintf(req_buff, "%s%i\r\n"
+			else if (msg_data->empty_contact == 0) {
+				sprintf(msg_data->req_buff, "%s%i\r\n"
 					"%ssip:%s%s:%i",
-					EXP_STR, expires_t,
-					CONT_STR, username, fqdn, lport);
-				req_buff += strlen(req_buff);
-				if (transport != SIP_UDP_TRANSPORT)
-					sprintf(req_buff, "%s%s\r\n\r\n", TRANSPORT_PARAMETER_STR,
+					EXP_STR, msg_data->expires_t,
+					CONT_STR, msg_data->username, fqdn, msg_data->lport);
+				msg_data->req_buff += strlen(msg_data->req_buff);
+				if (msg_data->transport != SIP_UDP_TRANSPORT)
+					sprintf(msg_data->req_buff, "%s%s\r\n\r\n", TRANSPORT_PARAMETER_STR,
 							transport_str);
 				else
-					sprintf(req_buff, "\r\n\r\n");
+					sprintf(msg_data->req_buff, "\r\n\r\n");
 			}
 			else{
-				sprintf(req_buff, "\r\n");
+				sprintf(msg_data->req_buff, "\r\n");
 			}
-			add_via(req_buf_begin);
+			add_via(req_buf_begin, msg_data->lport);
 			break;
 		case REQ_REM:
-			sprintf(req_buff, 
+			sprintf(msg_data->req_buff,
 				"%s sip:%s%s"
 				"%ssip:%s%s;tag=%x\r\n"
 				"%ssip:%s%s\r\n"
@@ -97,28 +97,28 @@ void create_msg(int action, char *req_buff, char *repl_buff, char *username, int
 				"%s70\r\n"
 				"%s%s\r\n"
 				"%ssip:%s%s:%i;%s0",
-				REG_STR, domainname, SIP20_STR, 
-				FROM_STR, username, domainname, c,
-				TO_STR, username, domainname, 
+				REG_STR, msg_data->domainname, SIP20_STR,
+				FROM_STR, msg_data->username, msg_data->domainname, c,
+				TO_STR, msg_data->username, msg_data->domainname,
 				CALL_STR, c, fqdn,
-				CSEQ_STR, cseq, REG_STR, 
-				EXP_STR, expires_t, 
-				CON_LEN_STR, 
-				MAX_FRW_STR, 
+				CSEQ_STR, msg_data->cseq, REG_STR,
+				EXP_STR, msg_data->expires_t,
+				CON_LEN_STR,
+				MAX_FRW_STR,
 				UA_STR, UA_VAL_STR,
-				CONT_STR, username, fqdn, lport, CON_EXP_STR);
-			req_buff += strlen(req_buff);
-			if (transport != SIP_UDP_TRANSPORT) {
-				sprintf(req_buff, "\r\n\r\n");
+				CONT_STR, msg_data->username, fqdn, msg_data->lport, CON_EXP_STR);
+			msg_data->req_buff += strlen(msg_data->req_buff);
+			if (msg_data->transport != SIP_UDP_TRANSPORT) {
+				sprintf(msg_data->req_buff, "\r\n\r\n");
 			}
 			else {
-				sprintf(req_buff, "%s%s\r\n\r\n", TRANSPORT_PARAMETER_STR,
+				sprintf(msg_data->req_buff, "%s%s\r\n\r\n", TRANSPORT_PARAMETER_STR,
 						transport_str);
 			}
-			add_via(req_buf_begin);
+			add_via(req_buf_begin, msg_data->lport);
 			break;
 		case REQ_INV:
-			sprintf(req_buff, 
+			sprintf(msg_data->req_buff,
 				"%s sip:%s%s%s"
 				"%ssip:%s%s\r\n"
 				"%s%u@%s\r\n"
@@ -128,30 +128,30 @@ void create_msg(int action, char *req_buff, char *repl_buff, char *username, int
 				"%sDONT ANSWER this test call!\r\n"
 				"%s70\r\n"
 				"%s%s\r\n",
-				INV_STR, username, domainname, SIP20_STR, 
-				TO_STR, username, domainname, 
-				CALL_STR, c, fqdn, 
-				CSEQ_STR, cseq, INV_STR, 
-				CON_LEN_STR, 
-				CONT_STR, fqdn, lport,
-				SUB_STR, 
-				MAX_FRW_STR, 
+				INV_STR, msg_data->username, msg_data->domainname, SIP20_STR,
+				TO_STR, msg_data->username, msg_data->domainname,
+				CALL_STR, c, fqdn,
+				CSEQ_STR, msg_data->cseq, INV_STR,
+				CON_LEN_STR,
+				CONT_STR, fqdn, msg_data->lport,
+				SUB_STR,
+				MAX_FRW_STR,
 				UA_STR, UA_VAL_STR);
-			req_buff += strlen(req_buff);
-			if (from_uri) {
-				sprintf(req_buff,
+			msg_data->req_buff += strlen(msg_data->req_buff);
+			if (msg_data->from_uri) {
+				sprintf(msg_data->req_buff,
 					"%s%s;tag=%x\r\n"
 					"\r\n",
-					FROM_STR, from_uri, c);
+					FROM_STR, msg_data->from_uri, c);
 			}
 			else {
-				sprintf(req_buff,
+				sprintf(msg_data->req_buff,
 					"%ssip:sipsak@%s:%i;tag=%x\r\n"
 					"\r\n",
-					FROM_STR, fqdn, lport, c);
+					FROM_STR, fqdn, msg_data->lport, c);
 			}
-			add_via(req_buf_begin);
-			sprintf(repl_buff, 
+			add_via(req_buf_begin, msg_data->lport);
+			sprintf(msg_data->repl_buff,
 				"%s"
 				"%ssip:sipsak@%s:%i;tag=%x\r\n"
 				"%ssip:%s%s;tag=%o%o\r\n"
@@ -161,17 +161,17 @@ void create_msg(int action, char *req_buff, char *repl_buff, char *username, int
 				"%ssip:sipsak_conf@%s:%i\r\n"
 				"%s%s\r\n"
 				"\r\n", 
-				SIP200_STR, 
-				FROM_STR, fqdn, lport, c,
-				TO_STR, username, domainname, c, d,
-				CALL_STR, c, fqdn, 
-				CSEQ_STR, cseq, INV_STR, 
+				SIP200_STR,
+				FROM_STR, fqdn, msg_data->lport, c,
+				TO_STR, msg_data->username, msg_data->domainname, c, d,
+				CALL_STR, c, fqdn,
+				CSEQ_STR, msg_data->cseq, INV_STR,
 				CON_LEN_STR,
-				CONT_STR, fqdn, lport,
+				CONT_STR, fqdn, msg_data->lport,
 				UA_STR, UA_VAL_STR);
 			break;
 		case REQ_MES:
-			sprintf(req_buff,
+			sprintf(msg_data->req_buff,
 				"%s sip:%s%s%s"
 				"%ssip:%s%s\r\n"
 				"%s%u@%s\r\n"
@@ -179,51 +179,51 @@ void create_msg(int action, char *req_buff, char *repl_buff, char *username, int
 				"%s%s\r\n"
 				"%s70\r\n"
 				"%s%s\r\n",
-				MES_STR, username, domainname, SIP20_STR, 
-				TO_STR, username, domainname, 
-				CALL_STR, c, fqdn, 
-				CSEQ_STR, cseq, MES_STR, 
-				CON_TYP_STR, TXT_PLA_STR, 
-				MAX_FRW_STR, 
+				MES_STR, msg_data->username, msg_data->domainname, SIP20_STR,
+				TO_STR, msg_data->username, msg_data->domainname,
+				CALL_STR, c, fqdn,
+				CSEQ_STR, msg_data->cseq, MES_STR,
+				CON_TYP_STR, TXT_PLA_STR,
+				MAX_FRW_STR,
 				UA_STR, UA_VAL_STR);
-			req_buff += strlen(req_buff);
-			if (from_uri) {
-				sprintf(req_buff,
+			msg_data->req_buff += strlen(msg_data->req_buff);
+			if (msg_data->from_uri) {
+				sprintf(msg_data->req_buff,
 					"%s%s;tag=%x\r\n",
-					FROM_STR, from_uri, c);
+					FROM_STR, msg_data->from_uri, c);
 			}
 			else {
-				sprintf(req_buff,
+				sprintf(msg_data->req_buff,
 					"%ssip:sipsak@%s:%i;tag=%x\r\n",
-					FROM_STR, fqdn, lport, c);
+					FROM_STR, fqdn, msg_data->lport, c);
 			}
-			req_buff += strlen(req_buff);
-			if (mes_body) {
-				len = strlen(mes_body);
+			msg_data->req_buff += strlen(msg_data->req_buff);
+			if (msg_data->mes_body) {
+				len = strlen(msg_data->mes_body);
 			}
 			else {
-				len = SIPSAK_MES_STR_LEN + strlen(username);
+				len = SIPSAK_MES_STR_LEN + strlen(msg_data->username);
 			}
-			sprintf(req_buff, "%s%u\r\n", CON_LEN_STR, len);
-			req_buff += strlen(req_buff);
-			if (con_dis) {
-				sprintf(req_buff, "%s%s\r\n", CON_DIS_STR, con_dis);
-				req_buff += strlen(req_buff);
+			sprintf(msg_data->req_buff, "%s%u\r\n", CON_LEN_STR, len);
+			msg_data->req_buff += strlen(msg_data->req_buff);
+			if (msg_data->con_dis) {
+				sprintf(msg_data->req_buff, "%s%s\r\n", CON_DIS_STR, msg_data->con_dis);
+				msg_data->req_buff += strlen(msg_data->req_buff);
 			}
-			sprintf(req_buff, "\r\n");
-			req_buff += 2;
-			if (mes_body) {
-				sprintf(req_buff,
+			sprintf(msg_data->req_buff, "\r\n");
+			msg_data->req_buff += 2;
+			if (msg_data->mes_body) {
+				sprintf(msg_data->req_buff,
 					"%s",
-					mes_body);
+					msg_data->mes_body);
 			}
 			else {
-				sprintf(req_buff, "%s%s", SIPSAK_MES_STR, username);
-				req_buff += strlen(req_buff) - 1;
-				*(req_buff) = '.';
+				sprintf(msg_data->req_buff, "%s%s", SIPSAK_MES_STR, msg_data->username);
+				msg_data->req_buff += strlen(msg_data->req_buff) - 1;
+				*(msg_data->req_buff) = '.';
 			}
-			add_via(req_buf_begin);
-			sprintf(repl_buff,
+			add_via(req_buf_begin, msg_data->lport);
+			sprintf(msg_data->repl_buff,
 				"%s"
 				"%ssip:sipsak@%s:%i;tag=%x\r\n"
 				"%ssip:%s%s;tag=%o%o\r\n"
@@ -232,16 +232,16 @@ void create_msg(int action, char *req_buff, char *repl_buff, char *username, int
 				"%s0\r\n"
 				"%s%s\r\n"
 				"\r\n", 
-				SIP200_STR, 
-				FROM_STR, fqdn, lport, c,
-				TO_STR, username, domainname, c, d,
-				CALL_STR, c, fqdn, 
-				CSEQ_STR, cseq, MES_STR, 
+				SIP200_STR,
+				FROM_STR, fqdn, msg_data->lport, c,
+				TO_STR, msg_data->username, msg_data->domainname, c, d,
+				CALL_STR, c, fqdn,
+				CSEQ_STR, msg_data->cseq, MES_STR,
 				CON_LEN_STR,
 				UA_STR, UA_VAL_STR);
 			break;
 		case REQ_OPT:
-			sprintf(req_buff, 
+			sprintf(msg_data->req_buff,
 				"%s sip:%s%s%s"
 				"%ssip:sipsak@%s:%i;tag=%x\r\n"
 				"%ssip:%s%s\r\n"
@@ -253,20 +253,20 @@ void create_msg(int action, char *req_buff, char *repl_buff, char *username, int
 				"%s%s\r\n"
 				"%s%s\r\n"
 				"\r\n", 
-				OPT_STR, username, domainname, SIP20_STR, 
-				FROM_STR, fqdn, lport, c,
-				TO_STR, username, domainname,
-				CALL_STR, c, fqdn, 
-				CSEQ_STR, cseq, OPT_STR, 
-				CONT_STR, fqdn, lport, 
-				CON_LEN_STR, 
-				MAX_FRW_STR, 
+				OPT_STR, msg_data->username, msg_data->domainname, SIP20_STR,
+				FROM_STR, fqdn, msg_data->lport, c,
+				TO_STR, msg_data->username, msg_data->domainname,
+				CALL_STR, c, fqdn,
+				CSEQ_STR, msg_data->cseq, OPT_STR,
+				CONT_STR, fqdn, msg_data->lport,
+				CON_LEN_STR,
+				MAX_FRW_STR,
 				UA_STR, UA_VAL_STR,
 				ACP_STR, TXT_PLA_STR);
-			add_via(req_buf_begin);
+			add_via(req_buf_begin, msg_data->lport);
 			break;
 		case REQ_FLOOD:
-			sprintf(req_buff, 
+			sprintf(msg_data->req_buff, 
 				"%s sip:%s%s%s"
 				"%s%s %s:9;branch=z9hG4bK.%08x\r\n"
 				"%ssip:sipsak@%s:9;tag=%x\r\n"
@@ -278,19 +278,19 @@ void create_msg(int action, char *req_buff, char *repl_buff, char *username, int
 				"%s70\r\n"
 				"%s%s\r\n"
 				"\r\n", 
-				FLOOD_METH, username, domainname, SIP20_STR, 
+				FLOOD_METH, msg_data->username, msg_data->domainname, SIP20_STR,
 				VIA_SIP_STR, TRANSPORT_UDP_STR, fqdn, d,
 				FROM_STR, fqdn, c,
-				TO_STR, username, domainname, 
-				CALL_STR, c, fqdn, 
-				CSEQ_STR, cseq, FLOOD_METH, 
-				CONT_STR, fqdn, 
-				CON_LEN_STR, 
-				MAX_FRW_STR, 
+				TO_STR, msg_data->username, msg_data->domainname,
+				CALL_STR, c, fqdn,
+				CSEQ_STR, msg_data->cseq, FLOOD_METH,
+				CONT_STR, fqdn,
+				CON_LEN_STR,
+				MAX_FRW_STR,
 				UA_STR, UA_VAL_STR);
 			break;
 		case REQ_RAND:
-			sprintf(req_buff, 
+			sprintf(msg_data->req_buff,
 				"%s sip:%s%s"
 				"%ssip:sipsak@%s:%i;tag=%x\r\n"
 				"%ssip:%s\r\n"
@@ -300,27 +300,27 @@ void create_msg(int action, char *req_buff, char *repl_buff, char *username, int
 				"%s0\r\n"
 				"%s70\r\n"
 				"%s%s\r\n"
-				"\r\n", 
-				OPT_STR, domainname, SIP20_STR, 
-				FROM_STR, fqdn, lport, c,
-				TO_STR, domainname,	
-				CALL_STR, c, fqdn, 
-				CSEQ_STR, cseq, OPT_STR, 
-				CONT_STR, fqdn,	lport, 
-				CON_LEN_STR, 
-				MAX_FRW_STR, 
+				"\r\n",
+				OPT_STR, msg_data->domainname, SIP20_STR,
+				FROM_STR, fqdn, msg_data->lport, c,
+				TO_STR, msg_data->domainname,
+				CALL_STR, c, fqdn,
+				CSEQ_STR, msg_data->cseq, OPT_STR,
+				CONT_STR, fqdn, msg_data->lport,
+				CON_LEN_STR,
+				MAX_FRW_STR,
 				UA_STR, UA_VAL_STR);
-			add_via(req_buf_begin);
+			add_via(req_buf_begin, msg_data->lport);
 			break;
 		default:
 			fprintf(stderr, "error: unknown request type to create\n");
 			exit_code(2, __PRETTY_FUNCTION__, "unknown request type requested");
 			break;
 	}
-	if (headers) {
-		insert_header(req_buf_begin, headers, 1);
-		if (repl_buff)
-			insert_header(repl_buff, headers, 1);
+	if (msg_data->headers) {
+		insert_header(req_buf_begin, msg_data->headers, 1);
+		if (msg_data->repl_buff)
+			insert_header(msg_data->repl_buff, msg_data->headers, 1);
 	}
 }
 
