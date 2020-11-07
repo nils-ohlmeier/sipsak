@@ -852,11 +852,11 @@ int check_for_message(char *recv, int size, struct sipsak_con_data *cd,
 		}
 		else {
 			/* set retry time according to RFC3261 */
-			if ((inv_trans) || (sd->retryAfter *2 < timer_t2)) {
+			if ((inv_trans) || (sd->retryAfter *2 < srt->timer_t2)) {
 				sd->retryAfter = sd->retryAfter * 2;
 			}
 			else {
-				sd->retryAfter = timer_t2;
+				sd->retryAfter = srt->timer_t2;
 			}
 		}
 		(count->retrans_s_c)++;

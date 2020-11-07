@@ -324,7 +324,6 @@ SSL* ssl;
 /* lots of global variables. ugly but makes life easier. */
 unsigned int nonce_count;
 int cseq_counter;
-int timer_t2;
 char fqdn[FQDN_SIZE];
 char target_dot[INET_ADDRSTRLEN], source_dot[INET_ADDRSTRLEN];
 char *request, *response, *received, *transport_str;

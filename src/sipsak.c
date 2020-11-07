@@ -335,7 +335,6 @@ int main(int argc, char *argv[])
 	port = 0;
 	expires_t = USRLOC_EXP_DEF;
 	timer_t1 = SIP_T1;
-	timer_t2 = 8;
 	timer_final = 64;
 	memset(buff, 0, BUFSIZE);
 	memset(fqdn, 0, FQDN_SIZE);
@@ -850,9 +849,6 @@ int main(int argc, char *argv[])
 	if (transport == 0) {
 		transport = SIP_UDP_TRANSPORT;
 	}
-
-	timer_t2 = timer_t2 * timer_t1;
-	timer_final = timer_final * timer_t1;
 
 	/* replace LF with CRLF if we read from a file */
 	if ((file_b) && (fix_crlf)) {
