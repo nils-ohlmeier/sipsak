@@ -816,7 +816,6 @@ void shoot(char *buf, int buff_size, struct sipsak_options *options)
 	char buf2[BUFSIZE], buf3[BUFSIZE], lport_str[LPORT_STR_LEN];
 
 	inv_trans = 0;
-	cseq_counter = 1;
 	usrlocstep = REG_REP;
 
 	/* initalize local vars */
@@ -862,8 +861,7 @@ void shoot(char *buf, int buff_size, struct sipsak_options *options)
 	response = buf2;
 	received = buf3;
 
-	msg_data.cseq = options->cseq;
-	msg_data.cseq_counter = msg_data.cseq;
+	msg_data.cseq_counter = 1;
 	msg_data.lport = options->lport;
 	msg_data.expires_t = options->expires_t;
 	msg_data.empty_contact = options->empty_contact;

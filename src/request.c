@@ -31,7 +31,7 @@ void create_msg(int action, struct sipsak_msg_data *msg_data){
 	unsigned int c, d, len;
 	char *req_buf_begin = msg_data->req_buff;
 
-	if(msg_data->cseq == 0) {
+	if(msg_data->cseq_counter == 0) {
 		fprintf(stderr, "error: CSeq 0 is not allowed\n");
 		exit_code(253, __PRETTY_FUNCTION__, "invalid CSeq 0");
 	}
@@ -57,7 +57,7 @@ void create_msg(int action, struct sipsak_msg_data *msg_data){
 				FROM_STR, msg_data->username, msg_data->domainname, c,
 				TO_STR, msg_data->username, msg_data->domainname,
 				CALL_STR, c, fqdn,
-				CSEQ_STR, msg_data->cseq, REG_STR,
+				CSEQ_STR, msg_data->cseq_counter, REG_STR,
 				CON_LEN_STR,
 				MAX_FRW_STR,
 				UA_STR, UA_VAL_STR);
@@ -101,7 +101,7 @@ void create_msg(int action, struct sipsak_msg_data *msg_data){
 				FROM_STR, msg_data->username, msg_data->domainname, c,
 				TO_STR, msg_data->username, msg_data->domainname,
 				CALL_STR, c, fqdn,
-				CSEQ_STR, msg_data->cseq, REG_STR,
+				CSEQ_STR, msg_data->cseq_counter, REG_STR,
 				EXP_STR, msg_data->expires_t,
 				CON_LEN_STR,
 				MAX_FRW_STR,
@@ -131,7 +131,7 @@ void create_msg(int action, struct sipsak_msg_data *msg_data){
 				INV_STR, msg_data->username, msg_data->domainname, SIP20_STR,
 				TO_STR, msg_data->username, msg_data->domainname,
 				CALL_STR, c, fqdn,
-				CSEQ_STR, msg_data->cseq, INV_STR,
+				CSEQ_STR, msg_data->cseq_counter, INV_STR,
 				CON_LEN_STR,
 				CONT_STR, fqdn, msg_data->lport,
 				SUB_STR,
@@ -165,7 +165,7 @@ void create_msg(int action, struct sipsak_msg_data *msg_data){
 				FROM_STR, fqdn, msg_data->lport, c,
 				TO_STR, msg_data->username, msg_data->domainname, c, d,
 				CALL_STR, c, fqdn,
-				CSEQ_STR, msg_data->cseq, INV_STR,
+				CSEQ_STR, msg_data->cseq_counter, INV_STR,
 				CON_LEN_STR,
 				CONT_STR, fqdn, msg_data->lport,
 				UA_STR, UA_VAL_STR);
@@ -182,7 +182,7 @@ void create_msg(int action, struct sipsak_msg_data *msg_data){
 				MES_STR, msg_data->username, msg_data->domainname, SIP20_STR,
 				TO_STR, msg_data->username, msg_data->domainname,
 				CALL_STR, c, fqdn,
-				CSEQ_STR, msg_data->cseq, MES_STR,
+				CSEQ_STR, msg_data->cseq_counter, MES_STR,
 				CON_TYP_STR, TXT_PLA_STR,
 				MAX_FRW_STR,
 				UA_STR, UA_VAL_STR);
@@ -236,7 +236,7 @@ void create_msg(int action, struct sipsak_msg_data *msg_data){
 				FROM_STR, fqdn, msg_data->lport, c,
 				TO_STR, msg_data->username, msg_data->domainname, c, d,
 				CALL_STR, c, fqdn,
-				CSEQ_STR, msg_data->cseq, MES_STR,
+				CSEQ_STR, msg_data->cseq_counter, MES_STR,
 				CON_LEN_STR,
 				UA_STR, UA_VAL_STR);
 			break;
@@ -257,7 +257,7 @@ void create_msg(int action, struct sipsak_msg_data *msg_data){
 				FROM_STR, fqdn, msg_data->lport, c,
 				TO_STR, msg_data->username, msg_data->domainname,
 				CALL_STR, c, fqdn,
-				CSEQ_STR, msg_data->cseq, OPT_STR,
+				CSEQ_STR, msg_data->cseq_counter, OPT_STR,
 				CONT_STR, fqdn, msg_data->lport,
 				CON_LEN_STR,
 				MAX_FRW_STR,
@@ -283,7 +283,7 @@ void create_msg(int action, struct sipsak_msg_data *msg_data){
 				FROM_STR, fqdn, c,
 				TO_STR, msg_data->username, msg_data->domainname,
 				CALL_STR, c, fqdn,
-				CSEQ_STR, msg_data->cseq, FLOOD_METH,
+				CSEQ_STR, msg_data->cseq_counter, FLOOD_METH,
 				CONT_STR, fqdn,
 				CON_LEN_STR,
 				MAX_FRW_STR,
@@ -305,7 +305,7 @@ void create_msg(int action, struct sipsak_msg_data *msg_data){
 				FROM_STR, fqdn, msg_data->lport, c,
 				TO_STR, msg_data->domainname,
 				CALL_STR, c, fqdn,
-				CSEQ_STR, msg_data->cseq, OPT_STR,
+				CSEQ_STR, msg_data->cseq_counter, OPT_STR,
 				CONT_STR, fqdn, msg_data->lport,
 				CON_LEN_STR,
 				MAX_FRW_STR,

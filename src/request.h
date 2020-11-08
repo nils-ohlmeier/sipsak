@@ -19,7 +19,6 @@
 #define SIPSAK_REQUEST_H
 
 struct sipsak_msg_data {
-  int cseq;
   int cseq_counter;
   int lport;
   int expires_t;
