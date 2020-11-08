@@ -611,7 +611,7 @@ void replace_string(char *mess, char *search, char *replacement) {
 
 /* checks if the strings contains special double marks and then
  * replace all occurrences of this strings in the message */
-void replace_strings(char *mes, char *strings, char *replace_str) {
+void replace_strings(char *mes, char *strings) {
 	char *pos, *atr, *val, *repl, *end;
 	char sep;
 
@@ -619,7 +619,7 @@ void replace_strings(char *mes, char *strings, char *replace_str) {
 	dbg("replace_strings entered\nstrings: '%s'\n", strings);
 	if ((isalnum(*strings) != 0) && 
 		(isalnum(*(strings + strlen(strings) - 1)) != 0)) {
-		replace_string(request, "$replace$", replace_str);
+		replace_string(request, "$replace$", strings);
 	}
 	else {
 		sep = *strings;

@@ -68,7 +68,7 @@ void get_fqdn(int numeric, char *hostname);
 
 void replace_string(char *mes, char *search, char *replacement);
 
-void replace_strings(char *mes, char *strings, char *replace_str);
+void replace_strings(char *mes, char *strings);
 
 void insert_cr(char *mes);
 
