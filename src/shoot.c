@@ -878,7 +878,7 @@ void shoot(char *buf, int buff_size, struct sipsak_options *options)
 	msg_data.mes_body = options->mes_body;
 	msg_data.headers = options->headers;
 
-	create_sockets(&cdata, options->local_ip, options->verbose);
+	create_sockets(&cdata, options->local_ip);
 
 	if (sleep_ms != 0) {
 		if (sleep_ms == -2) {
