@@ -862,7 +862,7 @@ void shoot(char *buf, int buff_size, struct sipsak_options *options)
 	received = buf3;
 
 	msg_data.cseq_counter = 1;
-	msg_data.lport = options->lport;
+	msg_data.lport = cdata.lport;
 	msg_data.expires_t = options->expires_t;
 	msg_data.empty_contact = options->empty_contact;
 	msg_data.transport = options->transport;
@@ -878,28 +878,16 @@ void shoot(char *buf, int buff_size, struct sipsak_options *options)
 
 	create_sockets(&cdata, options->local_ip);
 
-	if (sleep_ms != 0) {
-		if (sleep_ms == -2) {
-			rand_tmp = rand();
-			sleep_ms_s.tv_sec = rand_tmp / 1000;
-			sleep_ms_s.tv_nsec = (rand_tmp % 1000) * 1000000;
-		}
-		else {
-			sleep_ms_s.tv_sec = sleep_ms / 1000;
-			sleep_ms_s.tv_nsec = (sleep_ms % 1000) * 1000000;
-		}
-	}
-
-	if (replace_b == 1){
-		replace_string(request, "$dsthost$", domainname);
+	if (options->replace_b == 1){
+		replace_string(request, "$dsthost$", options->domainname);
 		replace_string(request, "$srchost$", fqdn);
-		sprintf(lport_str, "%i", lport);
+		sprintf(lport_str, "%i", cdata.lport);
 		replace_string(request, "$port$", lport_str);
-		if (username)
-			replace_string(request, "$user$", username);
+		if (msg_data.username)
+			replace_string(request, "$user$", msg_data.username);
 	}
-	if (replace_str)
-		replace_strings(request, replace_str);
+	if (options->replace_str)
+		replace_strings(request, options->replace_str);
 
 	/* set all regular expression to simplfy the result code identification */
 	regcomp(&(regexps.replyexp), "^SIP/[0-9]\\.[0-9] [1-6][0-9][0-9]", 
@@ -990,7 +978,7 @@ void shoot(char *buf, int buff_size, struct sipsak_options *options)
 				inv_trans = 1;
 			}
 			if(via_ins == 1)
-				add_via(request, options->lport);
+				add_via(request, cdata.lport);
 		}
 		/* delays.retryAfter = delays.retryAfter / 10; */
 		if(maxforw!=-1)
@@ -1004,15 +992,15 @@ void shoot(char *buf, int buff_size, struct sipsak_options *options)
 	while(1) {
 		before_sending();
 
-		if (sleep_ms == -2) {
+		if (options->sleep_ms == -2) {
 			rand_tmp = rand();
 			sleep_ms_s.tv_sec = rand_tmp / 1000;
 			sleep_ms_s.tv_nsec = (rand_tmp % 1000) * 1000;
-		} else if (sleep_ms != 0) {
-			sleep_ms_s.tv_sec = sleep_ms;
-			sleep_ms_s.tv_nsec = 0;
+		} else if (options->sleep_ms != 0) {
+			sleep_ms_s.tv_sec = options->sleep_ms;
+			sleep_ms_s.tv_nsec = (options->sleep_ms % 1000) * 1000000;
 		}
-		if (sleep_ms != 0) {
+		if (options->sleep_ms != 0) {
 			dbg("sleeping for %li s + %li ns\n", sleep_ms_s.tv_sec, sleep_ms_s.tv_nsec);
 			nanosleep(&sleep_ms_s, &sleep_rem);
 		}
