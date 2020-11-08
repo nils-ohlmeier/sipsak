@@ -754,7 +754,7 @@ void check_socket_error(int socket, int size, enum sipsak_modes mode) {
 
 int check_for_message(char *recv, int size, struct sipsak_con_data *cd,
 			struct sipsak_sr_time *srt, struct sipsak_counter *count,
-			struct sipsak_delay *sd, enum sipsak_modes mode) {
+			struct sipsak_delay *sd, enum sipsak_modes mode, int cseq_counter) {
 	fd_set	fd;
 	struct timezone tz;
 	struct timeval tv;
@@ -936,7 +936,7 @@ int complete_mes(char *mes, int size) {
 int recv_message(char *buf, int size, int inv_trans, 
 			struct sipsak_delay *sd, struct sipsak_sr_time *srt,
 			struct sipsak_counter *count, struct sipsak_con_data *cd,
-			struct sipsak_regexp *reg, enum sipsak_modes mode) {
+			struct sipsak_regexp *reg, enum sipsak_modes mode, int cseq_counter) {
 	int ret = 0;
 	int sock = 0;
 	double tmp_delay;
@@ -958,7 +958,7 @@ int recv_message(char *buf, int size, int inv_trans,
 		buf = cd->buf_tmp;
 		size = size - cd->buf_tmp_size;
 	}
-	sock = check_for_message(buf, size, cd, srt, count, sd, mode);
+	sock = check_for_message(buf, size, cd, srt, count, sd, mode, cseq_counter);
 	if (sock <= 1) {
 		return -1;
 	}

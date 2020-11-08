@@ -47,7 +47,7 @@ void warning_extract(char *message);
 
 int cseq(char *message);
 
-void increase_cseq(char *message, char *reply);
+int increase_cseq(char *message, char *reply);
 
 void parse_uri(char *uri, char **scheme, char **user, char **host, int *port);
 
@@ -55,7 +55,7 @@ char* uri_from_contact(char *message);
 
 void new_branch(char *message);
 
-void new_transaction(char *message, char *reply);
+int new_transaction(char *message, char *reply);
 
 void print_message_line(char *message);
 

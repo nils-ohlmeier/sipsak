@@ -123,7 +123,7 @@ void handle_3xx(struct sockaddr_in *tadr, int warning_ext, int rport,
 		}
 		/* correct our request */
 		uri_replace(request, contact);
-		new_transaction(request, response);
+		msg_data.cseq_counter = new_transaction(request, response);
 		/* extract the needed information*/
 		rport = 0;
 		address = 0;
@@ -154,7 +154,7 @@ void handle_3xx(struct sockaddr_in *tadr, int warning_ext, int rport,
 }
 
 /* takes care of replies in the trace route mode */
-void trace_reply(regex_t *regex, int namebeg, struct sipsak_sr_time *timers, struct sipsak_msg_data *msg_data)
+void trace_reply(regex_t *regex, int namebeg, struct sipsak_sr_time *timers)
 {
 	char *contact;
 
@@ -171,8 +171,8 @@ void trace_reply(regex_t *regex, int namebeg, struct sipsak_sr_time *timers, str
 			print_message_line(received);
 		}
 		namebeg++;
-		cseq_counter++;
-		create_msg(REQ_OPT, msg_data);
+		msg_data.cseq_counter++;
+		create_msg(REQ_OPT, &msg_data);
 		set_maxforw(request, namebeg);
 		return;
 	}
@@ -279,7 +279,7 @@ void handle_default(regex_t *regex, struct sipsak_sr_time *timers)
 			}
 			else {
 				counters.run++;
-				new_transaction(request, response);
+				msg_data.cseq_counter = new_transaction(request, response);
 				delays.retryAfter = timers->timer_t1;
 			}
 		}
@@ -320,7 +320,7 @@ void handle_randtrash(int warning_ext, int nameend)
 		if (verbose > 1) 
 			printf("sended:\n%s\nreceived:\n%s\n", request, received);
 	}
-	if (cseq_counter == nameend) {
+	if (msg_data.cseq_counter == nameend) {
 		if (counters.randretrys == 0) {
 			printf("random end reached. server survived :) respect!\n");
 			exit_code(0, __PRETTY_FUNCTION__, NULL);
@@ -416,27 +416,27 @@ void handle_usrloc(regex_t *regex, int namebeg, int nameend, int rand_rem,
 					   binding (case 6)*/
 					if ( ((float)rand()/RAND_MAX)*100 > rand_rem) {
 						namebeg++;
-						cseq_counter++;
+						msg_data.cseq_counter++;
 						create_usern(usern, username, namebeg);
 						create_msg(REQ_REG, &msg_data);
 					}
 					else {
 						/* to prevent only removing of low
 						   user numbers new random number*/
-						cseq_counter++;
+						msg_data.cseq_counter++;
 						create_usern(usern, username, ((float)rand()/RAND_MAX) * namebeg);
 						create_msg(REQ_REM, &msg_data);
 						usrlocstep=UNREG_REP;
 					}
 				} /* invite == 0 && message == 0 */
 				else if (invite == 1) {
-					cseq_counter++;
+					msg_data.cseq_counter++;
 					create_msg(REQ_INV, &msg_data);
 					inv_trans = 1;
 					usrlocstep=INV_RECV;
 				}
 				else if (message == 1) {
-					cseq_counter++;
+					msg_data.cseq_counter++;
 					create_msg(REQ_MES, &msg_data);
 					inv_trans = 0;
 					usrlocstep=MES_RECV;
@@ -555,7 +555,7 @@ void handle_usrloc(regex_t *regex, int namebeg, int nameend, int rand_rem,
 						   binding (case 6)*/
 						if (((float)rand()/RAND_MAX) * 100 > rand_rem) {
 							namebeg++;
-							cseq_counter++;
+							msg_data.cseq_counter++;
 							create_usern(usern, username, namebeg);
 							create_msg(REQ_REG, &msg_data);
 							usrlocstep=REG_REP;
@@ -563,7 +563,7 @@ void handle_usrloc(regex_t *regex, int namebeg, int nameend, int rand_rem,
 						else {
 							/* to prevent only removing of low
 							   user numbers new random number*/
-							cseq_counter++;
+							msg_data.cseq_counter++;
 							create_usern(usern, username, ((float)rand()/RAND_MAX) * namebeg);
 							create_msg(REQ_REM, &msg_data);
 							usrlocstep=UNREG_REP;
@@ -571,7 +571,7 @@ void handle_usrloc(regex_t *regex, int namebeg, int nameend, int rand_rem,
 					} /* usrloc == 1 */
 					else {
 						namebeg++;
-						cseq_counter++;
+						msg_data.cseq_counter++;
 						create_usern(usern, username, namebeg);
 						create_msg(REQ_INV, &msg_data);
 						inv_trans = 1;
@@ -669,7 +669,7 @@ void handle_usrloc(regex_t *regex, int namebeg, int nameend, int rand_rem,
 						   binding (case 6)*/
 						if (((float)rand()/RAND_MAX) * 100 > rand_rem) {
 							namebeg++;
-							cseq_counter++;
+							msg_data.cseq_counter++;
 							create_usern(usern, username, namebeg);
 							create_msg(REQ_REG, &msg_data);
 							usrlocstep=REG_REP;
@@ -677,7 +677,7 @@ void handle_usrloc(regex_t *regex, int namebeg, int nameend, int rand_rem,
 						else {
 							/* to prevent only removing of low
 							   user numbers new random number*/
-							cseq_counter++;
+							msg_data.cseq_counter++;
 							create_usern(usern, username, ((float)rand()/RAND_MAX) * namebeg);
 							create_msg(REQ_REM, &msg_data);
 							usrlocstep=UNREG_REP;
@@ -685,7 +685,7 @@ void handle_usrloc(regex_t *regex, int namebeg, int nameend, int rand_rem,
 					} /* usrloc == 1 */
 					else {
 						namebeg++;
-						cseq_counter++;
+						msg_data.cseq_counter++;
 						create_usern(usern, username, namebeg);
 						create_msg(REQ_MES, &msg_data);
 						usrlocstep=MES_RECV;
@@ -732,7 +732,7 @@ void handle_usrloc(regex_t *regex, int namebeg, int nameend, int rand_rem,
 						printf("Binding removal for %s successful\n", username);
 					}
 					namebeg++;
-					cseq_counter++;
+					msg_data.cseq_counter++;
 					create_usern(usern, username, namebeg);
 					create_msg(REQ_REG, &msg_data);
 					usrlocstep=REG_REP;
@@ -802,7 +802,7 @@ void before_sending(struct sipsak_counter *counter, struct sipsak_msg_data *msg_
 		printf("flooding message number %i\n", counter->namebeg);
 	}
 	else if (randtrash == 1 && verbose > 0) {
-		printf("message with %i randomized chars\n", cseq_counter);
+		printf("message with %i randomized chars\n", msg_data->cseq_counter);
 		if (verbose > 2)
 			printf("request:\n%s\n", request);
 	}
@@ -1061,7 +1061,7 @@ void shoot(char *buf, int buff_size, struct sipsak_options *options)
 								exit_code(0, __PRETTY_FUNCTION__, NULL);
 							}
 							counters.run++;
-							new_transaction(request, response);
+							msg_data.cseq_counter = new_transaction(request, response);
 							delays.retryAfter = timer_t1;
 							continue;
 						}
@@ -1076,7 +1076,7 @@ void shoot(char *buf, int buff_size, struct sipsak_options *options)
               options->auth_username, options->namebeg, options->nameend);
 					if (verbose > 2)
 						printf("\nreceived:\n%s\n", received);
-					new_transaction(request, response);
+					msg_data.cseq_counter = new_transaction(request, response);
 					continue;
 				} /* if auth...*/
 				/* lets see if received a redirect */

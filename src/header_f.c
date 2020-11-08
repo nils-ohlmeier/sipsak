@@ -432,15 +432,15 @@ int cseq(char *message)
 }
 
 /* if it find the Cseq number in the message it will increased by one */
-void increase_cseq(char *message, char *reply)
+int increase_cseq(char *message, char *reply)
 {
-	int cs;
+	int cs = 0;
 	char *cs_s, *eol, *backup;
 
 	cs = cseq(message);
 	if ((cs < 1) && (verbose > 1)) {
 		printf("CSeq increase failed because unable to extract CSeq number\n");
-		return;
+		return 0;
 	}
 	if (cs == INT_MAX)
 		cs = 1;
@@ -457,7 +457,6 @@ void increase_cseq(char *message, char *reply)
 		cs_s+=strlen(cs_s);
 		strncpy(cs_s, backup, strlen(backup));
 		free(backup);
-		cseq_counter = cs;
 	}
 	else if (verbose > 1)
 		printf("'CSeq' not found in message\n");
@@ -477,6 +476,7 @@ void increase_cseq(char *message, char *reply)
 		else if (verbose > 1)
 			printf("'CSeq' not found in reply\n");
 	}
+	return cs;
 }
 
 /* separates the given URI into the parts by setting the pointer but it
@@ -599,10 +599,10 @@ void new_branch(char *message)
 }
 
 /* increase the CSeq and insert a new branch value */
-void new_transaction(char *message, char *reply)
+int new_transaction(char *message, char *reply)
 {
-	increase_cseq(message, reply);
 	new_branch(message);
+	return increase_cseq(message, reply);
 }
 
 /* just print the first line of the message */
