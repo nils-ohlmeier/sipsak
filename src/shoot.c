@@ -170,6 +170,7 @@ void trace_reply(regex_t *regex, int namebeg, struct sipsak_sr_time *timers)
 			printf("(%.3f ms) ", deltaT(&(timers->sendtime), &(timers->recvtime)));
 			print_message_line(received);
 		}
+    // FIXME looks like we want to modify the global value here
 		namebeg++;
 		msg_data.cseq_counter++;
 		create_msg(REQ_OPT, &msg_data);
@@ -415,6 +416,7 @@ void handle_usrloc(regex_t *regex, int namebeg, int nameend, int rand_rem,
 					/* lets see if we deceid to remove a 
 					   binding (case 6)*/
 					if ( ((float)rand()/RAND_MAX)*100 > rand_rem) {
+            // FIXME we want to modify the global value here
 						namebeg++;
 						msg_data.cseq_counter++;
 						create_usern(usern, username, namebeg);
@@ -554,6 +556,7 @@ void handle_usrloc(regex_t *regex, int namebeg, int nameend, int rand_rem,
 						/* lets see if we deceid to remove a 
 						   binding (case 6)*/
 						if (((float)rand()/RAND_MAX) * 100 > rand_rem) {
+              // FIXME we want to modify the global value here
 							namebeg++;
 							msg_data.cseq_counter++;
 							create_usern(usern, username, namebeg);
@@ -570,6 +573,7 @@ void handle_usrloc(regex_t *regex, int namebeg, int nameend, int rand_rem,
 						}
 					} /* usrloc == 1 */
 					else {
+              // FIXME we want to modify the global value here
 						namebeg++;
 						msg_data.cseq_counter++;
 						create_usern(usern, username, namebeg);
@@ -668,6 +672,7 @@ void handle_usrloc(regex_t *regex, int namebeg, int nameend, int rand_rem,
 						/* lets see if we deceid to remove a 
 						   binding (case 6)*/
 						if (((float)rand()/RAND_MAX) * 100 > rand_rem) {
+              // FIXME we want to modify the global value here
 							namebeg++;
 							msg_data.cseq_counter++;
 							create_usern(usern, username, namebeg);
@@ -684,6 +689,7 @@ void handle_usrloc(regex_t *regex, int namebeg, int nameend, int rand_rem,
 						}
 					} /* usrloc == 1 */
 					else {
+              // FIXME we want to modify the global value here
 						namebeg++;
 						msg_data.cseq_counter++;
 						create_usern(usern, username, namebeg);
@@ -731,6 +737,7 @@ void handle_usrloc(regex_t *regex, int namebeg, int nameend, int rand_rem,
 					else if (verbose>0) {
 						printf("Binding removal for %s successful\n", username);
 					}
+              // FIXME we want to modify the global value here
 					namebeg++;
 					msg_data.cseq_counter++;
 					create_usern(usern, username, namebeg);
@@ -905,20 +912,20 @@ void shoot(char *buf, int buff_size, struct sipsak_options *options)
 	regcomp(&(regexps.tmhexp), "^SIP/[0-9]\\.[0-9] 483 ", 
 		REG_EXTENDED|REG_NOSUB|REG_ICASE); 
 
-	if (username) {
-		if (nameend > 0) {
-			usern = str_alloc(strlen(username) + 12);
-			create_usern(usern, username, namebeg);
+	if (msg_data.username) {
+		if (counters.nameend > 0) {
+			usern = str_alloc(strlen(msg_data.username) + 12);
+			create_usern(usern, msg_data.username, counters.namebeg);
       msg_data.username = usern;
 		}
 		else {
-			if (*(username + strlen(username) - 1) != '@') {
-				usern = str_alloc(strlen(username) + 2);
-				create_usern(usern, username, -1);
+			if (*(msg_data.username + strlen(msg_data.username) - 1) != '@') {
+				usern = str_alloc(strlen(msg_data.username) + 2);
+				create_usern(usern, msg_data.username, -1);
         msg_data.username = usern;
 			}
 			else {
-				usern = username;
+				usern = msg_data.username;
 			}
 		}
 	}
@@ -926,17 +933,17 @@ void shoot(char *buf, int buff_size, struct sipsak_options *options)
 	if (usrloc == 1||invite == 1||message == 1){
 		/* calculate the number of required steps and create initial mes */
 		if (usrloc == 1) {
-			create_msg(REQ_REG, msg_data);
+			create_msg(REQ_REG, &msg_data);
 			usrlocstep=REG_REP;
 		}
 		else if (invite == 1) {
-			create_msg(REQ_INV, msg_data);
+			create_msg(REQ_INV, &msg_data);
 			inv_trans = 1;
 			usrlocstep=INV_RECV;
 		}
 		else {
-			create_msg(REQ_MES, msg_data);
-			if (mes_body)
+			create_msg(REQ_MES, &msg_data);
+			if (msg_data.mes_body)
 				usrlocstep=MES_OK_RECV;
 			else
 				usrlocstep=MES_RECV;
@@ -944,23 +951,25 @@ void shoot(char *buf, int buff_size, struct sipsak_options *options)
 	}
 	else if (trace == 1){
 		/* for trace we need some spezial initis */
-		namebeg=0;
-		create_msg(REQ_OPT, msg_data);
-		set_maxforw(request, namebeg);
+		counters.namebeg=0;
+		create_msg(REQ_OPT, &msg_data);
+		set_maxforw(request, counters.namebeg);
 	}
 	else if (flood == 1){
-		if (nameend<=0) nameend=INT_MAX;
-		namebeg=1;
-		create_msg(REQ_FLOOD, msg_data);
+		if (counters.nameend<=0) {
+      counters.nameend=INT_MAX;
+    }
+		counters.namebeg=1;
+		create_msg(REQ_FLOOD, &msg_data);
 	}
 	else if (randtrash == 1){
 		counters.randretrys=0;
-		namebeg=1;
-		create_msg(REQ_RAND, msg_data);
-		nameend=(int)strlen(request);
+		counters.namebeg=1;
+		create_msg(REQ_RAND, &msg_data);
+		counters.nameend=(int)strlen(request);
 		if (trashchar == 1){
-			if (trashchar < nameend)
-				nameend=trashchar;
+			if (trashchar < counters.nameend)
+				counters.nameend=trashchar;
 			else
 				fprintf(stderr, "warning: number of trashed chars to big. setting to "
 					"request length\n");
@@ -970,8 +979,8 @@ void shoot(char *buf, int buff_size, struct sipsak_options *options)
 	else {
 		/* for none of the modes we also need some inits */
 		if (file_b == 0) {
-			namebeg=1;
-			create_msg(REQ_OPT, msg_data);
+			counters.namebeg=1;
+			create_msg(REQ_OPT, &msg_data);
 		}
 		else {
 			if (STRNCASECMP(request, INV_STR, INV_STR_LEN) == 0) {
@@ -1038,7 +1047,7 @@ void shoot(char *buf, int buff_size, struct sipsak_options *options)
 					continue;
 					}
 				else if (regexec(&(regexps.authexp), received, 0, 0, 0) == REG_NOERROR) {
-					if (!username && !auth_username) {
+					if (!msg_data.username && !auth_username) {
 						if (timing > 0) {
 							timing--;
 							if (timing == 0) {
@@ -1060,8 +1069,8 @@ void shoot(char *buf, int buff_size, struct sipsak_options *options)
 					}
 					/* prevents a strange error */
 					regcomp(&(regexps.authexp), "^SIP/[0-9]\\.[0-9] 40[17] ", REG_EXTENDED|REG_NOSUB|REG_ICASE);
-					insert_auth(request, received, options->username, options->password,
-              options->auth_username, options->namebeg, options->nameend);
+					insert_auth(request, received, msg_data.username, options->password,
+              options->auth_username, counters.namebeg, counters.nameend);
 					if (verbose > 2)
 						printf("\nreceived:\n%s\n", received);
 					msg_data.cseq_counter = new_transaction(request, response);
@@ -1107,15 +1116,15 @@ void shoot(char *buf, int buff_size, struct sipsak_options *options)
 			if (counters.send_counter == 1) {
 					memcpy(&(timers.firstsendt), &(timers.sendtime), sizeof(struct timeval));
 			}
-			if (namebeg==nameend) {
+			if (counters.namebeg==counters.nameend) {
 				printf("flood end reached\n");
 				printf("it took %.3f ms seconds to send %i request.\n", 
-						deltaT(&(timers.firstsendt), &(timers.sendtime)), namebeg);
+						deltaT(&(timers.firstsendt), &(timers.sendtime)), counters.namebeg);
 				printf("we sent %f requests per second.\n", 
-						(namebeg/(deltaT(&(timers.firstsendt), &(timers.sendtime)))*1000));
+						(counters.namebeg/(deltaT(&(timers.firstsendt), &(timers.sendtime)))*1000));
 				exit_code(0, __PRETTY_FUNCTION__, NULL);
 			}
-			namebeg++;
+			counters.namebeg++;
 			cseq_counter++;
 			create_msg(REQ_FLOOD, msg_data);
 		}
