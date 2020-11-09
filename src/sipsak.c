@@ -561,7 +561,11 @@ int main(int argc, char *argv[])
 				via_ins=0;
 				break;
 			case 'I':
-				options.mode = SM_INVITE;
+        if (options.mode == SM_USRLOC) {
+          options.mode = SM_USRLOC_INVITE;
+        } else {
+				  options.mode = SM_INVITE;
+        }
 				break;
 			case 'j':
 				headers=optarg;
@@ -596,7 +600,11 @@ int main(int argc, char *argv[])
 				maxforw=str_to_int(0, optarg);
 				break;
 			case 'M':
-				options.mode = SM_MESSAGE;
+        if (options.mode == SM_USRLOC) {
+          options.mode = SM_USRLOC_MESSAGE;
+        } else {
+				  options.mode = SM_MESSAGE;
+        }
 				break;
 			case 'n':
 				numeric = 0;
@@ -752,7 +760,13 @@ int main(int argc, char *argv[])
 				options.mode = SM_TRACE;
 				break;
 			case 'U':
-				options.mode = SM_USRLOC;
+        if (options.mode == SM_INVITE) {
+          options.mode = SM_USRLOC_INVITE;
+        } else if (options.mode == SM_MESSAGE) {
+          options.mode = SM_USRLOC_MESSAGE;
+        } else {
+				  options.mode = SM_USRLOC;
+        }
 				break;
 			case 'u':
 				auth_username=str_alloc(strlen(optarg) + 1);
@@ -892,6 +906,8 @@ int main(int argc, char *argv[])
 		if (maxforw==-1) maxforw=255;
 	}
 	else if (options.mode == SM_USRLOC ||
+           options.mode == SM_USRLOC_INVITE ||
+           options.mode == SM_USRLOC_MESSAGE ||
            options.mode == SM_INVITE ||
            options.mode == SM_MESSAGE) {
 		if (!username || !uri_b) {
@@ -911,7 +927,9 @@ int main(int argc, char *argv[])
 			exit_code(2, __PRETTY_FUNCTION__, "don't use usrloc INVITE mode without registerting before");
 		}
 		if (contact_uri!=NULL) {
-			if (options.mode == SM_INVITE ||
+			if (options.mode == SM_USRLOC_INVITE ||
+          options.mode == SM_USRLOC_MESSAGE ||
+          options.mode == SM_INVITE ||
           options.mode == SM_MESSAGE) {
 				fprintf(stderr, "error: Contact URI is not support for invites or "
 					"messages\n");
@@ -965,7 +983,8 @@ int main(int argc, char *argv[])
 		}
 	}
 	else if (mes_body) {
-		if (options.mode != SM_MESSAGE) {
+		if (!(options.mode == SM_MESSAGE ||
+          options.mode == SM_USRLOC_MSSAGE)) {
 			fprintf(stderr, "warning: to send a message mode (-M) is required. activating\n");
 			options.mode == SM_MESSAGE;
 		}

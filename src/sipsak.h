@@ -329,8 +329,7 @@ char *request, *response, *received, *transport_str;
 
 extern int verbose;
 
-enum sipsak_modes { SM_UNDEFINED, SM_USRLOC, SM_INVITE, SM_MESSAGE, SM_FLOOD,
-  SM_TRACE, SM_RANDTRASH };
+enum sipsak_modes { SM_UNDEFINED, SM_USRLOC, SM_USRLOC_INVITE, SM_USRLOC_MESSAGE, SM_INVITE, SM_MESSAGE, SM_FLOOD, SM_TRACE, SM_RANDTRASH };
 
 struct sipsak_options {
   int timing;

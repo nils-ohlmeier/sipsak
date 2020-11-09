@@ -341,7 +341,7 @@ void handle_randtrash(int warning_ext, int nameend)
 /* takes care of replies in the usrloc mode */
 void handle_usrloc(regex_t *regex, int namebeg, int nameend, int rand_rem,
     char *username, int nagios_warn, struct sipsak_sr_time *timers,
-    char *mes_body)
+    char *mes_body, enum sipsak_modes mode)
 {
 	char *crlf;
 	char ruri[11+12+20]; //FIXME: username length 20 should be dynamic
@@ -379,7 +379,7 @@ void handle_usrloc(regex_t *regex, int namebeg, int nameend, int rand_rem,
 					log_message(request);
 					exit_code(1, __PRETTY_FUNCTION__, "received non-2xx reply for REGISTER");
 				}
-				if (invite == 0 && message == 0) {
+				if (mode == SM_USRLOC) {
 					if (namebeg==nameend) {
 						if (verbose>0)  {
 							printf("\nAll usrloc tests"
@@ -431,13 +431,13 @@ void handle_usrloc(regex_t *regex, int namebeg, int nameend, int rand_rem,
 						usrlocstep=UNREG_REP;
 					}
 				} /* invite == 0 && message == 0 */
-				else if (invite == 1) {
+				else if (mode == SM_USRLOC_INVITE) {
 					msg_data.cseq_counter++;
 					create_msg(REQ_INV, &msg_data);
 					inv_trans = 1;
 					usrlocstep=INV_RECV;
 				}
-				else if (message == 1) {
+				else if (mode == SM_USRLOC_MESSAGE) {
 					msg_data.cseq_counter++;
 					create_msg(REQ_MES, &msg_data);
 					inv_trans = 0;
@@ -552,7 +552,7 @@ void handle_usrloc(regex_t *regex, int namebeg, int nameend, int rand_rem,
 						}
 						on_success(received, regex);
 					} /* namebeg == nameend */
-					if (usrloc == 1) {
+					if (mode == SM_USRLOC_INVITE) {
 						/* lets see if we deceid to remove a 
 						   binding (case 6)*/
 						if (((float)rand()/RAND_MAX) * 100 > rand_rem) {
@@ -668,7 +668,7 @@ void handle_usrloc(regex_t *regex, int namebeg, int nameend, int rand_rem,
 						}
 						on_success(received, regex);
 					} /* namebeg == nameend */
-					if (usrloc == 1) {
+					if (mode == SM_USRLOC_MESSAGE) {
 						/* lets see if we deceid to remove a 
 						   binding (case 6)*/
 						if (((float)rand()/RAND_MAX) * 100 > rand_rem) {
@@ -762,10 +762,17 @@ void handle_usrloc(regex_t *regex, int namebeg, int nameend, int rand_rem,
 	} /* regexec proexp */
 }
 
-void before_sending(struct sipsak_counter *counter, struct sipsak_msg_data *msg_data)
+void before_sending(struct sipsak_counter *counter, struct sipsak_msg_data *msg_data,
+    enum sipsak_modes mode)
 {
 	/* some initial output */
-	if ((usrloc == 1||invite == 1||message == 1) && (verbose > 1) && (cdata.dontsend == 0)) {
+	if ((mode == SM_USRLOC ||
+       mode == SM_USRLOC_INVITE ||
+       mode == SM_USRLOC_MESSAGE ||
+       mode == SM_INVITE ||
+       mode == SM_MESSAGE) &&
+      (verbose > 1) &&
+      (cdata.dontsend == 0)) {
 		switch (usrlocstep) {
 			case REG_REP:
 				if (counter->nameend>0)
@@ -805,10 +812,12 @@ void before_sending(struct sipsak_counter *counter, struct sipsak_msg_data *msg_
 				break;
 		}
 	} /* if usrloc...*/
-	else if (flood == 1 && verbose > 0) {
+	else if (mode == SM_FLOOD &&
+           verbose > 0) {
 		printf("flooding message number %i\n", counter->namebeg);
 	}
-	else if (randtrash == 1 && verbose > 0) {
+	else if (mode == SM_RANDTRASH &&
+      verbose > 0) {
 		printf("message with %i randomized chars\n", msg_data->cseq_counter);
 		if (verbose > 2)
 			printf("request:\n%s\n", request);
@@ -857,7 +866,7 @@ void shoot(char *buf, int buff_size, struct sipsak_options *options)
 	timers.timing = options->timing;
 
 	/* delays.retryAfter = DEFAULT_TIMEOUT; */
-	if (transport == SIP_UDP_TRANSPORT) {
+	if (cdata.transport == SIP_UDP_TRANSPORT) {
 		delays.retryAfter = timers.timer_t1;
 	}
 	else {
@@ -930,39 +939,39 @@ void shoot(char *buf, int buff_size, struct sipsak_options *options)
 		}
 	}
 
-	if (usrloc == 1||invite == 1||message == 1){
-		/* calculate the number of required steps and create initial mes */
-		if (usrloc == 1) {
-			create_msg(REQ_REG, &msg_data);
-			usrlocstep=REG_REP;
-		}
-		else if (invite == 1) {
-			create_msg(REQ_INV, &msg_data);
-			inv_trans = 1;
-			usrlocstep=INV_RECV;
-		}
-		else {
-			create_msg(REQ_MES, &msg_data);
-			if (msg_data.mes_body)
-				usrlocstep=MES_OK_RECV;
-			else
-				usrlocstep=MES_RECV;
-		}
-	}
-	else if (trace == 1){
+	/* calculate the number of required steps and create initial mes */
+  if (options->mode == SM_USRLOC ||
+      options->mode == SM_USRLOC_INVITE ||
+      options->mode == SM_USRLOC_MESSAGE) {
+    create_msg(REQ_REG, &msg_data);
+    usrlocstep=REG_REP;
+  }
+  else if (options->mode == SM_INVITE) {
+    create_msg(REQ_INV, &msg_data);
+    inv_trans = 1;
+    usrlocstep=INV_RECV;
+  }
+  else if (options->mode == SM_MESSAGE) {
+    create_msg(REQ_MES, &msg_data);
+    if (msg_data.mes_body)
+      usrlocstep=MES_OK_RECV;
+    else
+      usrlocstep=MES_RECV;
+  }
+	else if (options->mode == SM_TRACE){
 		/* for trace we need some spezial initis */
 		counters.namebeg=0;
 		create_msg(REQ_OPT, &msg_data);
 		set_maxforw(request, counters.namebeg);
 	}
-	else if (flood == 1){
+	else if (options->mode == SM_FLOOD){
 		if (counters.nameend<=0) {
       counters.nameend=INT_MAX;
     }
 		counters.namebeg=1;
 		create_msg(REQ_FLOOD, &msg_data);
 	}
-	else if (randtrash == 1){
+	else if (options->mode == SM_RANDTRASH){
 		counters.randretrys=0;
 		counters.namebeg=1;
 		create_msg(REQ_RAND, &msg_data);
@@ -1017,7 +1026,7 @@ void shoot(char *buf, int buff_size, struct sipsak_options *options)
 		send_message(request, &cdata, &counters, &timers, options->verbose);
 
 		/* in flood we are only interested in sending so skip the rest */
-		if (flood == 0) {
+		if (options->mode != SM_FLOOD) {
 			ret = recv_message(received, BUFSIZE, inv_trans, &delays, &timers,
 						&counters, &cdata, &regexps, options->randtrash, options->verbose);
 			if(ret > 0)
@@ -1080,13 +1089,17 @@ void shoot(char *buf, int buff_size, struct sipsak_options *options)
 				if (redirects == 1 && regexec(&(regexps.redexp), received, 0, 0, 0) == REG_NOERROR) {
 					handle_3xx(&(cdata.adr));
 				} /* if redircts... */
-				else if (trace == 1) {
+				else if (options->mode == SM_TRACE) {
 					trace_reply();
 				} /* if trace ... */
-				else if (usrloc == 1||invite == 1||message == 1) {
+				else if (options->mode == SM_USRLOC ||
+                 options->mode == SM_USRLOC_INVITE ||
+                 options->mode == SM_USRLOC_MESSAGE ||
+                 options->mode == SM_INVITE ||
+                 options->mode == SM_MESSAGE) {
 					handle_usrloc();
 				}
-				else if (randtrash == 1) {
+				else if (options->mode == SM_RANDTRASH) {
 					handle_randtrash();
 				}
 				else {
@@ -1131,7 +1144,7 @@ void shoot(char *buf, int buff_size, struct sipsak_options *options)
 	} /* while 1 */
 
 	/* this should never happen any more... */
-	if (randtrash == 1) {
+	if (options->mode == SM_RANDTRASH) {
 		exit_code(0, __PRETTY_FUNCTION__, NULL);
 	}
 	printf("** give up further retransmissions....\n");
