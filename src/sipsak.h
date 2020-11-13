@@ -309,16 +309,6 @@
 #ifdef WITH_TLS_TRANSP
 char *cert_file, *ca_file;
 int ignore_ca_fail;
-# ifdef USE_GNUTLS
-gnutls_session_t tls_session;
-//gnutls_anon_client_credentials_t anoncred;
-gnutls_certificate_credentials_t xcred;
-# else
-#  ifdef USE_OPENSSL
-SSL_CTX* ctx;
-SSL* ssl;
-#  endif
-# endif
 #endif
 
 /* lots of global variables. ugly but makes life easier. */
@@ -341,7 +331,6 @@ struct sipsak_options {
   int file_b;
   int replace_b;
   int via_ins;
-  int sysl;
   int lport;
   int rport;
   int fix_crlf;

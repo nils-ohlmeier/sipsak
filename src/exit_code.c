@@ -32,8 +32,10 @@
 #endif
 
 #include "exit_code.h"
+#include "transport.h"
 
 enum exit_modes exit_mode = EM_DEFAULT;
+int sysl;
 
 void log_message(const char *message) {
 	if ((sysl > 3) && (message != NULL)) {
@@ -45,22 +47,7 @@ void log_message(const char *message) {
 
 void exit_code(int code, const char *function, const char *reason)
 {
-#ifdef WITH_TLS_TRANSP
-	if (transport == SIP_TLS_TRANSPORT) {
-# ifdef USE_GNUTLS
-		if (tls_session) {
-			gnutls_deinit(tls_session);
-		}
-		if (xcred) {
-			gnutls_certificate_free_credentials(xcred);
-		}
-		gnutls_global_deinit();
-# else /* USE_GNUTLS */
-#  ifdef USE_OPENSSL
-#  endif /* USE_OPENSSL */
-# endif /* USE_GNUTLS */
-	}
-#endif /* WITH_TLS_TRANSP */
+  shutdown_network();
 
 	if ((sysl > 0) && (reason != NULL)) {
 #ifdef HAVE_SYSLOG

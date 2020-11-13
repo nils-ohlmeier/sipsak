@@ -104,6 +104,17 @@
 int rawsock;
 #endif
 
+#ifdef USE_GNUTLS
+gnutls_session_t tls_session;
+//gnutls_anon_client_credentials_t anoncred;
+gnutls_certificate_credentials_t xcred;
+#else
+# ifdef USE_OPENSSL
+SSL_CTX* ctx;
+SSL* ssl;
+# endif
+#endif
+
 #ifdef WITH_TLS_TRANSP
 # ifdef USE_GNUTLS
 void check_alert(gnutls_session_t session, int ret) {
@@ -555,12 +566,37 @@ void tls_dump_cert_info(char* s, X509* cert) {
 # endif /* USE_GNUTLS */
 #endif /* WITH_TLS_TRANSP */
 
-void create_sockets(struct sipsak_con_data *cd, char *local_ip) {
+void init_network(struct sipsak_con_data *cd, char *local_ip) {
 	socklen_t slen;
 
 #ifdef RAW_SUPPORT
 	rawsock = -1;
 #endif
+
+#ifdef WITH_TLS_TRANSP
+	if (cd->transport == SIP_TLS_TRANSPORT) {
+# ifdef USE_GNUTLS
+    tls_session = NULL;
+    xcred = NULL;
+
+		gnutls_global_init();
+		//gnutls_anon_allocate_client_credentials(&anoncred);
+		gnutls_certificate_allocate_credentials(&xcred);
+		if (ca_file != NULL) {
+			// set the trusted CA file
+			gnutls_certificate_set_x509_trust_file(xcred, ca_file, GNUTLS_X509_FMT_PEM);
+		}
+# else
+#  ifdef USE_OPENSSL
+    ctx = NULL;
+    ssl = NULL;
+
+		SSL_library_init();
+		SSL_load_error_strings();
+#  endif
+# endif
+	}
+#endif /* WITH_TLS_TRANSP */
 
 	memset(&(cd->adr), 0, sizeof(struct sockaddr_in));
 	cd->adr.sin_family = AF_INET;
@@ -584,7 +620,6 @@ void create_sockets(struct sipsak_con_data *cd, char *local_ip) {
 				exit_code(2, __PRETTY_FUNCTION__, "failed to bind unconnected UDP socket");
 			}
 		}
-
 
 #ifdef RAW_SUPPORT
 		/* try to create the raw socket */
@@ -676,6 +711,21 @@ void create_sockets(struct sipsak_con_data *cd, char *local_ip) {
 			getsockname(cd->usock, (struct sockaddr *) &(cd->adr), &slen);
 		cd->lport=ntohs(cd->adr.sin_port);
 	}
+}
+
+void shutdown_network() {
+# ifdef USE_GNUTLS
+  if (tls_session) {
+    gnutls_deinit(tls_session);
+  }
+  if (xcred) {
+    gnutls_certificate_free_credentials(xcred);
+  }
+  gnutls_global_deinit();
+# else /* USE_GNUTLS */
+#  ifdef USE_OPENSSL
+#  endif /* USE_OPENSSL */
+# endif /* USE_GNUTLS */
 }
 
 void send_message(char* mes, struct sipsak_con_data *cd,

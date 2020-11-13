@@ -78,9 +78,9 @@ struct sipsak_delay {
 	double all_delay;
 };
 
-void create_sockets(struct sipsak_con_data *cd, char *local_ip);
+void init_network(struct sipsak_con_data *cd, char *local_ip);
 
-void close_sockets(struct sipsak_con_data *cd);
+void shutdown_network();
 
 void send_message(char* mes, struct sipsak_con_data *cd,
 			struct sipsak_counter *sc, struct sipsak_sr_time *srt);

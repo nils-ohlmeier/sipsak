@@ -892,7 +892,7 @@ void shoot(char *buf, int buff_size, struct sipsak_options *options)
 	msg_data.mes_body = options->mes_body;
 	msg_data.headers = options->headers;
 
-	create_sockets(&cdata, options->local_ip);
+	init_network(&cdata, options->local_ip);
 
 	if (options->replace_b == 1){
 		replace_string(request, "$dsthost$", options->domainname);

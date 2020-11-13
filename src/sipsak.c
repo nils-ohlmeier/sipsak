@@ -344,15 +344,6 @@ int main(int argc, char *argv[])
 #ifdef WITH_TLS_TRANSP
 	cert_file = ca_file = NULL;
 	ignore_ca_fail = 0;
-# ifdef USE_GNUTLS
-	tls_session = NULL;
-	xcred = NULL;
-# else
-#  ifdef USE_OPENSSL
-	ctx = NULL;
-	ssl = NULL;
-#  endif
-#endif
 #endif /* WITH_TLS_TRANSP */
 
 	if (argc==1) {
@@ -584,14 +575,14 @@ int main(int argc, char *argv[])
 				options.local_ip=optarg;
 				break;
 			case 'K':
-				options.sysl=str_to_int(0, optarg);
-				if (options.sysl < LOG_ALERT || options.sysl > LOG_DEBUG) {
-					fprintf(stderr, "error: syslog value '%s' must be between ALERT (1) and DEBUG (7)\n", optarg);
-					exit_code(2, __PRETTY_FUNCTION__, "unsupported syslog value for option K");
-				}
+				sysl=str_to_int(0, optarg);
 #ifdef HAVE_SYSLOG_H
 				openlog(PACKAGE_NAME, LOG_CONS|LOG_NOWAIT|LOG_PID, LOG_USER);
 #endif
+				if (sysl < LOG_ALERT || sysl > LOG_DEBUG) {
+					fprintf(stderr, "error: syslog value '%s' must be between ALERT (1) and DEBUG (7)\n", optarg);
+					exit_code(2, __PRETTY_FUNCTION__, "unsupported syslog value for option K");
+				}
 				break;
 			case 'l':
 				options.lport=str_to_int(0, optarg);
@@ -1027,25 +1018,6 @@ int main(int argc, char *argv[])
 			fprintf(stderr, "unknown transport: %u\n", options.transport);
 			exit_code(2, __PRETTY_FUNCTION__, "unknown transport");
 	}
-
-#ifdef WITH_TLS_TRANSP
-	if (options.transport == SIP_TLS_TRANSPORT) {
-# ifdef USE_GNUTLS
-		gnutls_global_init();
-		//gnutls_anon_allocate_client_credentials(&anoncred);
-		gnutls_certificate_allocate_credentials(&xcred);
-		if (ca_file != NULL) {
-			// set the trusted CA file
-			gnutls_certificate_set_x509_trust_file(xcred, ca_file, GNUTLS_X509_FMT_PEM);
-		}
-# else
-#  ifdef USE_OPENSSL
-		SSL_library_init();
-		SSL_load_error_strings();
-#  endif
-# endif
-	}
-#endif /* WITH_TLS_TRANSP */
 
 	/* determine our hostname */
 	get_fqdn(options.numeric, options.hostname);
