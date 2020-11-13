@@ -306,15 +306,9 @@
 #endif
 #define SIPSAK_HASHHEXLEN 2 * SIPSAK_HASHLEN
 
-#ifdef WITH_TLS_TRANSP
-char *cert_file, *ca_file;
-int ignore_ca_fail;
-#endif
-
 /* lots of global variables. ugly but makes life easier. */
 unsigned int nonce_count;
 char fqdn[FQDN_SIZE];
-char target_dot[INET_ADDRSTRLEN], source_dot[INET_ADDRSTRLEN];
 char *request, *response, *received, *transport_str;
 
 extern int verbose;
@@ -348,6 +342,9 @@ struct sipsak_options {
   int expires_t;
   int rand_rem;
   int timer_t1;
+#ifdef WITH_TLS_TRANSP
+  int ignore_ca_fail;
+#endif
   enum sipsak_modes mode;
   char *password;
   char *mes_body;
@@ -362,6 +359,10 @@ struct sipsak_options {
   char *username;
   char *domainname;
   char *auth_username;
+#ifdef WITH_TLS_TRANSP
+  char *cert_file;
+  char *ca_file;
+#endif
   unsigned int transport;
   unsigned long address;
   regex_t *regex;

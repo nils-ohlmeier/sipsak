@@ -341,10 +341,6 @@ int main(int argc, char *argv[])
 	tsp = 0;
 	memset(buff, 0, BUFSIZE);
 	memset(fqdn, 0, FQDN_SIZE);
-#ifdef WITH_TLS_TRANSP
-	cert_file = ca_file = NULL;
-	ignore_ca_fail = 0;
-#endif /* WITH_TLS_TRANSP */
 
 	if (argc==1) {
 		print_help();
@@ -375,11 +371,11 @@ int main(int argc, char *argv[])
 						exit_code(2, __PRETTY_FUNCTION__, "failed to open CA cert file");
 					}
 					fclose(pf);
-					ca_file=optarg;
+					options.ca_file=optarg;
 					break;
 				}
 				else if (STRNCASECMP("tls-ignore-cert-failure", l_opts[option_index].name, 22) == 0) {
-					ignore_ca_fail = 1;
+					options.ignore_ca_fail = 1;
 					break;
 				}
 				else if (STRNCASECMP("tls-client-cert", l_opts[option_index].name, 14) == 0) {
@@ -389,7 +385,7 @@ int main(int argc, char *argv[])
 						exit_code(2, __PRETTY_FUNCTION__, "failed to open client cert file");
 					}
 					fclose(pf);
-					cert_file=optarg;
+					options.cert_file=optarg;
 					break;
 				}
 #endif

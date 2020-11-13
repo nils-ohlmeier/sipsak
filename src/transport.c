@@ -100,6 +100,8 @@
 #include "helper.h"
 #include "header_f.h"
 
+char target_dot[INET_ADDRSTRLEN], source_dot[INET_ADDRSTRLEN];
+
 #ifdef RAW_SUPPORT
 int rawsock;
 #endif
@@ -285,7 +287,8 @@ void verify_certificate_chain(gnutls_session_t session, const char *hostname,
 	return;
 }
 
-int verify_certificate_simple(gnutls_session_t session, const char *hostname) {
+int verify_certificate_simple(gnutls_session_t session, const char *hostname,
+    int ignore_ca_fail) {
 	unsigned int status, cert_list_size;
 	const gnutls_datum_t *cert_list;
 	int ret;
@@ -566,7 +569,11 @@ void tls_dump_cert_info(char* s, X509* cert) {
 # endif /* USE_GNUTLS */
 #endif /* WITH_TLS_TRANSP */
 
-void init_network(struct sipsak_con_data *cd, char *local_ip) {
+void init_network(struct sipsak_con_data *cd, char *local_ip
+#ifdef WITH_TLS_TRANSP
+    , char *ca_file
+#endif
+    ) {
 	socklen_t slen;
 
 #ifdef RAW_SUPPORT
@@ -1161,7 +1168,8 @@ int recv_message(char *buf, int size, int inv_trans,
 /* clears the given sockaddr, fills it with the given data and if a
  * socket is given connects the socket to the new target */
 int set_target(struct sockaddr_in *adr, unsigned long target, int port,
-    int socket, int connected, unsigned int transport, char *domainname) {
+    int socket, int connected, unsigned int transport, char *domainname,
+    int ignore_ca_fail) {
 #ifdef WITH_TLS_TRANSP
 	int ret;
 # ifdef USE_OPENSSL
@@ -1205,7 +1213,7 @@ int set_target(struct sockaddr_in *adr, unsigned long target, int port,
 			else if (verbose > 2) {
 				dbg(" TLS Handshake was completed!\n");
 				gnutls_session_info(tls_session);
-				if (verify_certificate_simple(tls_session, domainname) != 0) {
+				if (verify_certificate_simple(tls_session, domainname, ignore_ca_fail) != 0) {
 					if (ignore_ca_fail == 1) {
 						if (verbose) {
 							printf("WARN: Ignoring verification failures of the server certificate\n");

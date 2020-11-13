@@ -78,7 +78,11 @@ struct sipsak_delay {
 	double all_delay;
 };
 
-void init_network(struct sipsak_con_data *cd, char *local_ip);
+void init_network(struct sipsak_con_data *cd, char *local_ip
+#ifdef WITH_TLS_TRANSP
+    , char *ca_file
+#endif
+    );
 
 void shutdown_network();
 
@@ -97,5 +101,6 @@ int recv_message(char *buf, int size, int inv_trans,
 			struct sipsak_regexp *reg, enum sipsak_modes mode, int cseq_counter);
 
 int set_target(struct sockaddr_in *adr, unsigned long target, int port,
-    int socket, int connected, unsigned int transport, char *domainname);
+    int socket, int connected, unsigned int transport, char *domainname,
+    int ignore_ca_fail);
 #endif
