@@ -44,8 +44,6 @@ enum usteps {
 	UNREG_REP
 };
 
-int inv_trans;
-
 void shoot(char *buff, int buff_size, struct sipsak_options *options);
 
 #endif

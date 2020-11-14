@@ -59,6 +59,8 @@ char *response;
 
 char *usern;
 
+int inv_trans;
+
 enum usteps usrlocstep;
 
 struct sipsak_regexp regexps;
@@ -845,6 +847,9 @@ void shoot(char *buf, int buff_size, struct sipsak_options *options)
 	memset(buf2, 0, BUFSIZE);
 	memset(buf3, 0, BUFSIZE);
 	memset(lport_str, 0, LPORT_STR_LEN);
+
+  /* initialize external vars which don't have initializer */
+  nonce_count = 0;
 
 	counters.namebeg = options->namebeg;
 	counters.nameend = options->nameend;

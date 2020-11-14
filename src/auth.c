@@ -28,6 +28,8 @@
 #define SIPSAK_ALGO_SHA1 2
 #define SIPSAK_ALGO_SHA256 3
 
+unsigned int nonce_count;
+
 /* converts a hash into hex output
    taken from the RFC 2617 */
 void cvt_hex(unsigned char *_b, unsigned char *_h, int length)

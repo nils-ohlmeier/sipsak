@@ -813,7 +813,7 @@ void check_socket_error(int socket, char *buffer, int size,
 int check_for_message(char *recv, int size, struct sipsak_con_data *cd,
 			struct sipsak_sr_time *srt, struct sipsak_counter *count,
 			struct sipsak_delay *sd, enum sipsak_modes mode, int cseq_counter,
-      char *request, char *response) {
+      char *request, char *response, int inv_trans) {
 	fd_set fd;
 	struct timezone tz;
 	struct timeval tv;
@@ -1019,7 +1019,7 @@ int recv_message(char *buf, int size, int inv_trans,
 		size = size - cd->buf_tmp_size;
 	}
 	sock = check_for_message(buf, size, cd, srt, count, sd, mode, cseq_counter,
-      request, response);
+      request, response, inv_trans);
 	if (sock <= 1) {
 		return -1;
 	}
