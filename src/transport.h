@@ -89,16 +89,11 @@ void shutdown_network();
 void send_message(char* mes, struct sipsak_con_data *cd,
 			struct sipsak_counter *sc, struct sipsak_sr_time *srt);
 
-void check_socket_error(int socket, int size, enum sipsak_modes mode);
-
-int check_for_message(char *recv, int size, struct sipsak_con_data *cd,
-			struct sipsak_sr_time *srt, struct sipsak_counter *count,
-			struct sipsak_delay *sd, enum sipsak_modes mode, int cseq_counter);
-
 int recv_message(char *buf, int size, int inv_trans,
 			struct sipsak_delay *sd, struct sipsak_sr_time *srt,
 			struct sipsak_counter *count, struct sipsak_con_data *cd,
-			struct sipsak_regexp *reg, enum sipsak_modes mode, int cseq_counter);
+			struct sipsak_regexp *reg, enum sipsak_modes mode, int cseq_counter,
+      char *request, char *response);
 
 int set_target(struct sockaddr_in *adr, unsigned long target, int port,
     int socket, int connected, unsigned int transport, char *domainname,

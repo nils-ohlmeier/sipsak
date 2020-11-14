@@ -786,7 +786,8 @@ void send_message(char* mes, struct sipsak_con_data *cd,
 	}
 }
 
-void check_socket_error(int socket, int size, enum sipsak_modes mode) {
+void check_socket_error(int socket, int size, enum sipsak_modes mode,
+    char *request) {
 	struct pollfd sockerr;
 	int ret = 0;
 
@@ -811,8 +812,9 @@ void check_socket_error(int socket, int size, enum sipsak_modes mode) {
 
 int check_for_message(char *recv, int size, struct sipsak_con_data *cd,
 			struct sipsak_sr_time *srt, struct sipsak_counter *count,
-			struct sipsak_delay *sd, enum sipsak_modes mode, int cseq_counter) {
-	fd_set	fd;
+			struct sipsak_delay *sd, enum sipsak_modes mode, int cseq_counter,
+      char *request, char *response) {
+	fd_set fd;
 	struct timezone tz;
 	struct timeval tv;
 	double senddiff;
@@ -851,9 +853,9 @@ int check_for_message(char *recv, int size, struct sipsak_con_data *cd,
 	{
 		/* lets see if we at least received an icmp error */
 		if (cd->csock == -1) 
-			check_socket_error(cd->usock, size, mode);
+			check_socket_error(cd->usock, size, mode, request);
 		else
-			check_socket_error(cd->csock, size, mode);
+			check_socket_error(cd->csock, size, mode, request);
 		/* printout that we did not received anything */
 		if (verbose > 0) {
 			if (mode == SM_TRACE) {
@@ -990,10 +992,11 @@ int complete_mes(char *mes, int size) {
 	}
 }
 
-int recv_message(char *buf, int size, int inv_trans, 
+int recv_message(char *buf, int size, int inv_trans,
 			struct sipsak_delay *sd, struct sipsak_sr_time *srt,
 			struct sipsak_counter *count, struct sipsak_con_data *cd,
-			struct sipsak_regexp *reg, enum sipsak_modes mode, int cseq_counter) {
+			struct sipsak_regexp *reg, enum sipsak_modes mode, int cseq_counter,
+      char *request, char *response) {
 	int ret = 0;
 	int sock = 0;
 	double tmp_delay;
@@ -1015,7 +1018,8 @@ int recv_message(char *buf, int size, int inv_trans,
 		buf = cd->buf_tmp;
 		size = size - cd->buf_tmp_size;
 	}
-	sock = check_for_message(buf, size, cd, srt, count, sd, mode, cseq_counter);
+	sock = check_for_message(buf, size, cd, srt, count, sd, mode, cseq_counter,
+      request, response);
 	if (sock <= 1) {
 		return -1;
 	}
@@ -1024,7 +1028,7 @@ int recv_message(char *buf, int size, int inv_trans,
 #else
 	else {
 #endif
-		check_socket_error(sock, size, mode);
+		check_socket_error(sock, size, mode, request);
 #ifdef WITH_TLS_TRANSP
 		if (cd->transport == SIP_TLS_TRANSPORT) {
 # ifdef USE_GNUTLS
@@ -1158,7 +1162,7 @@ int recv_message(char *buf, int size, int inv_trans,
 		}
 	}
 	else {
-		check_socket_error(sock, size, mode);
+		check_socket_error(sock, size, mode, request);
 		printf("\nnothing received, select returned error\n");
 		exit_code(2, __PRETTY_FUNCTION__, "nothing received, select returned error");
 	}

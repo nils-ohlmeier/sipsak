@@ -54,6 +54,9 @@
 #define DEFAULT_TIMEOUT 5000
 #endif
 
+char *request;
+char *response;
+
 char *usern;
 
 enum usteps usrlocstep;
@@ -1032,7 +1035,8 @@ void shoot(char *buf, int buff_size, struct sipsak_options *options)
 		/* in flood we are only interested in sending so skip the rest */
 		if (options->mode != SM_FLOOD) {
 			ret = recv_message(received, BUFSIZE, inv_trans, &delays, &timers,
-						&counters, &cdata, &regexps, options->mode, msg_data.cseq_counter);
+						&counters, &cdata, &regexps, options->mode, msg_data.cseq_counter,
+            request, response);
 			if(ret > 0)
 			{
 				if (usrlocstep == INV_OK_RECV) {

@@ -309,7 +309,7 @@
 /* lots of global variables. ugly but makes life easier. */
 unsigned int nonce_count;
 char fqdn[FQDN_SIZE];
-char *request, *response, *received, *transport_str;
+char *received, *transport_str;
 
 extern int verbose;
 

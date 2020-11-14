@@ -619,7 +619,7 @@ void replace_strings(char *mes, char *strings) {
 	dbg("replace_strings entered\nstrings: '%s'\n", strings);
 	if ((isalnum(*strings) != 0) && 
 		(isalnum(*(strings + strlen(strings) - 1)) != 0)) {
-		replace_string(request, "$replace$", strings);
+		replace_string(mes, "$replace$", strings);
 	}
 	else {
 		sep = *strings;
