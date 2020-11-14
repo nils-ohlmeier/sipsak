@@ -786,8 +786,8 @@ void send_message(char* mes, struct sipsak_con_data *cd,
 	}
 }
 
-void check_socket_error(int socket, int size, enum sipsak_modes mode,
-    char *request) {
+void check_socket_error(int socket, char *buffer, int size,
+    enum sipsak_modes mode, char *request) {
 	struct pollfd sockerr;
 	int ret = 0;
 
@@ -797,7 +797,7 @@ void check_socket_error(int socket, int size, enum sipsak_modes mode,
 	ret = poll(&sockerr, 1, 10);
 	if (ret==1) {
 		if (sockerr.revents & POLLERR) {
-			recvfrom(socket, recv, size, 0, NULL, 0);
+			recvfrom(socket, buffer, size, 0, NULL, 0);
 			if (verbose)
 				printf("\n");
 			perror("send failure");
@@ -853,9 +853,9 @@ int check_for_message(char *recv, int size, struct sipsak_con_data *cd,
 	{
 		/* lets see if we at least received an icmp error */
 		if (cd->csock == -1) 
-			check_socket_error(cd->usock, size, mode, request);
+			check_socket_error(cd->usock, recv, size, mode, request);
 		else
-			check_socket_error(cd->csock, size, mode, request);
+			check_socket_error(cd->csock, recv, size, mode, request);
 		/* printout that we did not received anything */
 		if (verbose > 0) {
 			if (mode == SM_TRACE) {
@@ -1028,7 +1028,7 @@ int recv_message(char *buf, int size, int inv_trans,
 #else
 	else {
 #endif
-		check_socket_error(sock, size, mode, request);
+		check_socket_error(sock, buf, size, mode, request);
 #ifdef WITH_TLS_TRANSP
 		if (cd->transport == SIP_TLS_TRANSPORT) {
 # ifdef USE_GNUTLS
@@ -1162,7 +1162,7 @@ int recv_message(char *buf, int size, int inv_trans,
 		}
 	}
 	else {
-		check_socket_error(sock, size, mode, request);
+		check_socket_error(sock, buf, size, mode, request);
 		printf("\nnothing received, select returned error\n");
 		exit_code(2, __PRETTY_FUNCTION__, "nothing received, select returned error");
 	}
