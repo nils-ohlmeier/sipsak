@@ -98,6 +98,9 @@ int recv_message(char *buf, int size, int inv_trans,
       char *request, char *response);
 
 int set_target(struct sockaddr_in *adr, unsigned long target, int port,
-    int socket, int connected, unsigned int transport, char *domainname,
-    int ignore_ca_fail);
+    int socket, int connected, unsigned int transport, char *domainname
+#ifdef WITH_TLS_TRANSP
+    , int ignore_ca_fail
+#endif
+    );
 #endif

@@ -106,7 +106,11 @@ static inline void create_usern(char *target, char *username, int number)
 /* tries to take care of a redirection */
 void handle_3xx(struct sockaddr_in *tadr, int warning_ext, int rport,
     unsigned long address, unsigned int transport, int outbound_proxy,
-    char *domainname, int ignore_ca_fail)
+    char *domainname
+#ifdef WITH_TLS_TRANSP
+    , int ignore_ca_fail
+#endif
+    )
 {
 	char *uscheme, *uuser, *uhost, *contact;
 
@@ -152,7 +156,11 @@ void handle_3xx(struct sockaddr_in *tadr, int warning_ext, int rport,
 		free(contact);
 		if (!outbound_proxy)
 			cdata.connected = set_target(tadr, address, rport, cdata.csock,
-          cdata.connected, cdata.transport, domainname, ignore_ca_fail);
+          cdata.connected, cdata.transport, domainname
+#ifdef WITH_TLS_TRANSP
+          , ignore_ca_fail
+#endif
+          );
 	}
 	else {
 		fprintf(stderr, "error: cannot handle this redirect:"
@@ -1024,7 +1032,11 @@ void shoot(char *buf, int buff_size, struct sipsak_options *options)
 	}
 
 	cdata.connected = set_target(&(cdata.adr), options->address, cdata.rport, cdata.csock,
-      cdata.connected, cdata.transport, options->domainname, options->ignore_ca_fail);
+      cdata.connected, cdata.transport, options->domainname
+#ifdef WITH_TLS_TRANSP
+      , options->ignore_ca_fail
+#endif
+      );
 
 	/* here we go until someone decides to exit */
 	while(1) {
@@ -1112,7 +1124,11 @@ void shoot(char *buf, int buff_size, struct sipsak_options *options)
             regexec(&(regexps.redexp), received, 0, 0, 0) == REG_NOERROR) {
 					handle_3xx(&(cdata.adr), options->warning_ext, cdata.rport,
                      options->address, cdata.transport, options->outbound_proxy,
-                     options->domainname, options->ignore_ca_fail);
+                     options->domainname
+#ifdef WITH_TLS_TRANSP
+                     , options->ignore_ca_fail
+#endif
+                     );
 				} /* if redircts... */
 				else if (options->mode == SM_TRACE) {
 					trace_reply(options->regex, counters.namebeg, &timers);
