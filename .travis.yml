@@ -1,3 +1,6 @@
+env:
+  global:
+    - CK_LOG_FILE_NAME=-
 language: c
 os:
   - linux
