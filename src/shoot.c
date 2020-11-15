@@ -56,6 +56,7 @@
 
 char *request;
 char *response;
+char *received;
 
 char *usern;
 
