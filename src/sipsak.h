@@ -307,7 +307,6 @@
 #define SIPSAK_HASHHEXLEN 2 * SIPSAK_HASHLEN
 
 /* lots of global variables. ugly but makes life easier. */
-char fqdn[FQDN_SIZE];
 char *received, *transport_str;
 
 extern int verbose;

@@ -33,6 +33,7 @@ struct sipsak_msg_data {
   char *from_uri;
   char *mes_body;
   char *headers;
+  char *fqdn;
 };
 
 void create_msg(int action, struct sipsak_msg_data *data);

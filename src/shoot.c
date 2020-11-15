@@ -61,6 +61,8 @@ char *usern;
 
 int inv_trans;
 
+char fqdn[FQDN_SIZE];
+
 enum usteps usrlocstep;
 
 struct sipsak_regexp regexps;
@@ -847,6 +849,7 @@ void shoot(char *buf, int buff_size, struct sipsak_options *options)
 	memset(buf2, 0, BUFSIZE);
 	memset(buf3, 0, BUFSIZE);
 	memset(lport_str, 0, LPORT_STR_LEN);
+	memset(fqdn, 0, FQDN_SIZE);
 
   /* initialize external vars which don't have initializer */
   nonce_count = 0;
@@ -899,12 +902,16 @@ void shoot(char *buf, int buff_size, struct sipsak_options *options)
 	msg_data.from_uri = options->from_uri;
 	msg_data.mes_body = options->mes_body;
 	msg_data.headers = options->headers;
+	msg_data.fqdn = fqdn;
 
 	init_network(&cdata, options->local_ip
 #ifdef WITH_TLS_TRANSP
       , options->ca_file
 #endif
       );
+
+	/* determine our hostname */
+	get_fqdn(&fqdn[0], options->numeric, options->hostname);
 
 	if (options->replace_b == 1){
 		replace_string(request, "$dsthost$", options->domainname);
@@ -1008,7 +1015,7 @@ void shoot(char *buf, int buff_size, struct sipsak_options *options)
 				inv_trans = 1;
 			}
 			if(options->via_ins == 1)
-				add_via(request, cdata.lport);
+				add_via(request, msg_data.fqdn, msg_data.lport);
 		}
 		/* delays.retryAfter = delays.retryAfter / 10; */
 		if(options->maxforw != -1)

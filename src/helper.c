@@ -510,7 +510,7 @@ unsigned long getsrvadr(char *host, int *port, unsigned int *transport) {
 /* because the full qualified domain name is needed by many other
    functions it will be determined by this function.
 */
-void get_fqdn(int numeric, char *hostname) {
+void get_fqdn(char *buf, int numeric, char *hostname) {
 	char hname[100], dname[100], hlp[18];
 	size_t namelen=100;
 	struct hostent* he;
@@ -521,7 +521,7 @@ void get_fqdn(int numeric, char *hostname) {
 	memset(&hlp, 0, sizeof(hlp));
 
 	if (hostname) {
-		strncpy(fqdn, hostname, FQDN_SIZE-1);
+		strncpy(buf, hostname, FQDN_SIZE-1);
 		strncpy(hname, hostname, sizeof(hname)-1);
 	}
 	else {
@@ -542,27 +542,27 @@ void get_fqdn(int numeric, char *hostname) {
 				exit_code(2, __PRETTY_FUNCTION__, "failed to get domainname");
 			}
 			if (strcmp(&dname[0],"(none)")!=0)
-				snprintf(fqdn, FQDN_SIZE, "%s.%s", hname, dname);
+				snprintf(buf, FQDN_SIZE, "%s.%s", hname, dname);
 		}
 		else {
-			strncpy(fqdn, hname, FQDN_SIZE-1);
+			strncpy(buf, hname, FQDN_SIZE-1);
 		}
 #endif
 	}
 
-	if (!(numeric == 1 && is_ip(fqdn))) {
+	if (!(numeric == 1 && is_ip(buf))) {
 		he=gethostbyname(hname);
 		if (he) {
 			if (numeric == 1) {
 				snprintf(hlp, sizeof(hlp), "%s", inet_ntoa(*(struct in_addr *) he->h_addr_list[0]));
-				strncpy(fqdn, hlp, FQDN_SIZE-1);
+				strncpy(buf, hlp, FQDN_SIZE-1);
 			}
 			else {
 				if ((strchr(he->h_name, '.'))!=NULL && (strchr(hname, '.'))==NULL) {
-					strncpy(fqdn, he->h_name, FQDN_SIZE-1);
+					strncpy(buf, he->h_name, FQDN_SIZE-1);
 				}
 				else {
-					strncpy(fqdn, hname, FQDN_SIZE-1);
+					strncpy(buf, hname, FQDN_SIZE-1);
 				}
 			}
 		}
@@ -571,19 +571,19 @@ void get_fqdn(int numeric, char *hostname) {
 			exit_code(2, __PRETTY_FUNCTION__, "failed to resolve local hostname");
 		}
 	}
-	if ((strchr(fqdn, '.'))==NULL) {
+	if ((strchr(buf, '.'))==NULL) {
 		if (hostname) {
-			fprintf(stderr, "warning: %s is not resolvable... continuing anyway\n", fqdn);
-			strncpy(fqdn, hostname, FQDN_SIZE-1);
+			fprintf(stderr, "warning: %s is not resolvable... continuing anyway\n", buf);
+			strncpy(buf, hostname, FQDN_SIZE-1);
 		}
 		else {
-			fprintf(stderr, "error: this FQDN or IP is not valid: %s\n", fqdn);
+			fprintf(stderr, "error: this FQDN or IP is not valid: %s\n", buf);
 			exit_code(2, __PRETTY_FUNCTION__, "invalid IP or FQDN");
 		}
 	}
 
 	if (verbose > 2)
-		printf("fqdnhostname: %s\n", fqdn);
+		printf("fqdnhostname: %s\n", buf);
 }
 
 /* this function searches for search in mess and replaces it with

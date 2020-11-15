@@ -340,7 +340,6 @@ int main(int argc, char *argv[])
 	options.timer_final = 64;
 	tsp = 0;
 	memset(buff, 0, BUFSIZE);
-	memset(fqdn, 0, FQDN_SIZE);
 
 	if (argc==1) {
 		print_help();
@@ -1015,9 +1014,6 @@ int main(int argc, char *argv[])
 			exit_code(2, __PRETTY_FUNCTION__, "unknown transport");
 	}
 
-	/* determine our hostname */
-	get_fqdn(options.numeric, options.hostname);
-	
 	/* this is not a cryptographic random number generator,
 	   but hey this is only a test-tool => should be satisfying*/
 	srand(time(0) ^ (getpid() + (getpid() << 15)));

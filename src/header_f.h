@@ -22,7 +22,7 @@
 
 void insert_header(char *mes, char *header, int first);
 
-void add_via(char *mes, int lport);
+void add_via(char *mes, char *fqdn, int lport);
 
 void cpy_vias(char *reply, char *dest);
 
