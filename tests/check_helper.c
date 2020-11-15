@@ -9,6 +9,10 @@
 
 #define RUNNING_CHECK 1
 
+void shutdown_network() {};
+
+int verbose = 99;
+
 START_TEST (test_is_number) {
 	/* failure cases */
 	fail_unless(is_number("") == 0, "is_number(\"\") returned %d, instead of 0", is_number(""));
@@ -96,7 +100,7 @@ START_TEST (test_is_ip) {
 END_TEST
 
 START_TEST (test_getaddress) {
-	uint32_t localaddr;
+	unsigned long localaddr;
 
 	/* failure case */
 	fail_unless(getaddress("") == 0, "getaddress(\"\") returned %lu, instead of 0", getaddress(""));
