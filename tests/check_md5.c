@@ -10,7 +10,7 @@
 #define RUNNING_CHECK 1
 
 char md5hex_buf[33]; /* NULed by initialization */
-const char *md5hex(char res[16]) {
+const char *md5hex(unsigned char res[16]) {
 	int i;
 	for (i = 0; i < 16; ++i) {
 		sprintf(md5hex_buf + 2 * i, "%02hhx", res[i]);
