@@ -138,6 +138,35 @@ START_TEST (test_insert_cr) {
 }
 END_TEST
 
+START_TEST (test_get_fqdn) {
+  char fqdn[FQDN_SIZE];
+
+  memset(fqdn, '\0', FQDN_SIZE);
+  get_fqdn(fqdn, 0, 0);
+  fail_unless(memcmp(fqdn, "\0\0\0\0\0", 5) != 0, "get_fqdn empty buffer '%s'", fqdn);
+
+  memset(fqdn, '\0', FQDN_SIZE);
+  get_fqdn(fqdn, 1, 0);
+  fail_unless(memcmp(fqdn, "127.0.0.1\0", 10) == 0, "get_fqdn returned '%s', instead of '127.0.0.1'", fqdn);
+
+  memset(fqdn, '\0', FQDN_SIZE);
+  get_fqdn(fqdn, 0, "127.0.0.15");
+  fail_unless(memcmp(fqdn, "127.0.0.15\0", 11) == 0, "get_fqdn returned '%s', instead of '127.0.0.15'", fqdn);
+
+  memset(fqdn, '\0', FQDN_SIZE);
+  get_fqdn(fqdn, 0, "localhost");
+  fail_unless(memcmp(fqdn, "localhost\0", 10) == 0, "get_fqdn returned '%s', instead of 'localhost'", fqdn);
+
+  memset(fqdn, '\0', FQDN_SIZE);
+  get_fqdn(fqdn, 1, "127.0.0.21");
+  fail_unless(memcmp(fqdn, "127.0.0.21\0", 11) == 0, "get_fqdn returned '%s', instead of '127.0.0.21'", fqdn);
+
+  memset(fqdn, '\0', FQDN_SIZE);
+  get_fqdn(fqdn, 1, "localhost");
+  fail_unless(memcmp(fqdn, "127.0.0.1\0", 10) == 0, "get_fqdn returned '%s', instead of '127.0.0.1'", fqdn);
+}
+END_TEST
+
 Suite *helper_suite(void) {
 	Suite *s = suite_create("Helper");
 
@@ -161,12 +190,17 @@ Suite *helper_suite(void) {
 	TCase *tc_insert_cr = tcase_create("insert_cr");
 	tcase_add_test(tc_insert_cr, test_insert_cr);
 
+	/* get_fqdn test case */
+	TCase *tc_get_fqdn = tcase_create("get_fqdn");
+	tcase_add_test(tc_get_fqdn, test_get_fqdn);
+
 	/* add test cases to suite */
 	suite_add_tcase(s, tc_is_number);
 	suite_add_tcase(s, tc_str_to_int);
 	suite_add_tcase(s, tc_is_ip);
 	suite_add_tcase(s, tc_getaddress);
 	suite_add_tcase(s, tc_insert_cr);
+	suite_add_tcase(s, tc_get_fqdn);
 
 	return s;
 }
