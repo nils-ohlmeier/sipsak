@@ -24,11 +24,11 @@ START_TEST (test_md5_empty) {
 	MD5_CTX ctx;
 
 	MD5Init(&ctx);
-	MD5Final(res, &ctx);
+	MD5Final(&res[0], &ctx);
 
 	fail_unless(
 		strcmp(md5hex(res), expected) == 0,
-		"md5('') returned %s instead of %s", &md5hex_buf, expected);
+		"md5('') returned %s instead of %s", &md5hex_buf[0], expected);
 }
 END_TEST
 
@@ -42,12 +42,12 @@ START_TEST (test_md5_quick_brown_fox) {
 	MD5Update(&ctx, "jumped over ", 12);
 	MD5Update(&ctx, "the \0NUL\n", 9);
 	//MD5Update(&ctx, "The quick brown fox jumped over the \0NUL\n", 41);
-	MD5Final(res, &ctx);
+	MD5Final(&res[0], &ctx);
 
 	fail_unless(
 		strcmp(md5hex(res), expected) == 0,
 		"md5('The quick brown fox jumped over the \\0NUL\\n') "
-		"returned %s instead of %s", &md5hex_buf, expected);
+		"returned %s instead of %s", &md5hex_buf[0], expected);
 }
 END_TEST
 
