@@ -78,6 +78,8 @@ struct sipsak_delay {
 	double all_delay;
 };
 
+extern char *transport_str;
+
 void init_network(struct sipsak_con_data *cd, char *local_ip
 #ifdef WITH_TLS_TRANSP
     , char *ca_file

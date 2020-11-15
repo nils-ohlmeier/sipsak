@@ -21,6 +21,7 @@
 #include "exit_code.h"
 #include "helper.h"
 #include "shoot.h"
+#include "transport.h"
 
 
 /* add the given header(s) below the request line */

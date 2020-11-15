@@ -997,23 +997,6 @@ int main(int argc, char *argv[])
 		}
 	}
 
-	switch (options.transport) {
-#ifdef WITH_TLS_TRANSP
-		case SIP_TLS_TRANSPORT:
-			transport_str = TRANSPORT_TLS_STR;
-			break;
-#endif /* WITH_TLS_TRANSP */
-		case SIP_TCP_TRANSPORT:
-			transport_str = TRANSPORT_TCP_STR;
-			break;
-		case SIP_UDP_TRANSPORT:
-			transport_str = TRANSPORT_UDP_STR;
-			break;
-		default:
-			fprintf(stderr, "unknown transport: %u\n", options.transport);
-			exit_code(2, __PRETTY_FUNCTION__, "unknown transport");
-	}
-
 	/* this is not a cryptographic random number generator,
 	   but hey this is only a test-tool => should be satisfying*/
 	srand(time(0) ^ (getpid() + (getpid() << 15)));

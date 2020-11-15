@@ -100,6 +100,7 @@
 #include "helper.h"
 #include "header_f.h"
 
+char *transport_str;
 char target_dot[INET_ADDRSTRLEN], source_dot[INET_ADDRSTRLEN];
 
 #ifdef RAW_SUPPORT
@@ -576,9 +577,29 @@ void init_network(struct sipsak_con_data *cd, char *local_ip
     ) {
 	socklen_t slen;
 
+  transport_str = NULL;
+  memset(&target_dot, 0, INET_ADDRSTRLEN);
+  memset(&source_dot, 0, INET_ADDRSTRLEN);
 #ifdef RAW_SUPPORT
 	rawsock = -1;
 #endif
+
+	switch (cd->transport) {
+#ifdef WITH_TLS_TRANSP
+		case SIP_TLS_TRANSPORT:
+			transport_str = TRANSPORT_TLS_STR;
+			break;
+#endif /* WITH_TLS_TRANSP */
+		case SIP_TCP_TRANSPORT:
+			transport_str = TRANSPORT_TCP_STR;
+			break;
+		case SIP_UDP_TRANSPORT:
+			transport_str = TRANSPORT_UDP_STR;
+			break;
+		default:
+			fprintf(stderr, "unknown transport: %u\n", cd->transport);
+			exit_code(2, __PRETTY_FUNCTION__, "unknown transport");
+	}
 
 #ifdef WITH_TLS_TRANSP
 	if (cd->transport == SIP_TLS_TRANSPORT) {

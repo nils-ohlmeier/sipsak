@@ -307,7 +307,7 @@
 #define SIPSAK_HASHHEXLEN 2 * SIPSAK_HASHLEN
 
 /* lots of global variables. ugly but makes life easier. */
-char *received, *transport_str;
+char *received;
 
 extern int verbose;
 
