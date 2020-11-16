@@ -142,16 +142,6 @@ START_TEST (test_get_fqdn) {
   char fqdn[FQDN_SIZE];
 
   memset(fqdn, '\0', FQDN_SIZE);
-  get_fqdn(fqdn, 0, 0);
-  fail_unless(memcmp(fqdn, "\0\0\0\0\0", 5) != 0, "get_fqdn empty buffer '%s'", fqdn);
-  fprintf(stderr, "after fqdn test 1\n");
-
-  memset(fqdn, '\0', FQDN_SIZE);
-  get_fqdn(fqdn, 1, 0);
-  fail_unless(memcmp(fqdn, "127.0.0.1\0", 10) == 0, "get_fqdn returned '%s', instead of '127.0.0.1'", fqdn);
-  fprintf(stderr, "after fqdn test 2\n");
-
-  memset(fqdn, '\0', FQDN_SIZE);
   get_fqdn(fqdn, 0, "127.0.0.15");
   fail_unless(memcmp(fqdn, "127.0.0.15\0", 11) == 0, "get_fqdn returned '%s', instead of '127.0.0.15'", fqdn);
   fprintf(stderr, "after fqdn test 3\n");
@@ -170,6 +160,16 @@ START_TEST (test_get_fqdn) {
   get_fqdn(fqdn, 1, "localhost");
   fail_unless(memcmp(fqdn, "127.0.0.1\0", 10) == 0, "get_fqdn returned '%s', instead of '127.0.0.1'", fqdn);
   fprintf(stderr, "after fqdn test 6\n");
+
+  memset(fqdn, '\0', FQDN_SIZE);
+  get_fqdn(fqdn, 0, 0);
+  fail_unless(memcmp(fqdn, "\0\0\0\0\0", 5) != 0, "get_fqdn empty buffer '%s'", fqdn);
+  fprintf(stderr, "after fqdn test 1\n");
+
+  memset(fqdn, '\0', FQDN_SIZE);
+  get_fqdn(fqdn, 1, 0);
+  fail_unless(memcmp(fqdn, "127.0.0.1\0", 10) == 0, "get_fqdn returned '%s', instead of '127.0.0.1'", fqdn);
+  fprintf(stderr, "after fqdn test 2\n");
 }
 END_TEST
 
