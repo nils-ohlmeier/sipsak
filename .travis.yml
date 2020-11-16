@@ -1,6 +1,3 @@
-env:
-  global:
-    - CK_LOG_FILE_NAME=-
 language: c
 os:
   - linux
@@ -19,3 +16,4 @@ before_install:
   - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then brew install check c-ares ; fi
 install: autoreconf --install
 script: ./configure && make && make check
+  cat test-suite.log
