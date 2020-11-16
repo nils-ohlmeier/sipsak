@@ -144,22 +144,18 @@ START_TEST (test_get_fqdn) {
   memset(fqdn, '\0', FQDN_SIZE);
   get_fqdn(fqdn, 0, "127.0.0.15");
   fail_unless(memcmp(fqdn, "127.0.0.15\0", 11) == 0, "get_fqdn returned '%s', instead of '127.0.0.15'", fqdn);
-  fprintf(stderr, "after fqdn test 3\n");
 
   memset(fqdn, '\0', FQDN_SIZE);
   get_fqdn(fqdn, 0, "localhost");
   fail_unless(memcmp(fqdn, "localhost\0", 10) == 0, "get_fqdn returned '%s', instead of 'localhost'", fqdn);
-  fprintf(stderr, "after fqdn test 4\n");
 
   memset(fqdn, '\0', FQDN_SIZE);
   get_fqdn(fqdn, 1, "127.0.0.21");
   fail_unless(memcmp(fqdn, "127.0.0.21\0", 11) == 0, "get_fqdn returned '%s', instead of '127.0.0.21'", fqdn);
-  fprintf(stderr, "after fqdn test 5\n");
 
   memset(fqdn, '\0', FQDN_SIZE);
   get_fqdn(fqdn, 1, "localhost");
   fail_unless(memcmp(fqdn, "127.0.0.1\0", 10) == 0, "get_fqdn returned '%s', instead of '127.0.0.1'", fqdn);
-  fprintf(stderr, "after fqdn test 6\n");
 
   /* this fails on Travis Linux hosts, because their host names have no dots
   memset(fqdn, '\0', FQDN_SIZE);

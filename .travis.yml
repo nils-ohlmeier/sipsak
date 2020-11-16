@@ -15,8 +15,4 @@ before_install:
   - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then brew update ; fi
   - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then brew install check c-ares ; fi
 install: autoreconf --install
-script:
-  - ./configure
-  - make
-  - make check
-  - cat test-suite.log
+script: ./configure && make && make check
