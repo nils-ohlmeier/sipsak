@@ -108,6 +108,11 @@ void insert_auth(char *message, char *authreq, char *username,
 		/* make a copy of the auth header to prevent that our searches
 		   hit content of other header fields */
 		end=strchr(begin, '\n');
+    if (end == NULL) {
+			fprintf(stderr, "%s\nerror: failed to locate new line after auth header\n",
+          authreq);
+			exit_code(3, __PRETTY_FUNCTION__, "missing new line after auth header");
+    }
 		auth=str_alloc((size_t)(end-begin+1));
 		strncpy(auth, begin, (size_t)(end-begin));
 		/* we support Digest with MD5 or SHA1 */
