@@ -847,7 +847,7 @@ void *str_alloc(size_t size) {
 	ptr = malloc(size);
 #endif
 	if (ptr == NULL) {
-		fprintf(stderr, "error: memory allocation failed\n");
+		fprintf(stderr, "error: memory allocation for %lu bytes failed\n", size);
 		exit_code(255, __PRETTY_FUNCTION__, "memory allocation failure");
 	}
 #ifndef HAVE_CALLOC
