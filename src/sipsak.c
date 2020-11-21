@@ -647,7 +647,7 @@ int main(int argc, char *argv[])
 				}
 				options.outbound_proxy=1;
 #ifdef DEBUG
-				printf("address: %lu, rport: %i\n", address, rport);
+				printf("address: %lu, rport: %i\n", options.address, options.rport);
 #endif
 				break;
 			case 'P':
@@ -736,7 +736,7 @@ int main(int argc, char *argv[])
 				}
 				options.uri_b=1;
 #ifdef DEBUG
-				printf("address: %lu, rport: %i, username: '%s', domain: '%s'\n", address, rport, username, domainname);
+				printf("address: %lu, rport: %i, username: '%s', domain: '%s'\n", options.address, options.rport, options.username, options.domainname);
 #endif
 				break;
 			case 'S':

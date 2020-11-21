@@ -109,9 +109,9 @@ void insert_auth(char *message, char *authreq, char *username,
 		   hit content of other header fields */
 		end=strchr(begin, '\n');
     if (end == NULL) {
-			fprintf(stderr, "%s\nerror: failed to locate new line after auth header\n",
+      fprintf(stderr, "%s\nerror: failed to locate new line after auth header\n",
           authreq);
-			exit_code(3, __PRETTY_FUNCTION__, "missing new line after auth header");
+      exit_code(3, __PRETTY_FUNCTION__, "missing new line after auth header");
     }
 		auth=str_alloc((size_t)(end-begin+1));
 		strncpy(auth, begin, (size_t)(end-begin));
@@ -160,12 +160,22 @@ void insert_auth(char *message, char *authreq, char *username,
 		}
 		/* extract the method from the original request */
 		end=strchr(message, ' ');
+    if (end == NULL) {
+      fprintf(stderr, "%s\nerror: failed to locate space in message first line\n",
+          authreq);
+      exit_code(3, __PRETTY_FUNCTION__, "missing space in message");
+    }
 		method=str_alloc((size_t)(end-message+1));
 		strncpy(method, message, (size_t)(end-message));
 		/* extract the uri also */
 		begin=end++;
 		begin++;
 		end=strchr(end, ' ');
+    if (end == NULL) {
+      fprintf(stderr, "%s\nerror: failed to locate space in message first line\n",
+          authreq);
+      exit_code(3, __PRETTY_FUNCTION__, "missing space in message");
+    }
 		uri=str_alloc((size_t)(end-begin+1));
 		strncpy(uri, begin, (size_t)(end-begin));
 
