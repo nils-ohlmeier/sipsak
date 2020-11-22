@@ -153,10 +153,15 @@ void insert_auth(char *message, char *authreq, char *username,
 		}
 		else {
 			usern=str_alloc(strlen(username)+11);
+      if (usern == NULL) {
+        fprintf(stderr, "error: failed to allocate space for username: %s\n",
+            username);
+        exit_code(3, __PRETTY_FUNCTION__, "memory allocation failure");
+      }
 			if (nameend>0)
-				snprintf(usern, strlen(username)+10, "%s%i", username, namebeg);
+				snprintf(usern, strlen(username)+10, "%s%d", username, namebeg);
 			else
-				snprintf(usern, strlen(username)+10, "%s", username);
+				snprintf(usern, strlen(username)+1, "%s", username);
 		}
 		/* extract the method from the original request */
 		end=strchr(message, ' ');
