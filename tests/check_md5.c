@@ -26,7 +26,7 @@ START_TEST (test_md5_empty) {
 	MD5Init(&ctx);
 	MD5Final(&res[0], &ctx);
 
-	fail_unless(
+	ck_assert_msg(
 		strcmp(md5hex(res), expected) == 0,
 		"md5('') returned %s instead of %s", &md5hex_buf[0], expected);
 }
@@ -44,7 +44,7 @@ START_TEST (test_md5_quick_brown_fox) {
 	//MD5Update(&ctx, "The quick brown fox jumped over the \0NUL\n", 41);
 	MD5Final(&res[0], &ctx);
 
-	fail_unless(
+	ck_assert_msg(
 		strcmp(md5hex(res), expected) == 0,
 		"md5('The quick brown fox jumped over the \\0NUL\\n') "
 		"returned %s instead of %s", &md5hex_buf[0], expected);
