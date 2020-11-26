@@ -14,7 +14,7 @@ TESTS = tests/check_helper tests/check_md5 tests/check_auth
 
 check_PROGRAMS = $(TESTS)
 
-tests_check_helper_SOURCES = tests/check_helper.c src/helper.h src/helper.c src/exit_code.h src/exit_code.c
+tests_check_helper_SOURCES = tests/check_helper.c src/helper.h src/helper.c src/exit_code.h
 tests_check_helper_CFLAGS = @CHECK_CFLAGS@ -DRUNNING_CHECK
 tests_check_helper_LDADD = @CHECK_LIBS@
 

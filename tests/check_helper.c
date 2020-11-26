@@ -13,6 +13,10 @@ void shutdown_network() {};
 
 int verbose = 99;
 
+void exit_code(int code, const char *function, const char *reason) {
+  //fail();
+};
+
 START_TEST (test_is_number) {
 	/* failure cases */
 	ck_assert_msg(is_number("") == 0, "is_number(\"\") returned %d, instead of 0", is_number(""));
