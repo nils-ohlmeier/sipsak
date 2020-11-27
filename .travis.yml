@@ -17,5 +17,4 @@ addons:
     update: true
 install: autoreconf --install
 script: 
-  - ./configure && make
-  - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then make check ; fi
+  - ./configure && make && make check
