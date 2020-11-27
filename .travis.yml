@@ -15,6 +15,7 @@ addons:
     packages:
       - check
       - c-ares
+    update: true
 install: autoreconf --install
 script: 
   - ./configure && make
