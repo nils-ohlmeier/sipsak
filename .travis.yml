@@ -16,4 +16,6 @@ addons:
       - check
       - c-ares
 install: autoreconf --install
-script: ./configure && make && make check
+script: 
+  - ./configure && make
+  - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then make check ; fi
