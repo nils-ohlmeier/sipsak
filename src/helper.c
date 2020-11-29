@@ -853,7 +853,6 @@ void *str_alloc(size_t size) {
 #ifndef HAVE_CALLOC
 	memset(ptr, 0, size);
 #endif
-  printf("%lu\n", size);
 	return ptr;
 }
 

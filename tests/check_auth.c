@@ -14,8 +14,24 @@ void shutdown_network() {};
 
 int verbose = 99;
 
+int expected_exit_code = -1;
+char *expected_exit_reason = NULL;
+int expected_exit_code_called = 0;
+
+void set_expected_exit_code(int code, const char *reason) {
+  expected_exit_code = code;
+  expected_exit_reason = reason;
+  expected_exit_code_called = 0;
+}
+
 void exit_code(int code, const char *function, const char *reason) {
-  //fail();
+  if (expected_exit_code == -1) {
+    ck_abort_msg("Unexpected call to exit_code() with code %i at %s: %s",
+        code, function, reason);
+  }
+  expected_exit_code_called = 1;
+  ck_assert_msg(expected_exit_code == code, "Expected call to exit_code() with wrong code number");
+  ck_assert_str_eq(expected_exit_reason, reason);
 };
 
 START_TEST (test_insert_auth_md5) {
@@ -112,8 +128,19 @@ START_TEST (test_insert_auth_exits) {
   char username[] = "testuser";
   char password[] = "helloworld";
 
+  set_expected_exit_code(3, "missing authentication header in reply");
   insert_auth(&message1[0], &auth_response[0], &username[0], &password[0],
       NULL, NULL, 0, 0);
+  ck_assert_int_eq(expected_exit_code_called, 1);
+
+  /*
+  char message2[BUFSIZE] = "REGISTER";
+
+  set_expected_exit_code(3, "missing new line in request");
+  insert_auth(&message2[0], &auth_response[0], &username[0], &password[0],
+      NULL, NULL, 0, 0);
+  ck_assert_int_eq(expected_exit_code_called, 1);
+  */
 }
 END_TEST
 

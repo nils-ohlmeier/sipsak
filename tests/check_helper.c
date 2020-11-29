@@ -14,7 +14,8 @@ void shutdown_network() {};
 int verbose = 99;
 
 void exit_code(int code, const char *function, const char *reason) {
-  //fail();
+  ck_abort_msg("Unexpected call to exit_code() with code %i at %s: %s",
+      code, function, reason);
 };
 
 START_TEST (test_is_number) {

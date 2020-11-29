@@ -92,8 +92,9 @@ void insert_auth(char *message, char *authreq, char *username,
 	   simplicity we insert the auth header direct behind the request line */
 	insert=strchr(message, '\n');
 	if (!insert) {
-		printf("failed to find newline\n");
-		return;
+    fprintf(stderr, "%s\nerror: failed to locate new line in request message\n",
+        message);
+    exit_code(3, __PRETTY_FUNCTION__, "missing new line in request");
 	}
 	insert++;
 	backup=str_alloc(strlen(insert)+1);
