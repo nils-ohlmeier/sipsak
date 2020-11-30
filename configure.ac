@@ -98,7 +98,7 @@ PKG_CHECK_MODULES([CARES], [libcares], [
   LIBS="$LIBS $CARES_LIBS"
   CFLAGS="$CFLAGS $CARES_CFLAGS"
   AC_CHECK_HEADERS([arpa/nameser.h])
-])
+  ],:)
 
 # FIXME: this has to replaced with a real check
 # LIBS="$LIBS -lssl"
