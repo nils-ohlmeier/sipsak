@@ -40,9 +40,6 @@
 #ifdef HAVE_NETINET_IN_H
 # include <netinet/in.h>
 #endif
-#ifdef HAVE_RULI_H
-# include <ruli.h>
-#endif
 #ifdef HAVE_ERRNO_H
 # include <errno.h>
 #endif
@@ -370,78 +367,11 @@ static inline unsigned long srv_ares(char *host, int *port, char *srv) {
 }
 #endif // HAVE_CARES_H
 
-#ifdef HAVE_RULI_H
-static inline unsigned long srv_ruli(char *host, int *port, char *srv) {
-	int srv_code;
-	int ruli_opts = RULI_RES_OPT_SEARCH | RULI_RES_OPT_SRV_NOINET6 | RULI_RES_OPT_SRV_NOSORT6 | RULI_RES_OPT_SRV_NOFALL;
-#ifdef RULI_RES_OPT_SRV_CNAME
-	ruli_opts |= RULI_RES_OPT_SRV_CNAME;
-#endif
-
-	ruli_sync_t *sync_query = ruli_sync_query(srv, host, *port, ruli_opts);
-
-	/* sync query failure? */
-	if (!sync_query) {
-		printf("DNS SRV lookup failed for: %s\n", host);
-		exit_code(2, __PRETTY_FUNCTION__, "DNS SRV lookup failed");
-	}
-
-	srv_code = ruli_sync_srv_code(sync_query);
-	/* timeout? */
-	if (srv_code == RULI_SRV_CODE_ALARM) {
-		printf("Timeout during DNS SRV lookup for: %s\n", host);
-		ruli_sync_delete(sync_query);
-		exit_code(2, __PRETTY_FUNCTION__, "timeout during DNS SRV lookup");
-	}
-	/* service provided? */
-	else if (srv_code == RULI_SRV_CODE_UNAVAILABLE) {
-		printf("SRV service not provided for: %s\n", host);
-		ruli_sync_delete(sync_query);
-		exit_code(2, __PRETTY_FUNCTION__, "missing service in DNS SRV reply");
-	}
-	else if (srv_code) {
-		int rcode = ruli_sync_rcode(sync_query);
-		if (verbose > 1)
-			printf("SRV query failed for: %s, srv_code=%d, rcode=%d\n", host, srv_code, rcode);
-		ruli_sync_delete(sync_query);
-		return 0;
-	}
-
-	ruli_list_t *srv_list = ruli_sync_srv_list(sync_query);
-
-	int srv_list_size = ruli_list_size(srv_list);
-
-	if (srv_list_size < 1) {
-		if (verbose > 1)
-			printf("No SRV record: %s.%s\n", srv, host);
-		return 0;
-	}
-
-	ruli_srv_entry_t *entry = (ruli_srv_entry_t *) ruli_list_get(srv_list, 0);
-	ruli_list_t *addr_list = &entry->addr_list;
-	int addr_list_size = ruli_list_size(addr_list);
-
-	if (addr_list_size < 1) {
-		printf("missing addresses in SRV lookup for: %s\n", host);
-		ruli_sync_delete(sync_query);
-		exit_code(2, __PRETTY_FUNCTION__, "missing address in DNS SRV reply");
-	}
-
-	*port = entry->port;
-	ruli_addr_t *addr = (ruli_addr_t *) ruli_list_get(addr_list, 0);
-	return addr->addr.ipv4.s_addr;
-}
-#endif // HAVE_RULI_H
-
 unsigned long getsrvaddress(char *host, int *port, char *srv) {
-#ifdef HAVE_RULI_H
-	return srv_ruli(host, port, srv);
-#else
-# ifdef HAVE_CARES_H // HAVE_RULI_H
+#ifdef HAVE_CARES_H
 	return srv_ares(host, port, srv);
-# else // HAVE_CARES_H
+#else // HAVE_CARES_H
 	return 0;
-# endif
 #endif
 }
 
