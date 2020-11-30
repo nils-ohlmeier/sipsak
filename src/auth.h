@@ -18,6 +18,10 @@
 #ifndef SIPSAK_AUTH_H
 #define SIPSAK_AUTH_H
 
-void insert_auth(char *message, char *authreq);
+extern unsigned int nonce_count;
+
+void insert_auth(char *message, char *authreq, char *username,
+    char *password, char *auth_username, char *authhash,
+    int namebeg, int nameend);
 
 #endif

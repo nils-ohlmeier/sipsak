@@ -11,8 +11,10 @@ addons:
     packages:
       - check
       - libc-ares-dev
-before_install:
-  - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then brew update ; fi
-  - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then brew install check c-ares ; fi
+  homebrew:
+    packages:
+      - check
+    update: true
 install: autoreconf --install
-script: ./configure && make && make check
+script: 
+  - ./configure && make && make check

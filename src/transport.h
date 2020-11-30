@@ -40,6 +40,10 @@ struct sipsak_sr_time {
 	struct timeval firstsendt;
 	struct timeval starttime;
 	struct timeval delaytime;
+	int timer_t1;
+	int timer_t2;
+	int timer_final;
+	int timing;
 };
 
 struct sipsak_con_data {
@@ -49,6 +53,10 @@ struct sipsak_con_data {
 	int dontsend;
 	int dontrecv;
 	int connected;
+	int symmetric;
+	int lport;
+	int rport;
+	unsigned int transport;
 	char *buf_tmp;
 	int buf_tmp_size;
 };
@@ -59,6 +67,8 @@ struct sipsak_counter {
 	int retrans_s_c;
 	int randretrys;
 	int run;
+	int namebeg;
+	int nameend;
 };
 
 struct sipsak_delay {
@@ -68,23 +78,29 @@ struct sipsak_delay {
 	double all_delay;
 };
 
-void create_sockets(struct sipsak_con_data *cd);
+extern char *transport_str;
 
-void close_sockets(struct sipsak_con_data *cd);
+void init_network(struct sipsak_con_data *cd, char *local_ip
+#ifdef WITH_TLS_TRANSP
+    , char *ca_file
+#endif
+    );
+
+void shutdown_network();
 
 void send_message(char* mes, struct sipsak_con_data *cd,
 			struct sipsak_counter *sc, struct sipsak_sr_time *srt);
 
-void check_socket_error(int socket, int size);
-
-int check_for_message(char *recv, int size, struct sipsak_con_data *cd,
-			struct sipsak_sr_time *srt, struct sipsak_counter *count,
-			struct sipsak_delay *sd);
-
-int recv_message(char *buf, int size, int inv_trans, 
+int recv_message(char *buf, int size, int inv_trans,
 			struct sipsak_delay *sd, struct sipsak_sr_time *srt,
 			struct sipsak_counter *count, struct sipsak_con_data *cd,
-			struct sipsak_regexp *reg);
+			struct sipsak_regexp *reg, enum sipsak_modes mode, int cseq_counter,
+      char *request, char *response);
 
-int set_target(struct sockaddr_in *adr, unsigned long target, int port, int socket, int connected);
+int set_target(struct sockaddr_in *adr, unsigned long target, int port,
+    int socket, int connected, unsigned int transport, char *domainname
+#ifdef WITH_TLS_TRANSP
+    , int ignore_ca_fail
+#endif
+    );
 #endif

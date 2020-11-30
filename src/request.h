@@ -18,6 +18,24 @@
 #ifndef SIPSAK_REQUEST_H
 #define SIPSAK_REQUEST_H
 
-void create_msg(int action, char *buff, char *repl_buff, char *username, int cseq);
+struct sipsak_msg_data {
+  int cseq_counter;
+  int lport;
+  int expires_t;
+  int empty_contact;
+  unsigned int transport;
+  char *req_buff;
+  char *repl_buff;
+  char *username;
+  char *domainname;
+  char *contact_uri;
+  char *con_dis;
+  char *from_uri;
+  char *mes_body;
+  char *headers;
+  char *fqdn;
+};
+
+void create_msg(int action, struct sipsak_msg_data *data);
 
 #endif

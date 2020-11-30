@@ -34,7 +34,7 @@ struct sipsak_regexp {
 	regex_t replyexp;
 };
 
-enum usteps { 
+enum usteps {
 	REG_REP,
 	INV_RECV,
 	INV_OK_RECV,
@@ -44,8 +44,6 @@ enum usteps {
 	UNREG_REP
 };
 
-int inv_trans;
-
-void shoot(char *buff, int buff_size);
+void shoot(char *buff, int buff_size, struct sipsak_options *options);
 
 #endif

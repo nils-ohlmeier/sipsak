@@ -30,4 +30,5 @@ test-driver
 *.o
 check_helper
 check_md5
+check_auth
 sipsak

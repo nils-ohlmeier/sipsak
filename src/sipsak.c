@@ -61,6 +61,8 @@
 #include "shoot.h"
 #include "exit_code.h"
 
+int verbose;
+
 static void sigchld_handler(int signo)
 {
 	int chld_status;
@@ -257,6 +259,7 @@ int main(int argc, char *argv[])
 	pid_t 	pid;
 	struct 	timespec ts;
 	int 	upp;
+  struct sipsak_options options;
 
 #ifdef HAVE_GETOPT_LONG
 	int option_index = 0;
@@ -318,42 +321,25 @@ int main(int argc, char *argv[])
 	};
 #endif
 	/* some initialisation to be safe */
-	file_b=uri_b=trace=lport=usrloc=flood=verbose=randtrash=trashchar = 0;
-	warning_ext=rand_rem=nonce_count=replace_b=invite=message=sysl = 0;
-	sleep_ms=empty_contact=nagios_warn=timing=outbound_proxy=symmetric = 0;
-	namebeg=nameend=maxforw= -1;
+  verbose = 0;
+	memset(&options, 0, sizeof(struct sipsak_options));
+	options.namebeg = -1;
+  options.nameend = -1;
+  options.maxforw = -1;
 #ifdef OLDSTYLE_FQDN
-	numeric = 0;
+	options.numeric = 0;
 #else
-	numeric = 1;
+	options.numeric = 1;
 #endif
-	via_ins=redirects=fix_crlf=processes = 1;
-	username=password=replace_str=hostname=contact_uri=mes_body = NULL;
-	con_dis=auth_username=from_uri=headers=authhash=local_ip = NULL;
-	scheme = user = host = backup = request = response = received = NULL;
-	regex = NULL;
-	address= 0;
-	transport=tsp = 0;
-	rport = port = 0;
-	expires_t = USRLOC_EXP_DEF;
-	timer_t1 = SIP_T1;
-	timer_t2 = 8;
-	timer_final = 64;
+	options.via_ins = 1;
+  options.redirects = 1;
+  options.fix_crlf = 1;
+  options.processes = 1;
+	options.expires_t = USRLOC_EXP_DEF;
+	options.timer_t1 = SIP_T1;
+	options.timer_final = 64;
+	tsp = 0;
 	memset(buff, 0, BUFSIZE);
-	memset(fqdn, 0, FQDN_SIZE);
-#ifdef WITH_TLS_TRANSP
-	cert_file = ca_file = NULL;
-	ignore_ca_fail = 0;
-# ifdef USE_GNUTLS
-	tls_session = NULL;
-	xcred = NULL;
-# else
-#  ifdef USE_OPENSSL
-	ctx = NULL;
-	ssl = NULL;
-#  endif
-#endif
-#endif /* WITH_TLS_TRANSP */
 
 	if (argc==1) {
 		print_help();
@@ -384,11 +370,11 @@ int main(int argc, char *argv[])
 						exit_code(2, __PRETTY_FUNCTION__, "failed to open CA cert file");
 					}
 					fclose(pf);
-					ca_file=optarg;
+					options.ca_file=optarg;
 					break;
 				}
 				else if (STRNCASECMP("tls-ignore-cert-failure", l_opts[option_index].name, 22) == 0) {
-					ignore_ca_fail = 1;
+					options.ignore_ca_fail = 1;
 					break;
 				}
 				else if (STRNCASECMP("tls-client-cert", l_opts[option_index].name, 14) == 0) {
@@ -398,7 +384,7 @@ int main(int argc, char *argv[])
 						exit_code(2, __PRETTY_FUNCTION__, "failed to open client cert file");
 					}
 					fclose(pf);
-					cert_file=optarg;
+					options.cert_file=optarg;
 					break;
 				}
 #endif
@@ -406,26 +392,26 @@ int main(int argc, char *argv[])
 #endif
 			case 'a':
 				if (strlen(optarg) == 1 && STRNCASECMP(optarg, "-", 1) == 0) {
-					password = str_alloc(SIPSAK_MAX_PASSWD_LEN);
+					options.password = str_alloc(SIPSAK_MAX_PASSWD_LEN);
 					printf("Please enter the password (max. length %i): ", SIPSAK_MAX_PASSWD_LEN);
-					if (read_stdin(password, SIPSAK_MAX_PASSWD_LEN, 1) == 0) {
+					if (read_stdin(options.password, SIPSAK_MAX_PASSWD_LEN, 1) == 0) {
 						exit_code(0, __PRETTY_FUNCTION__, NULL);
 					}
 				}
 				else {
-					password=str_alloc(strlen(optarg) + 1);
-					strncpy(password, optarg, strlen(optarg));
+					options.password=str_alloc(strlen(optarg) + 1);
+					strncpy(options.password, optarg, strlen(optarg));
 				}
 				break;
 			case 'A':
-				timing=str_to_int(0, optarg);
+				options.timing=str_to_int(0, optarg);
 				break;
 			case 'b':
-				namebeg=str_to_int(0, optarg);
+				options.namebeg=str_to_int(0, optarg);
 				break;
 			case 'B':
-				mes_body=str_alloc(strlen(optarg) + 1);
-				strncpy(mes_body, optarg, strlen(optarg));
+				options.mes_body=str_alloc(strlen(optarg) + 1);
+				strncpy(options.mes_body, optarg, strlen(optarg));
 				break;
 			case 'c':
 				backup=str_alloc(strlen(optarg)+1);
@@ -444,20 +430,20 @@ int main(int argc, char *argv[])
 					exit_code(2, __PRETTY_FUNCTION__, "missing host in From URI");
 				}
 				else {
-					from_uri=str_alloc(strlen(optarg)+1);
-					strncpy(from_uri, optarg, strlen(optarg));
+					options.from_uri=str_alloc(strlen(optarg)+1);
+					strncpy(options.from_uri, optarg, strlen(optarg));
 				}
 				free(backup);
 				break;
 			case 'C':
 				if ((strlen(optarg) == 5 && STRNCASECMP(optarg, "empty", 5) == 0) || 
 					(strlen(optarg) == 4 && STRNCASECMP(optarg, "none", 4) == 0)) {
-					empty_contact = 1;
+					options.empty_contact = 1;
 				}
 				else if ((strlen(optarg) == 1 && STRNCASECMP(optarg, "*", 1) == 0) ||
 						(strlen(optarg) == 4 && STRNCASECMP(optarg, "star", 4) == 0)) {
-					contact_uri=str_alloc(2);
-					memcpy(contact_uri, "*", 1);
+					options.contact_uri=str_alloc(2);
+					memcpy(options.contact_uri, "*", 1);
 				}
 				else {
 					backup=str_alloc(strlen(optarg)+1);
@@ -477,38 +463,38 @@ int main(int argc, char *argv[])
 						exit_code(2, __PRETTY_FUNCTION__, "missing host in Contact");
 					}
 					else {
-						contact_uri=str_alloc(strlen(optarg)+1);
-						strncpy(contact_uri, optarg, strlen(optarg));
+						options.contact_uri=str_alloc(strlen(optarg)+1);
+						strncpy(options.contact_uri, optarg, strlen(optarg));
 					}
 					free(backup);
 				}
 				break;
 			case 'd':
-				redirects=0;
+				options.redirects=0;
 				break;
 			case 'D':
-				timer_final = str_to_int(0, optarg);
-				if (timer_final <= 0) {
+				options.timer_final = str_to_int(0, optarg);
+				if (options.timer_final <= 0) {
 					fprintf(stderr, "error: option D has to be above 0\n");
 					exit_code(2, __PRETTY_FUNCTION__, "option D has to be above 0");
 				}
 				break;
 			case 'e':
-				nameend=str_to_int(0, optarg);
+				options.nameend=str_to_int(0, optarg);
 				break;
 			case 'E':
 				if (strlen(optarg) == 3 && 
 					STRNCASECMP(optarg, "udp", 3) == 0) {
-					transport = SIP_UDP_TRANSPORT;
+					options.transport = SIP_UDP_TRANSPORT;
 				}
 				else if (strlen(optarg) == 3 &&
 						STRNCASECMP(optarg, "tcp", 3) == 0) {
-					transport = SIP_TCP_TRANSPORT;
+					options.transport = SIP_TCP_TRANSPORT;
 				}
 #ifdef WITH_TLS_TRANSP
 				else if (strlen(optarg) == 3 &&
 						STRNCASECMP(optarg, "tls", 3) == 0) {
-					transport = SIP_TLS_TRANSPORT;
+					options.transport = SIP_TLS_TRANSPORT;
 				}
 #endif
 				else {
@@ -517,7 +503,7 @@ int main(int argc, char *argv[])
 				}
 				break;
 			case 'F':
-				flood=1;
+				options.mode = SM_FLOOD;
 				break;
 			case 'f':
 				if (strlen(optarg) != 1 && STRNCASECMP(optarg, "-", 1) != 0) {
@@ -546,79 +532,87 @@ int main(int argc, char *argv[])
 					fprintf(stderr, "error: unable to handle input file name: %s\n", optarg);
 					exit_code(2, __PRETTY_FUNCTION__, "unsupported input file name");
 				}
-				file_b=1;
+				options.file_b=1;
 				break;
 			case 'g':
-				replace_str=optarg;
+				options.replace_str=optarg;
 				break;
 			case 'G':
-				replace_b=1;
+				options.replace_b=1;
 				break;
 			case 'h':
 				print_help();
 				break;
 			case 'H':
-				hostname=optarg;
+				options.hostname=optarg;
 				break;
 			case 'i':
-				via_ins=0;
+				options.via_ins=0;
 				break;
 			case 'I':
-				invite=1;
+        if (options.mode == SM_USRLOC) {
+          options.mode = SM_USRLOC_INVITE;
+        } else {
+				  options.mode = SM_INVITE;
+        }
 				break;
 			case 'j':
-				headers=optarg;
+				options.headers=optarg;
 				break;
 			case 'J':
 				if (strlen(optarg) < SIPSAK_HASHHEXLEN_MD5) {
 					fprintf(stderr, "error: authhash string is too short\n");
 					exit_code(2, __PRETTY_FUNCTION__, "authhash string is too short");
 				}
-				authhash=optarg;
+				options.authhash=optarg;
 				break;
 			case 'k':
-				local_ip=optarg;
+				options.local_ip=optarg;
 				break;
 			case 'K':
 				sysl=str_to_int(0, optarg);
+#ifdef HAVE_SYSLOG_H
+				openlog(PACKAGE_NAME, LOG_CONS|LOG_NOWAIT|LOG_PID, LOG_USER);
+#endif
 				if (sysl < LOG_ALERT || sysl > LOG_DEBUG) {
 					fprintf(stderr, "error: syslog value '%s' must be between ALERT (1) and DEBUG (7)\n", optarg);
 					exit_code(2, __PRETTY_FUNCTION__, "unsupported syslog value for option K");
 				}
-#ifdef HAVE_SYSLOG_H
-				openlog(PACKAGE_NAME, LOG_CONS|LOG_NOWAIT|LOG_PID, LOG_USER);
-#endif
 				break;
 			case 'l':
-				lport=str_to_int(0, optarg);
+				options.lport=str_to_int(0, optarg);
 				break;
 			case 'L':
-				fix_crlf=0;
+				options.fix_crlf=0;
 				break;
 			case 'm':
-				maxforw=str_to_int(0, optarg);
+				options.maxforw=str_to_int(0, optarg);
 				break;
 			case 'M':
-				message=1;
+        if (options.mode == SM_USRLOC) {
+          options.mode = SM_USRLOC_MESSAGE;
+        } else {
+				  options.mode = SM_MESSAGE;
+        }
 				break;
 			case 'n':
-				numeric = 0;
+				options.numeric = 0;
 				break;
 			case 'N':
-				exit_mode=EM_NAGIOS;
+				exit_mode = EM_NAGIOS;
 				break;
 			case 'o':
-				sleep_ms = 0;
+				options.sleep_ms = 0;
 				if (strlen(optarg) == 4 && STRNCASECMP(optarg, "rand", 4) == 0) {
-					sleep_ms = -2;
+					options.sleep_ms = -2;
 				}
 				else {
-					sleep_ms = str_to_int(0, optarg);
+					options.sleep_ms = str_to_int(0, optarg);
 				}
 				break;
 			case 'O':
-				con_dis=str_alloc(strlen(optarg) + 1);
-				strncpy(con_dis, optarg, strlen(optarg));
+				options.con_dis=str_alloc(strlen(optarg) + 1);
+				strncpy(options.con_dis, optarg, strlen(optarg));
 				break;
 			case 'p':
 				parse_uri(optarg, &scheme, &user, &host, &port);
@@ -627,64 +621,64 @@ int main(int argc, char *argv[])
 					exit_code(2, __PRETTY_FUNCTION__, "missing host in outbound proxy");
 				}
 				if (is_ip(host)) {
-					address = getaddress(host);
-					if (transport == 0)
-						transport = SIP_UDP_TRANSPORT;
+					options.address = getaddress(host);
+					if (options.transport == 0)
+						options.transport = SIP_UDP_TRANSPORT;
 				}
 				else {
 					if (!port) {
-						address = getsrvadr(host, &rport, &tsp);
+						options.address = getsrvadr(host, &options.rport, &tsp);
 						if (tsp != 0)
-							transport = tsp;
+							options.transport = tsp;
 					}
-					if (!address) {
-						address = getaddress(host);
-						if (address && verbose > 1)
+					if (!options.address) {
+						options.address = getaddress(host);
+						if (options.address && verbose > 1)
 							printf("using A record: %s\n", host);
 					}
-					if (!address){
+					if (!options.address){
 						fprintf(stderr, "error:unable to determine the outbound proxy "
 							"address\n");
 						exit_code(2, __PRETTY_FUNCTION__, "failed to resolve the outbound proxy");
 					}
 				}
-				if (port && !rport) {
-					rport = port;
+				if (port && !options.rport) {
+					options.rport = port;
 				}
-				outbound_proxy=1;
+				options.outbound_proxy=1;
 #ifdef DEBUG
-				printf("address: %lu, rport: %i\n", address, rport);
+				printf("address: %lu, rport: %i\n", options.address, options.rport);
 #endif
 				break;
 			case 'P':
-				processes=str_to_int(0, optarg);
+				options.processes=str_to_int(0, optarg);
 				break;
 			case 'q':
-				if (regex) {
+				if (options.regex) {
 					/* previously allocated -- free */
-					regfree(regex);
+					regfree(options.regex);
 				} else {
 					/* never tried -- allocate */
-					regex=malloc(sizeof(regex_t));
+					options.regex=malloc(sizeof(regex_t));
 				};
-				if (!regex) {
+				if (!options.regex) {
 					fprintf(stderr, "Error: can't allocate RE\n");
 					exit_code(2, __PRETTY_FUNCTION__, "failed to allocate memory for regualr expression");
 				};
-				if (regcomp(regex, optarg, REG_EXTENDED|REG_ICASE|REG_NEWLINE )!=0) {
+				if (regcomp(options.regex, optarg, REG_EXTENDED|REG_ICASE|REG_NEWLINE )!=0) {
 					fprintf(stderr, "Error: compiling RE: %s\n", optarg );
 					exit_code(2, __PRETTY_FUNCTION__, "failed to compile regular expression");
 				};
 				break;
 			case 'r':
 				port=str_to_int(0, optarg);
-				if (rport) {
+				if (options.rport) {
 					fprintf(stderr, "warning: you are overwritting the destination port with the r argument\n");
 				}
-				rport = port;
+				options.rport = port;
 				break;
 			case 'R':
-				randtrash=1;
+				options.mode = SM_RANDTRASH;
 				break;
 			case 's':
 				parse_uri(optarg, &scheme, &user, &host, &port);
@@ -701,65 +695,72 @@ int main(int argc, char *argv[])
 					exit_code(2, __PRETTY_FUNCTION__, "unsupported scheme in target URI");
 				}
 				if (user != NULL) {
-					username = user;
+					options.username = user;
 				}
 				if (host != NULL) {
-					domainname = host;
+					options.domainname = host;
 				}
 				else {
 					fprintf(stderr, "error: missing hostname in SIP URI\n");
 					exit_code(2, __PRETTY_FUNCTION__, "missing host name in target URI");
 				}
-				if (port && !rport) {
-					rport = port;
+				if (port && !options.rport) {
+					options.rport = port;
 				}
-				if (is_ip(domainname) && !address) {
-					address = getaddress(domainname);
-					if (transport == 0)
-						transport = SIP_UDP_TRANSPORT;
+				if (is_ip(options.domainname) && !options.address) {
+					options.address = getaddress(options.domainname);
+					if (options.transport == 0)
+						options.transport = SIP_UDP_TRANSPORT;
 				}
 				else {
-					if (!rport && !address) {
-						address = getsrvadr(domainname, &rport, &tsp);
-						if (tsp != 0 && transport == 0)
-							transport = tsp;
+					if (!options.rport && !options.address) {
+						options.address = getsrvadr(options.domainname, &options.rport, &tsp);
+						if (tsp != 0 && options.transport == 0)
+							options.transport = tsp;
 					}
-					if (!address) {
-						address = getaddress(domainname);
-						if (address && verbose > 1)
-							printf("using A record: %s\n", domainname);
+					if (!options.address) {
+						options.address = getaddress(options.domainname);
+						if (options.address && verbose > 1)
+							printf("using A record: %s\n", options.domainname);
 					}
-					if (!address){
-						fprintf(stderr, "error:unable to determine the IP address for: %s\n", domainname);
+					if (!options.address){
+						fprintf(stderr, "error:unable to determine the IP address for: %s\n", options.domainname);
 						exit_code(2, __PRETTY_FUNCTION__, "failed to resolve host from target URI");
 					}
 				}
 				if (port != 0) {
-					backup = str_alloc(strlen(domainname)+1+6);
-					snprintf(backup, strlen(domainname)+6, "%s:%i", domainname, port);
-					domainname = backup;
+					backup = str_alloc(strlen(options.domainname)+1+6);
+					snprintf(backup, strlen(options.domainname)+6, "%s:%i",
+                   options.domainname, port);
+					options.domainname = backup;
 				}
-				uri_b=1;
+				options.uri_b=1;
 #ifdef DEBUG
-				printf("address: %lu, rport: %i, username: '%s', domain: '%s'\n", address, rport, username, domainname);
+				printf("address: %lu, rport: %i, username: '%s', domain: '%s'\n", options.address, options.rport, options.username, options.domainname);
 #endif
 				break;
 			case 'S':
 				fprintf(stderr, "warning: symmetric does not work with a-symmetric servers\n");
-				symmetric=1;
+				options.symmetric=1;
 				break;
 			case 't':
-				trashchar=str_to_int(0, optarg);
+				options.trashchar=str_to_int(0, optarg);
 				break;
 			case 'T':
-				trace=1;
+				options.mode = SM_TRACE;
 				break;
 			case 'U':
-				usrloc=1;
+        if (options.mode == SM_INVITE) {
+          options.mode = SM_USRLOC_INVITE;
+        } else if (options.mode == SM_MESSAGE) {
+          options.mode = SM_USRLOC_MESSAGE;
+        } else {
+				  options.mode = SM_USRLOC;
+        }
 				break;
 			case 'u':
-				auth_username=str_alloc(strlen(optarg) + 1);
-				strncpy(auth_username, optarg, strlen(optarg));
+				options.auth_username=str_alloc(strlen(optarg) + 1);
+				strncpy(options.auth_username, optarg, strlen(optarg));
 				break;
 			case 'v':
 				verbose++;
@@ -813,24 +814,24 @@ int main(int argc, char *argv[])
 				exit_code(0, __PRETTY_FUNCTION__, NULL);
 				break;
 			case 'w':
-				warning_ext=1;
+				options.warning_ext=1;
 				break;
 			case 'W':
-				nagios_warn = str_to_int(0, optarg);
+				options.nagios_warn = str_to_int(0, optarg);
 				break;
 			case 'x':
-				expires_t=str_to_int(0, optarg);
+				options.expires_t=str_to_int(0, optarg);
 				break;
 			case 'z':
-				rand_rem=str_to_int(0, optarg);
-				if (rand_rem < 0 || rand_rem > 100) {
+				options.rand_rem=str_to_int(0, optarg);
+				if (options.rand_rem < 0 || options.rand_rem > 100) {
 					fprintf(stderr, "error: z option must between 0 and 100\n");
 					exit_code(2, __PRETTY_FUNCTION__, "value for option z out of range");
 				}
 				break;
 			case 'Z':
-				timer_t1 = str_to_int(0, optarg);
-				if (timer_t1 <= 0) {
+				options.timer_t1 = str_to_int(0, optarg);
+				if (options.timer_t1 <= 0) {
 					fprintf(stderr, "error: Z option must be above 0\n");
 					exit_code(2, __PRETTY_FUNCTION__, "value for option Z must be above 0");
 				}
@@ -842,227 +843,172 @@ int main(int argc, char *argv[])
 		}
 	}
 
-	if (rport == 0) {
-		rport =  5060;
+	if (options.rport == 0) {
+		options.rport = 5060;
 	}
-	if (rport > 65535 || rport <= 0) {
-		fprintf(stderr, "error: invalid remote port: %i\n", rport);
+	if (options.rport > 65535 || options.rport <= 0) {
+		fprintf(stderr, "error: invalid remote port: %i\n", options.rport);
 		exit_code(2, __PRETTY_FUNCTION__, "remote port out of range");
 	}
-	if (transport == 0) {
-		transport = SIP_UDP_TRANSPORT;
+	if (options.transport == 0) {
+		options.transport = SIP_UDP_TRANSPORT;
 	}
-
-	timer_t2 = timer_t2 * timer_t1;
-	timer_final = timer_final * timer_t1;
 
 	/* replace LF with CRLF if we read from a file */
-	if ((file_b) && (fix_crlf)) {
+	if ((options.file_b) && (options.fix_crlf)) {
 		insert_cr(buff);
 	}
-	if (headers) {
-		backup = str_alloc(strlen(headers) + 30); // FIXME
-		strcpy(backup, headers);
-		headers = backup;
-		replace_string(headers, "\\n", "\r\n");
-		backup = headers + strlen(headers) - 1;
+	if (options.headers) {
+		backup = str_alloc(strlen(options.headers) + 30); // FIXME
+		strcpy(backup, options.headers);
+		options.headers = backup;
+		replace_string(options.headers, "\\n", "\r\n");
+		backup = options.headers + strlen(options.headers) - 1;
 		if (*backup != '\n') {
 			strcpy(backup + 1, "\r\n");
 		}
-		if (file_b)
-			insert_header(buff, headers, 1);
+		if (options.file_b)
+			insert_header(buff, options.headers, 1);
 	}
 	/* lots of conditions to check */
-	if (trace) {
-		if (usrloc || flood || randtrash) {
-			fprintf(stderr, "error: trace can't be combined with usrloc, random or "
-				"flood\n");
-			exit_code(2, __PRETTY_FUNCTION__, "trace mode can't be combined with other modes");
-		}
-		if (!uri_b) {
+	if (options.mode == SM_TRACE) {
+		if (!options.uri_b) {
 			fprintf(stderr, "error: for trace mode a SIPURI is really needed\n");
 			exit_code(2, __PRETTY_FUNCTION__, "missing URI for trace mode");
 		}
-		if (file_b) {
+		if (options.file_b) {
 			fprintf(stderr, "warning: file will be ignored for tracing.");
 		}
-		if (!username) {
+		if (!options.username) {
 			fprintf(stderr, "error: for trace mode without a file the SIPURI have to "
 				"contain a username\n");
 			exit_code(2, __PRETTY_FUNCTION__, "missing username in target URI");
 		}
-		if (!via_ins){
+		if (!options.via_ins){
 			fprintf(stderr, "warning: Via-Line is needed for tracing. Ignoring -i\n");
-			via_ins=1;
+			options.via_ins=1;
 		}
-		if (!warning_ext) {
+		if (!options.warning_ext) {
 			fprintf(stderr, "warning: IP extract from warning activated to be more "
 				"informational\n");
-			warning_ext=1;
+			options.warning_ext=1;
 		}
-		if (maxforw==-1) maxforw=255;
+		if (options.maxforw==-1) {
+      options.maxforw=255;
+    }
 	}
-	else if (usrloc || invite || message) {
-		if (trace || flood || randtrash) {
-			fprintf(stderr, "error: usrloc can't be combined with trace, random or "
-				"flood\n");
-			exit_code(2, __PRETTY_FUNCTION__, "usrloc mode can't be combined with other modes");
-		}
-		if (!username || !uri_b) {
+	else if (options.mode == SM_USRLOC ||
+           options.mode == SM_USRLOC_INVITE ||
+           options.mode == SM_USRLOC_MESSAGE ||
+           options.mode == SM_INVITE ||
+           options.mode == SM_MESSAGE) {
+		if (!options.username || !options.uri_b) {
 			fprintf(stderr, "error: for the USRLOC mode you have to give a SIPURI with "
 				"a username\n       at least\n");
 			exit_code(2, __PRETTY_FUNCTION__, "missing target URI or username in URI");
 		}
-		if (namebeg>0 && nameend==-1) {
+		if (options.namebeg>0 && options.nameend==-1) {
 			fprintf(stderr, "error: if a starting numbers is given also an ending "
 				"number have to be specified\n");
 			exit_code(2, __PRETTY_FUNCTION__, "missing end number");
 		}
-		if (invite && message) {
-			fprintf(stderr, "error: invite and message tests are XOR\n");
-			exit_code(2, __PRETTY_FUNCTION__, "INVITE and MESSAGE tests are XOR");
-		}
-		if (!usrloc && invite && !lport) {
+		if (options.mode == SM_USRLOC_INVITE && !options.lport) {
 			fprintf(stderr, "warning: Do NOT use the usrloc invite mode without "
 				"registering sipsak before.\n         See man page for "
 				"details.\n");
 			exit_code(2, __PRETTY_FUNCTION__, "don't use usrloc INVITE mode without registerting before");
 		}
-		if (contact_uri!=NULL) {
-			if (invite || message) {
+		if (options.contact_uri!=NULL) {
+			if (options.mode == SM_USRLOC_INVITE ||
+          options.mode == SM_USRLOC_MESSAGE ||
+          options.mode == SM_INVITE ||
+          options.mode == SM_MESSAGE) {
 				fprintf(stderr, "error: Contact URI is not support for invites or "
 					"messages\n");
 				exit_code(2, __PRETTY_FUNCTION__, "Contact URI not supported for INVITE or MESSAGE mode");
 			}
-			if (nameend!=-1 || namebeg!=-1) {
+			if (options.nameend!=-1 || options.namebeg!=-1) {
 				fprintf(stderr, "warning: ignoring starting or ending number if Contact"
 					" is given\n");
-				nameend=namebeg=0;
+				options.nameend = 0;
+        options.namebeg = 0;
 			}
-			if (rand_rem) {
+			if (options.rand_rem) {
 				fprintf(stderr, "warning: ignoring -z option when Contact is given\n");
-				rand_rem=0;
+				options.rand_rem=0;
 			}
 		}
-		if (via_ins) {
+		if (options.via_ins) {
 			if (verbose > 1) {
 				fprintf(stderr, "warning: Deactivated Via insertion in usrloc mode.\n         Please use option -i to suppress this warning.\n");
 			}
-			via_ins=0;
+			options.via_ins=0;
 		}
-		if (nameend==-1)
-			nameend=0;
-		if (namebeg==-1)
-			namebeg=0;
+		if (options.nameend==-1)
+			options.nameend=0;
+		if (options.namebeg==-1)
+			options.namebeg=0;
 	}
-	else if (flood) {
-		if (trace || usrloc || randtrash) {
-			fprintf(stderr, "error: flood can't be combined with trace, random or "
-				"usrloc\n");
-			exit_code(2, __PRETTY_FUNCTION__, "flood mode can't be combined with other modes");
-		}
-		if (!uri_b) {
+	else if (options.mode == SM_FLOOD) {
+		if (!options.uri_b) {
 			fprintf(stderr, "error: we need at least a SIP URI for flood\n");
 			exit_code(2, __PRETTY_FUNCTION__, "missing target URI");
 		}
-		if (redirects) {
+		if (options.redirects) {
 			fprintf(stderr, "warning: redirects are not expected in flood. "
 				"disabling\n");
-			redirects=0;
+			options.redirects=0;
 		}
 	}
-	else if (randtrash) {
-		if (trace || usrloc || flood) {
-			fprintf(stderr, "error: random can't be combined with trace, flood or "
-				"usrloc\n");
-			exit_code(2, __PRETTY_FUNCTION__, "random mode can't be combined with other modes");
-		}
-		if (!uri_b) {
+	else if (options.mode == SM_RANDTRASH) {
+		if (!options.uri_b) {
 			fprintf(stderr, "error: need at least a SIP URI for random\n");
 			exit_code(2, __PRETTY_FUNCTION__, "missing target URI");
 		}
-		if (redirects) {
+		if (options.redirects) {
 			fprintf(stderr, "warning: redirects are not expected in random. "
 				"disableing\n");
-			redirects=0;
+			options.redirects=0;
 		}
 		if (verbose) {
 			fprintf(stderr, "warning: random characters may destroy your terminal "
 				"output\n");
 		}
 	}
-	else if (mes_body) {
-		if (!message) {
+	else if (options.mes_body) {
+		if (!(options.mode == SM_MESSAGE ||
+          options.mode == SM_USRLOC_MESSAGE)) {
 			fprintf(stderr, "warning: to send a message mode (-M) is required. activating\n");
-			message=1;
+			options.mode = SM_MESSAGE;
 		}
-		if (!uri_b) {
+		if (!options.uri_b) {
 			fprintf(stderr, "error: need at least a SIP URI to send a meesage\n");
 			exit_code(2, __PRETTY_FUNCTION__, "missing target SIP URI");
 		}
-		if (nameend==-1)
-			nameend=0;
-		if (namebeg==-1)
-			namebeg=0;
+		if (options.nameend==-1)
+			options.nameend=0;
+		if (options.namebeg==-1)
+			options.namebeg=0;
 	}
 	else {
-		if (!uri_b) {
+		if (!options.uri_b) {
 			fprintf(stderr, "error: a SIP URI is needed at least\n");
 			exit_code(2, __PRETTY_FUNCTION__, "missing target SIP URI");
 		}
 	}
 
-	switch (transport) {
-#ifdef WITH_TLS_TRANSP
-		case SIP_TLS_TRANSPORT:
-			transport_str = TRANSPORT_TLS_STR;
-			break;
-#endif /* WITH_TLS_TRANSP */
-		case SIP_TCP_TRANSPORT:
-			transport_str = TRANSPORT_TCP_STR;
-			break;
-		case SIP_UDP_TRANSPORT:
-			transport_str = TRANSPORT_UDP_STR;
-			break;
-		default:
-			fprintf(stderr, "unknown transport: %u\n", transport);
-			exit_code(2, __PRETTY_FUNCTION__, "unknown transport");
-	}
-
-#ifdef WITH_TLS_TRANSP
-	if (transport == SIP_TLS_TRANSPORT) {
-# ifdef USE_GNUTLS
-		gnutls_global_init();
-		//gnutls_anon_allocate_client_credentials(&anoncred);
-		gnutls_certificate_allocate_credentials(&xcred);
-		if (ca_file != NULL) {
-			// set the trusted CA file
-			gnutls_certificate_set_x509_trust_file(xcred, ca_file, GNUTLS_X509_FMT_PEM);
-		}
-# else
-#  ifdef USE_OPENSSL
-		SSL_library_init();
-		SSL_load_error_strings();
-#  endif
-# endif
-	}
-#endif /* WITH_TLS_TRANSP */
-
-	/* determine our hostname */
-	get_fqdn();
-	
 	/* this is not a cryptographic random number generator,
 	   but hey this is only a test-tool => should be satisfying*/
 	srand(time(0) ^ (getpid() + (getpid() << 15)));
 	
-	if (processes > 1) {
+	if (options.processes > 1) {
 		if (signal(SIGCHLD , sigchld_handler)  == SIG_ERR ) {
 			fprintf(stderr, "error: Could not install SIGCHLD handler\n");
 			exit_code(2, __PRETTY_FUNCTION__, "failed to install SIGCHLD handler");
 		}
 	}
 
-	for(i = 0; i < processes - 1; i++) {
+	for(i = 0; i < options.processes - 1; i++) {
 		if ((pid = fork()) < 0) {
 			fprintf(stderr, "error: Cannot fork\n");
 			exit_code(2, __PRETTY_FUNCTION__, "failed to fork");
@@ -1070,13 +1016,13 @@ int main(int argc, char *argv[])
 		
 		if (pid == 0){
 	    	/* child */
-			upp = (nameend - namebeg + 1) / processes;
-			namebeg = namebeg + upp * i;
-			nameend = namebeg + upp;
-			shoot(&buff[0], sizeof(buff));
+			upp = (options.nameend - options.namebeg + 1) / options.processes;
+			options.namebeg = options.namebeg + upp * i;
+			options.nameend = options.namebeg + upp;
+			shoot(&buff[0], sizeof(buff), &options);
 		} else {
-			if (lport) {
-				lport++;
+			if (options.lport) {
+				options.lport++;
 			}
 		}
 		
@@ -1085,17 +1031,17 @@ int main(int argc, char *argv[])
 		 * the retransmission interval evenly
 		 */
 		ts.tv_sec = 0;
-		ts.tv_nsec = (float)DEFAULT_TIMEOUT / (float)processes * (float)1000 * (float)1000;
+		ts.tv_nsec = (float)DEFAULT_TIMEOUT / (float)options.processes * (float)1000 * (float)1000;
 		nanosleep(&ts, 0);
 	}
 
 	/* here we go...*/
-	if (processes > 1) {
-		upp = (nameend - namebeg + 1) / processes;
-		namebeg = namebeg + upp * i;
-		nameend = namebeg + upp;
+	if (options.processes > 1) {
+		upp = (options.nameend - options.namebeg + 1) / options.processes;
+		options.namebeg = options.namebeg + upp * i;
+		options.nameend = options.namebeg + upp;
 	}
-	shoot(&buff[0], sizeof(buff));
+	shoot(&buff[0], sizeof(buff), &options);
 
 	/* normaly we won't come back here, but to satisfy the compiler */
 	return 0;

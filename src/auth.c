@@ -28,6 +28,8 @@
 #define SIPSAK_ALGO_SHA1 2
 #define SIPSAK_ALGO_SHA256 3
 
+unsigned int nonce_count;
+
 /* converts a hash into hex output
    taken from the RFC 2617 */
 void cvt_hex(unsigned char *_b, unsigned char *_h, int length)
@@ -53,7 +55,9 @@ void cvt_hex(unsigned char *_b, unsigned char *_h, int length)
 }
 
 /* check for, create and insert a auth header into the message */
-void insert_auth(char *message, char *authreq)
+void insert_auth(char *message, char *authreq, char *username,
+    char *password, char *auth_username, char *authhash,
+    int namebeg, int nameend)
 {
 	char *auth, *begin, *end, *insert, *backup, *realm, *usern, *nonce;
 	char *method, *uri;
@@ -88,8 +92,9 @@ void insert_auth(char *message, char *authreq)
 	   simplicity we insert the auth header direct behind the request line */
 	insert=strchr(message, '\n');
 	if (!insert) {
-		printf("failed to find newline\n");
-		return;
+    fprintf(stderr, "%s\nerror: failed to locate new line in request message\n",
+        message);
+    exit_code(3, __PRETTY_FUNCTION__, "missing new line in request");
 	}
 	insert++;
 	backup=str_alloc(strlen(insert)+1);
@@ -104,6 +109,11 @@ void insert_auth(char *message, char *authreq)
 		/* make a copy of the auth header to prevent that our searches
 		   hit content of other header fields */
 		end=strchr(begin, '\n');
+    if (end == NULL) {
+      fprintf(stderr, "%s\nerror: failed to locate new line after auth header\n",
+          authreq);
+      exit_code(3, __PRETTY_FUNCTION__, "missing new line after auth header");
+    }
 		auth=str_alloc((size_t)(end-begin+1));
 		strncpy(auth, begin, (size_t)(end-begin));
 		/* we support Digest with MD5 or SHA1 */
@@ -144,19 +154,34 @@ void insert_auth(char *message, char *authreq)
 		}
 		else {
 			usern=str_alloc(strlen(username)+11);
+      if (usern == NULL) {
+        fprintf(stderr, "error: failed to allocate space for username: %s\n",
+            username);
+        exit_code(3, __PRETTY_FUNCTION__, "memory allocation failure");
+      }
 			if (nameend>0)
-				snprintf(usern, strlen(username)+10, "%s%i", username, namebeg);
+				snprintf(usern, strlen(username)+10, "%s%d", username, namebeg);
 			else
-				snprintf(usern, strlen(username)+10, "%s", username);
+				snprintf(usern, strlen(username)+1, "%s", username);
 		}
 		/* extract the method from the original request */
 		end=strchr(message, ' ');
+    if (end == NULL) {
+      fprintf(stderr, "%s\nerror: failed to locate space in message first line\n",
+          authreq);
+      exit_code(3, __PRETTY_FUNCTION__, "missing space in message");
+    }
 		method=str_alloc((size_t)(end-message+1));
 		strncpy(method, message, (size_t)(end-message));
 		/* extract the uri also */
 		begin=end++;
 		begin++;
 		end=strchr(end, ' ');
+    if (end == NULL) {
+      fprintf(stderr, "%s\nerror: failed to locate space in message first line\n",
+          authreq);
+      exit_code(3, __PRETTY_FUNCTION__, "missing space in message");
+    }
 		uri=str_alloc((size_t)(end-begin+1));
 		strncpy(uri, begin, (size_t)(end-begin));
 

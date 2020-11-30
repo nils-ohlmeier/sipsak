@@ -10,7 +10,7 @@
 #define RUNNING_CHECK 1
 
 char md5hex_buf[33]; /* NULed by initialization */
-const char *md5hex(char res[16]) {
+const char *md5hex(unsigned char res[16]) {
 	int i;
 	for (i = 0; i < 16; ++i) {
 		sprintf(md5hex_buf + 2 * i, "%02hhx", res[i]);
@@ -20,21 +20,21 @@ const char *md5hex(char res[16]) {
 
 START_TEST (test_md5_empty) {
 	const char expected[] = "d41d8cd98f00b204e9800998ecf8427e";
-	char res[16];
+	unsigned char res[16];
 	MD5_CTX ctx;
 
 	MD5Init(&ctx);
-	MD5Final(res, &ctx);
+	MD5Final(&res[0], &ctx);
 
-	fail_unless(
+	ck_assert_msg(
 		strcmp(md5hex(res), expected) == 0,
-		"md5('') returned %s instead of %s", &md5hex_buf, expected);
+		"md5('') returned %s instead of %s", &md5hex_buf[0], expected);
 }
 END_TEST
 
 START_TEST (test_md5_quick_brown_fox) {
 	const char expected[] = "14aa0efdbdac9187f334b9d25ddeaefe";
-	char res[16];
+	unsigned char res[16];
 	MD5_CTX ctx;
 
 	MD5Init(&ctx);
@@ -42,12 +42,12 @@ START_TEST (test_md5_quick_brown_fox) {
 	MD5Update(&ctx, "jumped over ", 12);
 	MD5Update(&ctx, "the \0NUL\n", 9);
 	//MD5Update(&ctx, "The quick brown fox jumped over the \0NUL\n", 41);
-	MD5Final(res, &ctx);
+	MD5Final(&res[0], &ctx);
 
-	fail_unless(
+	ck_assert_msg(
 		strcmp(md5hex(res), expected) == 0,
 		"md5('The quick brown fox jumped over the \\0NUL\\n') "
-		"returned %s instead of %s", &md5hex_buf, expected);
+		"returned %s instead of %s", &md5hex_buf[0], expected);
 }
 END_TEST
 
