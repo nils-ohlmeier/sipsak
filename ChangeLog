@@ -1,3 +1,5 @@
+* version 0.9.8-pre
+  - removed support for ruli
 * version 0.9.7
   - added new option -E which overrules SRV result
   - added new option -J to take ha1 instead of password
