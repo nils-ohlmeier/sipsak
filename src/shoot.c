@@ -68,7 +68,6 @@ enum usteps usrlocstep;
 
 struct sipsak_regexp regexps;
 
-struct sipsak_delay delays;
 
 struct sipsak_msg_data msg_data;
 
@@ -167,7 +166,8 @@ void handle_3xx(struct sipsak_con_data *con, int warning_ext,
 
 /* takes care of replies in the trace route mode */
 void trace_reply(regex_t *regex, struct sipsak_counter *counter,
-    struct sipsak_sr_time *timer, struct sipsak_con_data *con)
+    struct sipsak_sr_time *timer, struct sipsak_con_data *con,
+    struct sipsak_delay *delay)
 {
 	char *contact;
 
@@ -201,7 +201,7 @@ void trace_reply(regex_t *regex, struct sipsak_counter *counter,
 			printf("(%.3f ms) ", deltaT(&(timer->sendtime), &(timer->recvtime)));
 			print_message_line(received);
 		}
-		delays.retryAfter = timer->timer_t2;
+		delay->retryAfter = timer->timer_t2;
 		con->dontsend=1;
 		return;
 	}
@@ -234,7 +234,8 @@ void trace_reply(regex_t *regex, struct sipsak_counter *counter,
 
 /* takes care of replies in the default mode */
 void handle_default(regex_t *regex, struct sipsak_counter *counter,
-    struct sipsak_sr_time *timers, struct sipsak_con_data *con)
+    struct sipsak_sr_time *timers, struct sipsak_con_data *con,
+    struct sipsak_delay *delay)
 {
 	/* in the normal send and reply case anything other 
 	   then 1xx will be treated as final response*/
@@ -256,10 +257,10 @@ void handle_default(regex_t *regex, struct sipsak_counter *counter,
 					" waiting for a final response\n");
 		}
 		if (inv_trans) {
-			delays.retryAfter = timers->timer_final;
+			delay->retryAfter = timers->timer_final;
 		}
 		else {
-			delays.retryAfter = timers->timer_t2;
+			delay->retryAfter = timers->timer_t2;
 		}
 		con->dontsend = 1;
 		return;
@@ -289,13 +290,13 @@ void handle_default(regex_t *regex, struct sipsak_counter *counter,
 				if (counter->run == 0) {
 					counter->run++;
 				}
-				printf("%.3f/%.3f/%.3f ms\n", delays.small_delay, delays.all_delay / 
-            counter->run, delays.big_delay);
+				printf("%.3f/%.3f/%.3f ms\n", delay->small_delay, delay->all_delay / 
+            counter->run, delay->big_delay);
 			}
 			else {
 				counter->run++;
 				msg_data.cseq_counter = new_transaction(request, response);
-				delays.retryAfter = timers->timer_t1;
+				delay->retryAfter = timers->timer_t1;
 			}
 		}
 		if (timers->timing == 0) {
@@ -355,7 +356,8 @@ void handle_randtrash(int warning_ext, struct sipsak_counter *counter)
 /* takes care of replies in the usrloc mode */
 void handle_usrloc(regex_t *regex, struct sipsak_counter *counter, int rand_rem,
     char *username, int nagios_warn, struct sipsak_sr_time *timers,
-    char *mes_body, enum sipsak_modes mode, struct sipsak_con_data *con)
+    char *mes_body, enum sipsak_modes mode, struct sipsak_con_data *con,
+    struct sipsak_delay *delay)
 {
 	char *crlf;
 	char ruri[11+12+20]; //FIXME: username length 20 should be dynamic
@@ -366,10 +368,10 @@ void handle_usrloc(regex_t *regex, struct sipsak_counter *counter, int rand_rem,
 			printf("ignoring provisional response\n\n");
 		}
 		if (inv_trans) {
-			delays.retryAfter = timers->timer_final;
+			delay->retryAfter = timers->timer_final;
 		}
 		else {
-			delays.retryAfter = timers->timer_t2;
+			delay->retryAfter = timers->timer_t2;
 		}
 		con->dontsend = 1;
 	}
@@ -402,10 +404,10 @@ void handle_usrloc(regex_t *regex, struct sipsak_counter *counter, int rand_rem,
 										" request (test duration).\n", 
 										deltaT(&(timers->firstsendt), &(timers->recvtime)));
 						}
-						if (delays.big_delay>0 && verbose>0) {
+						if (delay->big_delay>0 && verbose>0) {
 							printf("biggest delay between "
 										"request and response was %.3f"
-										" ms\n", delays.big_delay);
+										" ms\n", delay->big_delay);
 						}
 						if (counter->retrans_r_c>0 && verbose>0) {
 							printf("%i retransmission(s) received from server.\n", 
@@ -415,7 +417,7 @@ void handle_usrloc(regex_t *regex, struct sipsak_counter *counter, int rand_rem,
 							printf("%i time(s) the timeout of "
 										"%i ms exceeded and request was"
 										" retransmitted.\n", 
-										counter->retrans_s_c, delays.retryAfter);
+										counter->retrans_s_c, delay->retryAfter);
 							if (counter->retrans_s_c > nagios_warn) {
 								log_message(request);
 								exit_code(4, __PRETTY_FUNCTION__, "#retransmissions above nagios warn level");
@@ -544,10 +546,10 @@ void handle_usrloc(regex_t *regex, struct sipsak_counter *counter, int rand_rem,
 										" duration).\n", deltaT(&(timers->firstsendt),
                       &(timers->recvtime)));
 						}
-						if (delays.big_delay>0) {
+						if (delay->big_delay>0) {
 							printf("biggest delay between "
 										"request and response was %.3f"
-										" ms\n", delays.big_delay);
+										" ms\n", delay->big_delay);
 						}
 						if (counter->retrans_r_c>0) {
 							printf("%i retransmission(s) received from server.\n", 
@@ -557,7 +559,7 @@ void handle_usrloc(regex_t *regex, struct sipsak_counter *counter, int rand_rem,
 							printf("%i time(s) the timeout of "
 										"%i ms exceeded and request was"
 										" retransmitted.\n", 
-										counter->retrans_s_c, delays.retryAfter);
+										counter->retrans_s_c, delay->retryAfter);
 							if (counter->retrans_s_c > nagios_warn) {
 								log_message(request);
 								exit_code(4, __PRETTY_FUNCTION__, "#retransmissions above nagios warn level");
@@ -657,10 +659,10 @@ void handle_usrloc(regex_t *regex, struct sipsak_counter *counter, int rand_rem,
 										" duration).\n", deltaT(&(timers->firstsendt),
                       &(timers->recvtime)));
 						}
-						if (delays.big_delay>0) {
+						if (delay->big_delay>0) {
 							printf("biggest delay between "
 										"request and response was %.3f"
-										" ms\n", delays.big_delay);
+										" ms\n", delay->big_delay);
 						}
 						if (counter->retrans_r_c>0) {
 							printf("%i retransmission(s) "
@@ -671,7 +673,7 @@ void handle_usrloc(regex_t *regex, struct sipsak_counter *counter, int rand_rem,
 							printf("%i time(s) the timeout of "
 										"%i ms exceeded and request was"
 										" retransmitted.\n", 
-										counter->retrans_s_c, delays.retryAfter);
+										counter->retrans_s_c, delay->retryAfter);
 							if (counter->retrans_s_c > nagios_warn) {
 								log_message(request);
 								exit_code(4, __PRETTY_FUNCTION__, "#retransmissions above nagios warn level");
@@ -842,6 +844,7 @@ void shoot(char *buf, int buff_size, struct sipsak_options *options)
   struct sipsak_counter counters;
   struct sipsak_sr_time timers;
   struct sipsak_con_data connection;
+  struct sipsak_delay delays;
 
 	inv_trans = 0;
 	usrlocstep = REG_REP;
@@ -1128,7 +1131,7 @@ void shoot(char *buf, int buff_size, struct sipsak_options *options)
                      );
 				} /* if redircts... */
 				else if (options->mode == SM_TRACE) {
-					trace_reply(options->regex, &counters, &timers, &connection);
+					trace_reply(options->regex, &counters, &timers, &connection, &delays);
 				} /* if trace ... */
 				else if (options->mode == SM_USRLOC ||
                  options->mode == SM_USRLOC_INVITE ||
@@ -1138,13 +1141,13 @@ void shoot(char *buf, int buff_size, struct sipsak_options *options)
 					handle_usrloc(options->regex, &counters,
                         options->rand_rem, msg_data.username,
                         options->nagios_warn, &timers, msg_data.mes_body,
-                        options->mode, &connection);
+                        options->mode, &connection, &delays);
 				}
 				else if (options->mode == SM_RANDTRASH) {
 					handle_randtrash(options->warning_ext, &counters);
 				}
 				else {
-					handle_default(options->regex, &counters, &timers, &connection);
+					handle_default(options->regex, &counters, &timers, &connection, &delays);
 				} /* redirect, auth, and modes */
 			} /* ret > 0 */
 			else if (ret == -1) { // we did not got anything back, send again
