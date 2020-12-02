@@ -68,7 +68,6 @@ enum usteps usrlocstep;
 
 struct sipsak_regexp regexps;
 
-struct sipsak_sr_time timers;
 struct sipsak_con_data cdata;
 struct sipsak_delay delays;
 
@@ -843,6 +842,7 @@ void shoot(char *buf, int buff_size, struct sipsak_options *options)
 	char buf2[BUFSIZE], buf3[BUFSIZE], lport_str[LPORT_STR_LEN];
 
   struct sipsak_counter counters;
+  struct sipsak_sr_time timers;
 
 	inv_trans = 0;
 	usrlocstep = REG_REP;
