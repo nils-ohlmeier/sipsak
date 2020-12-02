@@ -68,7 +68,6 @@ enum usteps usrlocstep;
 
 struct sipsak_regexp regexps;
 
-struct sipsak_con_data cdata;
 struct sipsak_delay delays;
 
 struct sipsak_msg_data msg_data;
@@ -102,9 +101,8 @@ static inline void create_usern(char *target, char *username, int number)
 }
 
 /* tries to take care of a redirection */
-void handle_3xx(struct sockaddr_in *tadr, int warning_ext, int rport,
-    unsigned long address, unsigned int transport, int outbound_proxy,
-    char *domainname
+void handle_3xx(struct sipsak_con_data *con, int warning_ext,
+    int outbound_proxy, char *domainname
 #ifdef WITH_TLS_TRANSP
     , int ignore_ca_fail
 #endif
@@ -135,26 +133,26 @@ void handle_3xx(struct sockaddr_in *tadr, int warning_ext, int rport,
 		uri_replace(request, contact);
 		msg_data.cseq_counter = new_transaction(request, response);
 		/* extract the needed information*/
-		rport = 0;
-		address = 0;
-		parse_uri(contact, &uscheme, &uuser, &uhost, &rport);
-		if (!rport)
-			address = getsrvadr(uhost, &rport, &transport);
-		if (!address)
-			address = getaddress(uhost);
-		if (!address){
+		con->rport = 0;
+		con->address = 0;
+		parse_uri(contact, &uscheme, &uuser, &uhost, &con->rport);
+		if (!con->rport)
+			con->address = getsrvadr(uhost, &con->rport, &con->transport);
+		if (!con->address)
+			con->address = getaddress(uhost);
+		if (!con->address){
 			fprintf(stderr, "error: cannot determine host "
 					"address from Contact of redirect:"
 					"\n%s\n", received);
 			exit_code(2, __PRETTY_FUNCTION__, "missing host in Contact header");
 		}
-		if (!rport) {
-			rport = 5060;
+		if (!con->rport) {
+			con->rport = 5060;
 		}
 		free(contact);
 		if (!outbound_proxy)
-			cdata.connected = set_target(tadr, address, rport, cdata.csock,
-          cdata.connected, cdata.transport, domainname
+			con->connected = set_target(&(con->adr), con->address, con->rport,
+          con->csock, con->connected, con->transport, domainname
 #ifdef WITH_TLS_TRANSP
           , ignore_ca_fail
 #endif
@@ -169,7 +167,7 @@ void handle_3xx(struct sockaddr_in *tadr, int warning_ext, int rport,
 
 /* takes care of replies in the trace route mode */
 void trace_reply(regex_t *regex, struct sipsak_counter *counter,
-    struct sipsak_sr_time *timer)
+    struct sipsak_sr_time *timer, struct sipsak_con_data *con)
 {
 	char *contact;
 
@@ -204,7 +202,7 @@ void trace_reply(regex_t *regex, struct sipsak_counter *counter,
 			print_message_line(received);
 		}
 		delays.retryAfter = timer->timer_t2;
-		cdata.dontsend=1;
+		con->dontsend=1;
 		return;
 	}
 	else {
@@ -236,7 +234,7 @@ void trace_reply(regex_t *regex, struct sipsak_counter *counter,
 
 /* takes care of replies in the default mode */
 void handle_default(regex_t *regex, struct sipsak_counter *counter,
-    struct sipsak_sr_time *timers)
+    struct sipsak_sr_time *timers, struct sipsak_con_data *con)
 {
 	/* in the normal send and reply case anything other 
 	   then 1xx will be treated as final response*/
@@ -263,7 +261,7 @@ void handle_default(regex_t *regex, struct sipsak_counter *counter,
 		else {
 			delays.retryAfter = timers->timer_t2;
 		}
-		cdata.dontsend = 1;
+		con->dontsend = 1;
 		return;
 	}
 	else {
@@ -357,7 +355,7 @@ void handle_randtrash(int warning_ext, struct sipsak_counter *counter)
 /* takes care of replies in the usrloc mode */
 void handle_usrloc(regex_t *regex, struct sipsak_counter *counter, int rand_rem,
     char *username, int nagios_warn, struct sipsak_sr_time *timers,
-    char *mes_body, enum sipsak_modes mode)
+    char *mes_body, enum sipsak_modes mode, struct sipsak_con_data *con)
 {
 	char *crlf;
 	char ruri[11+12+20]; //FIXME: username length 20 should be dynamic
@@ -373,7 +371,7 @@ void handle_usrloc(regex_t *regex, struct sipsak_counter *counter, int rand_rem,
 		else {
 			delays.retryAfter = timers->timer_t2;
 		}
-		cdata.dontsend = 1;
+		con->dontsend = 1;
 	}
 	else {
 		switch (usrlocstep) {
@@ -490,7 +488,7 @@ void handle_usrloc(regex_t *regex, struct sipsak_counter *counter, int rand_rem,
 						printf("ignoring INVITE retransmission\n");
 					}
 					counter->retrans_r_c++;
-					cdata.dontsend=1;
+					con->dontsend=1;
 					return;
 				}
 				if (regexec(&(regexps.okexp), received, 0, 0, 0) == REG_NOERROR) {
@@ -502,7 +500,7 @@ void handle_usrloc(regex_t *regex, struct sipsak_counter *counter, int rand_rem,
 					}
 					/* ACK was send already earlier generically */
 					usrlocstep=INV_ACK_RECV;
-					cdata.dontsend=1;
+					con->dontsend=1;
 				}
 				else {
 					fprintf(stderr, "received:\n%s\nerror: did not "
@@ -520,7 +518,7 @@ void handle_usrloc(regex_t *regex, struct sipsak_counter *counter, int rand_rem,
 						printf("ignoring 200 OK retransmission\n");
 					}
 					counter->retrans_r_c++;
-					cdata.dontsend=1;
+					con->dontsend=1;
 					return;
 				}
 				sprintf(ruri, "%s sip:sipsak_conf@", ACK_STR);
@@ -637,7 +635,7 @@ void handle_usrloc(regex_t *regex, struct sipsak_counter *counter, int rand_rem,
 						printf("ignoring MESSAGE retransmission\n");
 					}
 					counter->retrans_r_c++;
-					cdata.dontsend=1;
+					con->dontsend=1;
 					return;
 				}
 				if (regexec(&(regexps.okexp), received, 0, 0, 0) == REG_NOERROR) {
@@ -734,7 +732,7 @@ void handle_usrloc(regex_t *regex, struct sipsak_counter *counter, int rand_rem,
 						printf("ignoring MESSAGE retransmission\n");
 					}
 					counter->retrans_r_c++;
-					cdata.dontsend=1;
+					con->dontsend=1;
 					return;
 				}
 				if (regexec(&(regexps.okexp), received, 0, 0, 0) == REG_NOERROR) {
@@ -773,7 +771,7 @@ void handle_usrloc(regex_t *regex, struct sipsak_counter *counter, int rand_rem,
 }
 
 void before_sending(struct sipsak_counter *counter, struct sipsak_msg_data *msg_data,
-    enum sipsak_modes mode)
+    enum sipsak_modes mode, struct sipsak_con_data *con)
 {
 	/* some initial output */
 	if ((mode == SM_USRLOC ||
@@ -782,7 +780,7 @@ void before_sending(struct sipsak_counter *counter, struct sipsak_msg_data *msg_
        mode == SM_INVITE ||
        mode == SM_MESSAGE) &&
       (verbose > 1) &&
-      (cdata.dontsend == 0)) {
+      (con->dontsend == 0)) {
 		switch (usrlocstep) {
 			case REG_REP:
 				if (counter->nameend>0)
@@ -843,12 +841,13 @@ void shoot(char *buf, int buff_size, struct sipsak_options *options)
 
   struct sipsak_counter counters;
   struct sipsak_sr_time timers;
+  struct sipsak_con_data connection;
 
 	inv_trans = 0;
 	usrlocstep = REG_REP;
 
 	/* initalize local vars */
-	cdata.dontsend=cdata.dontrecv=counters.retrans_r_c=counters.retrans_s_c= 0;
+	connection.dontsend=connection.dontrecv=counters.retrans_r_c=counters.retrans_s_c= 0;
 	delays.big_delay=counters.send_counter=counters.run= 0;
 	usern = NULL;
 	/* initialize local arrays */
@@ -863,14 +862,15 @@ void shoot(char *buf, int buff_size, struct sipsak_options *options)
 	counters.namebeg = options->namebeg;
 	counters.nameend = options->nameend;
 
-	cdata.csock = cdata.usock = -1;
-	cdata.connected = 0;
-	cdata.transport = options->transport;
-	cdata.symmetric = options->symmetric;
-	cdata.lport = options->lport;
-	cdata.rport = options->rport;
-	cdata.buf_tmp = NULL;
-	cdata.buf_tmp_size = 0;
+	connection.csock = connection.usock = -1;
+	connection.connected = 0;
+	connection.transport = options->transport;
+	connection.address = options->address;
+	connection.symmetric = options->symmetric;
+	connection.lport = options->lport;
+	connection.rport = options->rport;
+	connection.buf_tmp = NULL;
+	connection.buf_tmp_size = 0;
 
 	memset(&(timers.sendtime), 0, sizeof(timers.sendtime));
 	memset(&(timers.recvtime), 0, sizeof(timers.recvtime));
@@ -883,7 +883,7 @@ void shoot(char *buf, int buff_size, struct sipsak_options *options)
 	timers.timing = options->timing;
 
 	/* delays.retryAfter = DEFAULT_TIMEOUT; */
-	if (cdata.transport == SIP_UDP_TRANSPORT) {
+	if (connection.transport == SIP_UDP_TRANSPORT) {
 		delays.retryAfter = timers.timer_t1;
 	}
 	else {
@@ -895,7 +895,7 @@ void shoot(char *buf, int buff_size, struct sipsak_options *options)
 	received = buf3;
 
 	msg_data.cseq_counter = 1;
-	msg_data.lport = cdata.lport;
+	msg_data.lport = connection.lport;
 	msg_data.expires_t = options->expires_t;
 	msg_data.empty_contact = options->empty_contact;
 	msg_data.transport = options->transport;
@@ -910,7 +910,7 @@ void shoot(char *buf, int buff_size, struct sipsak_options *options)
 	msg_data.headers = options->headers;
 	msg_data.fqdn = fqdn;
 
-	init_network(&cdata, options->local_ip
+	init_network(&connection, options->local_ip
 #ifdef WITH_TLS_TRANSP
       , options->ca_file
 #endif
@@ -922,7 +922,7 @@ void shoot(char *buf, int buff_size, struct sipsak_options *options)
 	if (options->replace_b == 1){
 		replace_string(request, "$dsthost$", options->domainname);
 		replace_string(request, "$srchost$", fqdn);
-		sprintf(lport_str, "%i", cdata.lport);
+		sprintf(lport_str, "%i", connection.lport);
 		replace_string(request, "$port$", lport_str);
 		if (msg_data.username)
 			replace_string(request, "$user$", msg_data.username);
@@ -1028,8 +1028,9 @@ void shoot(char *buf, int buff_size, struct sipsak_options *options)
 			set_maxforw(request, options->maxforw);
 	}
 
-	cdata.connected = set_target(&(cdata.adr), options->address, cdata.rport, cdata.csock,
-      cdata.connected, cdata.transport, options->domainname
+	connection.connected = set_target(&(connection.adr), connection.address,
+      connection.rport, connection.csock, connection.connected,
+      connection.transport, options->domainname
 #ifdef WITH_TLS_TRANSP
       , options->ignore_ca_fail
 #endif
@@ -1037,7 +1038,7 @@ void shoot(char *buf, int buff_size, struct sipsak_options *options)
 
 	/* here we go until someone decides to exit */
 	while(1) {
-		before_sending(&counters, &msg_data, options->mode);
+		before_sending(&counters, &msg_data, options->mode, &connection);
 
 		if (options->sleep_ms == -2) {
 			rand_tmp = rand();
@@ -1052,12 +1053,12 @@ void shoot(char *buf, int buff_size, struct sipsak_options *options)
 			nanosleep(&sleep_ms_s, &sleep_rem);
 		}
 
-		send_message(request, &cdata, &counters, &timers);
+		send_message(request, &connection, &counters, &timers);
 
 		/* in flood we are only interested in sending so skip the rest */
 		if (options->mode != SM_FLOOD) {
 			ret = recv_message(received, BUFSIZE, inv_trans, &delays, &timers,
-						&counters, &cdata, &regexps, options->mode, msg_data.cseq_counter,
+						&counters, &connection, &regexps, options->mode, msg_data.cseq_counter,
             request, response);
 			if(ret > 0)
 			{
@@ -1069,10 +1070,10 @@ void shoot(char *buf, int buff_size, struct sipsak_options *options)
 						(regexec(&(regexps.replyexp), received, 0, 0, 0) == REG_NOERROR) && 
 						(regexec(&(regexps.proexp), received, 0, 0, 0) == REG_NOMATCH)) { 
 					build_ack(request, received, response, &regexps);
-					cdata.dontsend = 0;
+					connection.dontsend = 0;
 					inv_trans = 0;
 					/* lets fire the ACK to the server */
-					send_message(response, &cdata, &counters, &timers);
+					send_message(response, &connection, &counters, &timers);
 					inv_trans = 1;
 				}
 				/* check for old CSeq => ignore retransmission */
@@ -1082,7 +1083,7 @@ void shoot(char *buf, int buff_size, struct sipsak_options *options)
 						printf("ignoring retransmission\n");
 					}
 					counters.retrans_r_c++;
-					cdata.dontsend = 1;
+					connection.dontsend = 1;
 					continue;
 					}
 				else if (regexec(&(regexps.authexp), received, 0, 0, 0) == REG_NOERROR) {
@@ -1119,8 +1120,7 @@ void shoot(char *buf, int buff_size, struct sipsak_options *options)
 				/* lets see if received a redirect */
 				if (options->redirects == 1 &&
             regexec(&(regexps.redexp), received, 0, 0, 0) == REG_NOERROR) {
-					handle_3xx(&(cdata.adr), options->warning_ext, cdata.rport,
-                     options->address, cdata.transport, options->outbound_proxy,
+					handle_3xx(&connection, options->warning_ext, options->outbound_proxy,
                      options->domainname
 #ifdef WITH_TLS_TRANSP
                      , options->ignore_ca_fail
@@ -1128,7 +1128,7 @@ void shoot(char *buf, int buff_size, struct sipsak_options *options)
                      );
 				} /* if redircts... */
 				else if (options->mode == SM_TRACE) {
-					trace_reply(options->regex, &counters, &timers);
+					trace_reply(options->regex, &counters, &timers, &connection);
 				} /* if trace ... */
 				else if (options->mode == SM_USRLOC ||
                  options->mode == SM_USRLOC_INVITE ||
@@ -1138,24 +1138,24 @@ void shoot(char *buf, int buff_size, struct sipsak_options *options)
 					handle_usrloc(options->regex, &counters,
                         options->rand_rem, msg_data.username,
                         options->nagios_warn, &timers, msg_data.mes_body,
-                        options->mode);
+                        options->mode, &connection);
 				}
 				else if (options->mode == SM_RANDTRASH) {
 					handle_randtrash(options->warning_ext, &counters);
 				}
 				else {
-					handle_default(options->regex, &counters, &timers);
+					handle_default(options->regex, &counters, &timers, &connection);
 				} /* redirect, auth, and modes */
 			} /* ret > 0 */
 			else if (ret == -1) { // we did not got anything back, send again
 				/* no re-transmission on reliable transports */
-				if (cdata.transport != SIP_UDP_TRANSPORT) {
-					cdata.dontsend = 1;
+				if (connection.transport != SIP_UDP_TRANSPORT) {
+					connection.dontsend = 1;
 				}
 				continue;
 			}
 			else if (ret == -2) { // we received non-matching ICMP
-				cdata.dontsend = 1;
+				connection.dontsend = 1;
 				continue;
 			}
 			else {
