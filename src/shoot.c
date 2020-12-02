@@ -70,7 +70,6 @@ struct sipsak_regexp regexps;
 
 struct sipsak_sr_time timers;
 struct sipsak_con_data cdata;
-struct sipsak_counter counters;
 struct sipsak_delay delays;
 
 struct sipsak_msg_data msg_data;
@@ -170,51 +169,51 @@ void handle_3xx(struct sockaddr_in *tadr, int warning_ext, int rport,
 }
 
 /* takes care of replies in the trace route mode */
-void trace_reply(regex_t *regex, int namebeg, struct sipsak_sr_time *timers)
+void trace_reply(regex_t *regex, struct sipsak_counter *counter,
+    struct sipsak_sr_time *timer)
 {
 	char *contact;
 
 	if (regexec(&(regexps.tmhexp), received, 0, 0, 0) == REG_NOERROR) {
 		/* we received 483 to many hops */
-		printf("%i: ", namebeg);
+		printf("%i: ", counter->namebeg);
 		if (verbose > 2) {
 			printf("(%.3f ms)\n%s\n", 
-				deltaT(&(timers->sendtime), &(timers->recvtime)), received);
+				deltaT(&(timer->sendtime), &(timer->recvtime)), received);
 		}
 		else {
 			warning_extract(received);
-			printf("(%.3f ms) ", deltaT(&(timers->sendtime), &(timers->recvtime)));
+			printf("(%.3f ms) ", deltaT(&(timer->sendtime), &(timer->recvtime)));
 			print_message_line(received);
 		}
-    // FIXME looks like we want to modify the global value here
-		namebeg++;
+		counter->namebeg++;
 		msg_data.cseq_counter++;
 		create_msg(REQ_OPT, &msg_data);
-		set_maxforw(request, namebeg);
+		set_maxforw(request, counter->namebeg);
 		return;
 	}
 	else if (regexec(&(regexps.proexp), received, 0, 0, 0) == REG_NOERROR) {
 		/* we received a provisional response */
-		printf("%i: ", namebeg);
+		printf("%i: ", counter->namebeg);
 		if (verbose > 2) {
 			printf("(%.3f ms)\n%s\n", 
-				deltaT(&(timers->sendtime), &(timers->recvtime)), received);
+				deltaT(&(timer->sendtime), &(timer->recvtime)), received);
 		}
 		else {
 			warning_extract(received);
-			printf("(%.3f ms) ", deltaT(&(timers->sendtime), &(timers->recvtime)));
+			printf("(%.3f ms) ", deltaT(&(timer->sendtime), &(timer->recvtime)));
 			print_message_line(received);
 		}
-		delays.retryAfter = timers->timer_t2;
+		delays.retryAfter = timer->timer_t2;
 		cdata.dontsend=1;
 		return;
 	}
 	else {
 		/* anything else then 483 or provisional will
 		   be treated as final */
-		printf("%i: ", namebeg);
+		printf("%i: ", counter->namebeg);
 		warning_extract(received);
-		printf("(%.3f ms) ", deltaT(&(timers->sendtime), &(timers->recvtime)));
+		printf("(%.3f ms) ", deltaT(&(timer->sendtime), &(timer->recvtime)));
 		print_message_line(received);
 		if ((contact = STRCASESTR(received, CONT_STR)) != NULL ||
 				(contact = STRCASESTR(received, CONT_SHORT_STR)) != NULL) {
@@ -237,7 +236,8 @@ void trace_reply(regex_t *regex, int namebeg, struct sipsak_sr_time *timers)
 }
 
 /* takes care of replies in the default mode */
-void handle_default(regex_t *regex, struct sipsak_sr_time *timers)
+void handle_default(regex_t *regex, struct sipsak_counter *counter,
+    struct sipsak_sr_time *timers)
 {
 	/* in the normal send and reply case anything other 
 	   then 1xx will be treated as final response*/
@@ -245,7 +245,7 @@ void handle_default(regex_t *regex, struct sipsak_sr_time *timers)
 		if (verbose > 1) {
 			printf("%s\n\n", received);
 			printf("** reply received ");
-			if ((counters.send_counter == 1) || (STRNCASECMP(request, ACK_STR, ACK_STR_LEN) == 0)) {
+			if ((counter->send_counter == 1) || (STRNCASECMP(request, ACK_STR, ACK_STR_LEN) == 0)) {
 				printf("after %.3f ms **\n", deltaT(&(timers->firstsendt), &(timers->recvtime)));
 			}
 			else {
@@ -271,7 +271,7 @@ void handle_default(regex_t *regex, struct sipsak_sr_time *timers)
 		if (verbose > 1) {
 			printf("%s\n\n", received);
 			printf("** reply received ");
-			if ((counters.send_counter == 1) || (STRNCASECMP(request, ACK_STR, ACK_STR_LEN) == 0)){
+			if ((counter->send_counter == 1) || (STRNCASECMP(request, ACK_STR, ACK_STR_LEN) == 0)){
 				printf("after %.3f ms **\n", deltaT(&(timers->firstsendt), &(timers->recvtime)));
 			}
 			else {
@@ -289,13 +289,14 @@ void handle_default(regex_t *regex, struct sipsak_sr_time *timers)
 		if (timers->timing > 0) {
 			timers->timing--;
 			if (timers->timing == 0) {
-				if (counters.run == 0) {
-					counters.run++;
+				if (counter->run == 0) {
+					counter->run++;
 				}
-				printf("%.3f/%.3f/%.3f ms\n", delays.small_delay, delays.all_delay / counters.run, delays.big_delay);
+				printf("%.3f/%.3f/%.3f ms\n", delays.small_delay, delays.all_delay / 
+            counter->run, delays.big_delay);
 			}
 			else {
-				counters.run++;
+				counter->run++;
 				msg_data.cseq_counter = new_transaction(request, response);
 				delays.retryAfter = timers->timer_t1;
 			}
@@ -313,7 +314,7 @@ void handle_default(regex_t *regex, struct sipsak_sr_time *timers)
 }
 
 /* takes care of replies in the readntrash mode */
-void handle_randtrash(int warning_ext, int nameend)
+void handle_randtrash(int warning_ext, struct sipsak_counter *counter)
 {
 	/* in randomzing trash we are expexting 4?? error codes
 	   everything else should not be normal */
@@ -337,8 +338,8 @@ void handle_randtrash(int warning_ext, int nameend)
 		if (verbose > 1) 
 			printf("sended:\n%s\nreceived:\n%s\n", request, received);
 	}
-	if (msg_data.cseq_counter == nameend) {
-		if (counters.randretrys == 0) {
+	if (msg_data.cseq_counter == counter->nameend) {
+		if (counter->randretrys == 0) {
 			printf("random end reached. server survived :) respect!\n");
 			exit_code(0, __PRETTY_FUNCTION__, NULL);
 		}
@@ -355,7 +356,7 @@ void handle_randtrash(int warning_ext, int nameend)
 }
 
 /* takes care of replies in the usrloc mode */
-void handle_usrloc(regex_t *regex, int namebeg, int nameend, int rand_rem,
+void handle_usrloc(regex_t *regex, struct sipsak_counter *counter, int rand_rem,
     char *username, int nagios_warn, struct sipsak_sr_time *timers,
     char *mes_body, enum sipsak_modes mode)
 {
@@ -396,7 +397,7 @@ void handle_usrloc(regex_t *regex, int namebeg, int nameend, int rand_rem,
 					exit_code(1, __PRETTY_FUNCTION__, "received non-2xx reply for REGISTER");
 				}
 				if (mode == SM_USRLOC) {
-					if (namebeg==nameend) {
+					if (counter->namebeg == counter->nameend) {
 						if (verbose>0)  {
 							printf("\nAll usrloc tests"
 										" completed successful.\nreceived"
@@ -409,16 +410,16 @@ void handle_usrloc(regex_t *regex, int namebeg, int nameend, int rand_rem,
 										"request and response was %.3f"
 										" ms\n", delays.big_delay);
 						}
-						if (counters.retrans_r_c>0 && verbose>0) {
+						if (counter->retrans_r_c>0 && verbose>0) {
 							printf("%i retransmission(s) received from server.\n", 
-										counters.retrans_r_c);
+										counter->retrans_r_c);
 						}
-						if (counters.retrans_s_c>0 && verbose>0) {
+						if (counter->retrans_s_c>0 && verbose>0) {
 							printf("%i time(s) the timeout of "
 										"%i ms exceeded and request was"
 										" retransmitted.\n", 
-										counters.retrans_s_c, delays.retryAfter);
-							if (counters.retrans_s_c > nagios_warn) {
+										counter->retrans_s_c, delays.retryAfter);
+							if (counter->retrans_s_c > nagios_warn) {
 								log_message(request);
 								exit_code(4, __PRETTY_FUNCTION__, "#retransmissions above nagios warn level");
 							}
@@ -432,17 +433,16 @@ void handle_usrloc(regex_t *regex, int namebeg, int nameend, int rand_rem,
 					/* lets see if we deceid to remove a 
 					   binding (case 6)*/
 					if ( ((float)rand()/RAND_MAX)*100 > rand_rem) {
-            // FIXME we want to modify the global value here
-						namebeg++;
+						counter->namebeg++;
 						msg_data.cseq_counter++;
-						create_usern(usern, username, namebeg);
+						create_usern(usern, username, counter->namebeg);
 						create_msg(REQ_REG, &msg_data);
 					}
 					else {
 						/* to prevent only removing of low
 						   user numbers new random number*/
 						msg_data.cseq_counter++;
-						create_usern(usern, username, ((float)rand()/RAND_MAX) * namebeg);
+						create_usern(usern, username, ((float)rand()/RAND_MAX) * counter->namebeg);
 						create_msg(REQ_REM, &msg_data);
 						usrlocstep=UNREG_REP;
 					}
@@ -490,7 +490,7 @@ void handle_usrloc(regex_t *regex, int namebeg, int nameend, int rand_rem,
 					if (verbose>0) {
 						printf("ignoring INVITE retransmission\n");
 					}
-					counters.retrans_r_c++;
+					counter->retrans_r_c++;
 					cdata.dontsend=1;
 					return;
 				}
@@ -520,7 +520,7 @@ void handle_usrloc(regex_t *regex, int namebeg, int nameend, int rand_rem,
 					if (verbose>0) {
 						printf("ignoring 200 OK retransmission\n");
 					}
-					counters.retrans_r_c++;
+					counter->retrans_r_c++;
 					cdata.dontsend=1;
 					return;
 				}
@@ -532,14 +532,14 @@ void handle_usrloc(regex_t *regex, int namebeg, int nameend, int rand_rem,
 					if (verbose > 2) {
 						printf("\n%s\n", received);
 					}
-					if (verbose>0 && nameend>0) {
+					if (verbose>0 && counter->nameend>0) {
 						printf("usrloc for %s%i completed "
-									"successful\n", username, namebeg);
+									"successful\n", username, counter->namebeg);
 					}
 					else if (verbose>0) {
 						printf("usrloc for %s completed successful\n", username);
 					}
-					if (namebeg==nameend) {
+					if (counter->namebeg == counter->nameend) {
 						if (verbose>0) {
 							printf("\nAll usrloc tests completed "
 										"successful.\nreceived last message"
@@ -552,16 +552,16 @@ void handle_usrloc(regex_t *regex, int namebeg, int nameend, int rand_rem,
 										"request and response was %.3f"
 										" ms\n", delays.big_delay);
 						}
-						if (counters.retrans_r_c>0) {
+						if (counter->retrans_r_c>0) {
 							printf("%i retransmission(s) received from server.\n", 
-										counters.retrans_r_c);
+										counter->retrans_r_c);
 						}
-						if (counters.retrans_s_c>0) {
+						if (counter->retrans_s_c>0) {
 							printf("%i time(s) the timeout of "
 										"%i ms exceeded and request was"
 										" retransmitted.\n", 
-										counters.retrans_s_c, delays.retryAfter);
-							if (counters.retrans_s_c > nagios_warn) {
+										counter->retrans_s_c, delays.retryAfter);
+							if (counter->retrans_s_c > nagios_warn) {
 								log_message(request);
 								exit_code(4, __PRETTY_FUNCTION__, "#retransmissions above nagios warn level");
 							}
@@ -572,10 +572,9 @@ void handle_usrloc(regex_t *regex, int namebeg, int nameend, int rand_rem,
 						/* lets see if we deceid to remove a 
 						   binding (case 6)*/
 						if (((float)rand()/RAND_MAX) * 100 > rand_rem) {
-              // FIXME we want to modify the global value here
-							namebeg++;
+							counter->namebeg++;
 							msg_data.cseq_counter++;
-							create_usern(usern, username, namebeg);
+							create_usern(usern, username, counter->namebeg);
 							create_msg(REQ_REG, &msg_data);
 							usrlocstep=REG_REP;
 						}
@@ -583,16 +582,15 @@ void handle_usrloc(regex_t *regex, int namebeg, int nameend, int rand_rem,
 							/* to prevent only removing of low
 							   user numbers new random number*/
 							msg_data.cseq_counter++;
-							create_usern(usern, username, ((float)rand()/RAND_MAX) * namebeg);
+							create_usern(usern, username, ((float)rand()/RAND_MAX) * counter->namebeg);
 							create_msg(REQ_REM, &msg_data);
 							usrlocstep=UNREG_REP;
 						}
 					} /* usrloc == 1 */
 					else {
-              // FIXME we want to modify the global value here
-						namebeg++;
+						counter->namebeg++;
 						msg_data.cseq_counter++;
-						create_usern(usern, username, namebeg);
+						create_usern(usern, username, counter->namebeg);
 						create_msg(REQ_INV, &msg_data);
 						inv_trans = 1;
 						usrlocstep=INV_RECV;
@@ -639,7 +637,7 @@ void handle_usrloc(regex_t *regex, int namebeg, int nameend, int rand_rem,
 					if (verbose>0) {
 						printf("ignoring MESSAGE retransmission\n");
 					}
-					counters.retrans_r_c++;
+					counter->retrans_r_c++;
 					cdata.dontsend=1;
 					return;
 				}
@@ -647,14 +645,14 @@ void handle_usrloc(regex_t *regex, int namebeg, int nameend, int rand_rem,
 					if (verbose > 1) {
 						printf("  reply received\n\n");
 					}
-					else if (verbose>0 && nameend>0) {
+					else if (verbose>0 && counter->nameend>0) {
 						printf("usrloc for %s%i completed "
-									"successful\n", username, namebeg);
+									"successful\n", username, counter->namebeg);
 					}
 					else if (verbose>0) {
 						printf("usrloc for %s completed successful\n", username);
 					}
-					if (namebeg==nameend) {
+					if (counter->namebeg == counter->nameend) {
 						if (verbose>0) {
 							printf("\nAll usrloc tests completed "
 										"successful.\nreceived last message"
@@ -667,17 +665,17 @@ void handle_usrloc(regex_t *regex, int namebeg, int nameend, int rand_rem,
 										"request and response was %.3f"
 										" ms\n", delays.big_delay);
 						}
-						if (counters.retrans_r_c>0) {
+						if (counter->retrans_r_c>0) {
 							printf("%i retransmission(s) "
 										"received from server.\n", 
-											counters.retrans_r_c);
+											counter->retrans_r_c);
 						}
-						if (counters.retrans_s_c>0) {
+						if (counter->retrans_s_c>0) {
 							printf("%i time(s) the timeout of "
 										"%i ms exceeded and request was"
 										" retransmitted.\n", 
-										counters.retrans_s_c, delays.retryAfter);
-							if (counters.retrans_s_c > nagios_warn) {
+										counter->retrans_s_c, delays.retryAfter);
+							if (counter->retrans_s_c > nagios_warn) {
 								log_message(request);
 								exit_code(4, __PRETTY_FUNCTION__, "#retransmissions above nagios warn level");
 							}
@@ -688,10 +686,9 @@ void handle_usrloc(regex_t *regex, int namebeg, int nameend, int rand_rem,
 						/* lets see if we deceid to remove a 
 						   binding (case 6)*/
 						if (((float)rand()/RAND_MAX) * 100 > rand_rem) {
-              // FIXME we want to modify the global value here
-							namebeg++;
+							counter->namebeg++;
 							msg_data.cseq_counter++;
-							create_usern(usern, username, namebeg);
+							create_usern(usern, username, counter->namebeg);
 							create_msg(REQ_REG, &msg_data);
 							usrlocstep=REG_REP;
 						}
@@ -699,16 +696,15 @@ void handle_usrloc(regex_t *regex, int namebeg, int nameend, int rand_rem,
 							/* to prevent only removing of low
 							   user numbers new random number*/
 							msg_data.cseq_counter++;
-							create_usern(usern, username, ((float)rand()/RAND_MAX) * namebeg);
+							create_usern(usern, username, ((float)rand()/RAND_MAX) * counter->namebeg);
 							create_msg(REQ_REM, &msg_data);
 							usrlocstep=UNREG_REP;
 						}
 					} /* usrloc == 1 */
 					else {
-              // FIXME we want to modify the global value here
-						namebeg++;
+						counter->namebeg++;
 						msg_data.cseq_counter++;
-						create_usern(usern, username, namebeg);
+						create_usern(usern, username, counter->namebeg);
 						create_msg(REQ_MES, &msg_data);
 						usrlocstep=MES_RECV;
 					}
@@ -738,7 +734,7 @@ void handle_usrloc(regex_t *regex, int namebeg, int nameend, int rand_rem,
 					if (verbose>0) {
 						printf("ignoring MESSAGE retransmission\n");
 					}
-					counters.retrans_r_c++;
+					counter->retrans_r_c++;
 					cdata.dontsend=1;
 					return;
 				}
@@ -746,17 +742,16 @@ void handle_usrloc(regex_t *regex, int namebeg, int nameend, int rand_rem,
 					if (verbose > 1) {
 						printf("   OK\n\n");
 					}
-					else if (verbose>0 && nameend>0) {
+					else if (verbose>0 && counter->nameend>0) {
 						printf("Binding removal for %s%i "
-									"successful\n", username, namebeg);
+									"successful\n", username, counter->namebeg);
 					}
 					else if (verbose>0) {
 						printf("Binding removal for %s successful\n", username);
 					}
-              // FIXME we want to modify the global value here
-					namebeg++;
+					counter->namebeg++;
 					msg_data.cseq_counter++;
-					create_usern(usern, username, namebeg);
+					create_usern(usern, username, counter->namebeg);
 					create_msg(REQ_REG, &msg_data);
 					usrlocstep=REG_REP;
 				}
@@ -764,8 +759,8 @@ void handle_usrloc(regex_t *regex, int namebeg, int nameend, int rand_rem,
 					fprintf(stderr, "received:\n%s\nerror: did not "
 								"receive the expected 200 on the "
 								"remove bindings request for %s%i (see"
-								" above). aborting\n", received, username, 
-								namebeg);
+								" above). aborting\n", received, username,
+								counter->namebeg);
 					log_message(request);
 					exit_code(1, __PRETTY_FUNCTION__, "received non-2xx reply for de-register request");
 				}
@@ -846,6 +841,8 @@ void shoot(char *buf, int buff_size, struct sipsak_options *options)
 	struct timespec sleep_ms_s, sleep_rem;
 	int ret, cseqtmp, rand_tmp;
 	char buf2[BUFSIZE], buf3[BUFSIZE], lport_str[LPORT_STR_LEN];
+
+  struct sipsak_counter counters;
 
 	inv_trans = 0;
 	usrlocstep = REG_REP;
@@ -1131,23 +1128,23 @@ void shoot(char *buf, int buff_size, struct sipsak_options *options)
                      );
 				} /* if redircts... */
 				else if (options->mode == SM_TRACE) {
-					trace_reply(options->regex, counters.namebeg, &timers);
+					trace_reply(options->regex, &counters, &timers);
 				} /* if trace ... */
 				else if (options->mode == SM_USRLOC ||
                  options->mode == SM_USRLOC_INVITE ||
                  options->mode == SM_USRLOC_MESSAGE ||
                  options->mode == SM_INVITE ||
                  options->mode == SM_MESSAGE) {
-					handle_usrloc(options->regex, counters.namebeg, counters.nameend,
+					handle_usrloc(options->regex, &counters,
                         options->rand_rem, msg_data.username,
                         options->nagios_warn, &timers, msg_data.mes_body,
                         options->mode);
 				}
 				else if (options->mode == SM_RANDTRASH) {
-					handle_randtrash(options->warning_ext, counters.nameend);
+					handle_randtrash(options->warning_ext, &counters);
 				}
 				else {
-					handle_default(options->regex, &timers);
+					handle_default(options->regex, &counters, &timers);
 				} /* redirect, auth, and modes */
 			} /* ret > 0 */
 			else if (ret == -1) { // we did not got anything back, send again
