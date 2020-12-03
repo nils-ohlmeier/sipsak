@@ -69,8 +69,6 @@ enum usteps usrlocstep;
 struct sipsak_regexp regexps;
 
 
-struct sipsak_msg_data msg_data;
-
 /* if a reply was received successfully, return success, unless
  * reply matching is enabled and no match occurred
  */
@@ -100,8 +98,8 @@ static inline void create_usern(char *target, char *username, int number)
 }
 
 /* tries to take care of a redirection */
-void handle_3xx(struct sipsak_con_data *con, int warning_ext,
-    int outbound_proxy, char *domainname
+void handle_3xx(struct sipsak_con_data *con, struct sipsak_msg_data *message,
+    int warning_ext, int outbound_proxy, char *domainname
 #ifdef WITH_TLS_TRANSP
     , int ignore_ca_fail
 #endif
@@ -130,7 +128,7 @@ void handle_3xx(struct sipsak_con_data *con, int warning_ext,
 		}
 		/* correct our request */
 		uri_replace(request, contact);
-		msg_data.cseq_counter = new_transaction(request, response);
+		message->cseq_counter = new_transaction(request, response);
 		/* extract the needed information*/
 		con->rport = 0;
 		con->address = 0;
@@ -167,7 +165,7 @@ void handle_3xx(struct sipsak_con_data *con, int warning_ext,
 /* takes care of replies in the trace route mode */
 void trace_reply(regex_t *regex, struct sipsak_counter *counter,
     struct sipsak_sr_time *timer, struct sipsak_con_data *con,
-    struct sipsak_delay *delay)
+    struct sipsak_delay *delay, struct sipsak_msg_data *message)
 {
 	char *contact;
 
@@ -184,8 +182,8 @@ void trace_reply(regex_t *regex, struct sipsak_counter *counter,
 			print_message_line(received);
 		}
 		counter->namebeg++;
-		msg_data.cseq_counter++;
-		create_msg(REQ_OPT, &msg_data);
+		message->cseq_counter++;
+		create_msg(REQ_OPT, message);
 		set_maxforw(request, counter->namebeg);
 		return;
 	}
@@ -235,7 +233,7 @@ void trace_reply(regex_t *regex, struct sipsak_counter *counter,
 /* takes care of replies in the default mode */
 void handle_default(regex_t *regex, struct sipsak_counter *counter,
     struct sipsak_sr_time *timers, struct sipsak_con_data *con,
-    struct sipsak_delay *delay)
+    struct sipsak_delay *delay, struct sipsak_msg_data *message)
 {
 	/* in the normal send and reply case anything other 
 	   then 1xx will be treated as final response*/
@@ -295,7 +293,7 @@ void handle_default(regex_t *regex, struct sipsak_counter *counter,
 			}
 			else {
 				counter->run++;
-				msg_data.cseq_counter = new_transaction(request, response);
+				message->cseq_counter = new_transaction(request, response);
 				delay->retryAfter = timers->timer_t1;
 			}
 		}
@@ -312,7 +310,8 @@ void handle_default(regex_t *regex, struct sipsak_counter *counter,
 }
 
 /* takes care of replies in the readntrash mode */
-void handle_randtrash(int warning_ext, struct sipsak_counter *counter)
+void handle_randtrash(int warning_ext, struct sipsak_counter *counter,
+    struct sipsak_msg_data *message)
 {
 	/* in randomzing trash we are expexting 4?? error codes
 	   everything else should not be normal */
@@ -336,7 +335,7 @@ void handle_randtrash(int warning_ext, struct sipsak_counter *counter)
 		if (verbose > 1) 
 			printf("sended:\n%s\nreceived:\n%s\n", request, received);
 	}
-	if (msg_data.cseq_counter == counter->nameend) {
+	if (message->cseq_counter == counter->nameend) {
 		if (counter->randretrys == 0) {
 			printf("random end reached. server survived :) respect!\n");
 			exit_code(0, __PRETTY_FUNCTION__, NULL);
@@ -357,7 +356,7 @@ void handle_randtrash(int warning_ext, struct sipsak_counter *counter)
 void handle_usrloc(regex_t *regex, struct sipsak_counter *counter, int rand_rem,
     char *username, int nagios_warn, struct sipsak_sr_time *timers,
     char *mes_body, enum sipsak_modes mode, struct sipsak_con_data *con,
-    struct sipsak_delay *delay)
+    struct sipsak_delay *delay, struct sipsak_msg_data *message)
 {
 	char *crlf;
 	char ruri[11+12+20]; //FIXME: username length 20 should be dynamic
@@ -433,28 +432,28 @@ void handle_usrloc(regex_t *regex, struct sipsak_counter *counter, int rand_rem,
 					   binding (case 6)*/
 					if ( ((float)rand()/RAND_MAX)*100 > rand_rem) {
 						counter->namebeg++;
-						msg_data.cseq_counter++;
+						message->cseq_counter++;
 						create_usern(usern, username, counter->namebeg);
-						create_msg(REQ_REG, &msg_data);
+						create_msg(REQ_REG, message);
 					}
 					else {
 						/* to prevent only removing of low
 						   user numbers new random number*/
-						msg_data.cseq_counter++;
+						message->cseq_counter++;
 						create_usern(usern, username, ((float)rand()/RAND_MAX) * counter->namebeg);
-						create_msg(REQ_REM, &msg_data);
+						create_msg(REQ_REM, message);
 						usrlocstep=UNREG_REP;
 					}
 				} /* invite == 0 && message == 0 */
 				else if (mode == SM_USRLOC_INVITE) {
-					msg_data.cseq_counter++;
-					create_msg(REQ_INV, &msg_data);
+					message->cseq_counter++;
+					create_msg(REQ_INV, message);
 					inv_trans = 1;
 					usrlocstep=INV_RECV;
 				}
 				else if (mode == SM_USRLOC_MESSAGE) {
-					msg_data.cseq_counter++;
-					create_msg(REQ_MES, &msg_data);
+					message->cseq_counter++;
+					create_msg(REQ_MES, message);
 					inv_trans = 0;
 					usrlocstep=MES_RECV;
 				}
@@ -572,25 +571,25 @@ void handle_usrloc(regex_t *regex, struct sipsak_counter *counter, int rand_rem,
 						   binding (case 6)*/
 						if (((float)rand()/RAND_MAX) * 100 > rand_rem) {
 							counter->namebeg++;
-							msg_data.cseq_counter++;
+							message->cseq_counter++;
 							create_usern(usern, username, counter->namebeg);
-							create_msg(REQ_REG, &msg_data);
+							create_msg(REQ_REG, message);
 							usrlocstep=REG_REP;
 						}
 						else {
 							/* to prevent only removing of low
 							   user numbers new random number*/
-							msg_data.cseq_counter++;
+							message->cseq_counter++;
 							create_usern(usern, username, ((float)rand()/RAND_MAX) * counter->namebeg);
-							create_msg(REQ_REM, &msg_data);
+							create_msg(REQ_REM, message);
 							usrlocstep=UNREG_REP;
 						}
 					} /* usrloc == 1 */
 					else {
 						counter->namebeg++;
-						msg_data.cseq_counter++;
+						message->cseq_counter++;
 						create_usern(usern, username, counter->namebeg);
-						create_msg(REQ_INV, &msg_data);
+						create_msg(REQ_INV, message);
 						inv_trans = 1;
 						usrlocstep=INV_RECV;
 					}
@@ -686,25 +685,25 @@ void handle_usrloc(regex_t *regex, struct sipsak_counter *counter, int rand_rem,
 						   binding (case 6)*/
 						if (((float)rand()/RAND_MAX) * 100 > rand_rem) {
 							counter->namebeg++;
-							msg_data.cseq_counter++;
+							message->cseq_counter++;
 							create_usern(usern, username, counter->namebeg);
-							create_msg(REQ_REG, &msg_data);
+							create_msg(REQ_REG, message);
 							usrlocstep=REG_REP;
 						}
 						else {
 							/* to prevent only removing of low
 							   user numbers new random number*/
-							msg_data.cseq_counter++;
+							message->cseq_counter++;
 							create_usern(usern, username, ((float)rand()/RAND_MAX) * counter->namebeg);
-							create_msg(REQ_REM, &msg_data);
+							create_msg(REQ_REM, message);
 							usrlocstep=UNREG_REP;
 						}
 					} /* usrloc == 1 */
 					else {
 						counter->namebeg++;
-						msg_data.cseq_counter++;
+						message->cseq_counter++;
 						create_usern(usern, username, counter->namebeg);
-						create_msg(REQ_MES, &msg_data);
+						create_msg(REQ_MES, message);
 						usrlocstep=MES_RECV;
 					}
 				} /* regexec */
@@ -749,9 +748,9 @@ void handle_usrloc(regex_t *regex, struct sipsak_counter *counter, int rand_rem,
 						printf("Binding removal for %s successful\n", username);
 					}
 					counter->namebeg++;
-					msg_data.cseq_counter++;
+					message->cseq_counter++;
 					create_usern(usern, username, counter->namebeg);
-					create_msg(REQ_REG, &msg_data);
+					create_msg(REQ_REG, message);
 					usrlocstep=REG_REP;
 				}
 				else {
@@ -845,6 +844,7 @@ void shoot(char *buf, int buff_size, struct sipsak_options *options)
   struct sipsak_sr_time timers;
   struct sipsak_con_data connection;
   struct sipsak_delay delays;
+  struct sipsak_msg_data msg_data;
 
 	inv_trans = 0;
 	usrlocstep = REG_REP;
@@ -1123,15 +1123,16 @@ void shoot(char *buf, int buff_size, struct sipsak_options *options)
 				/* lets see if received a redirect */
 				if (options->redirects == 1 &&
             regexec(&(regexps.redexp), received, 0, 0, 0) == REG_NOERROR) {
-					handle_3xx(&connection, options->warning_ext, options->outbound_proxy,
-                     options->domainname
+					handle_3xx(&connection, &msg_data, options->warning_ext,
+              options->outbound_proxy, options->domainname
 #ifdef WITH_TLS_TRANSP
                      , options->ignore_ca_fail
 #endif
                      );
 				} /* if redircts... */
 				else if (options->mode == SM_TRACE) {
-					trace_reply(options->regex, &counters, &timers, &connection, &delays);
+					trace_reply(options->regex, &counters, &timers, &connection, &delays,
+              &msg_data);
 				} /* if trace ... */
 				else if (options->mode == SM_USRLOC ||
                  options->mode == SM_USRLOC_INVITE ||
@@ -1141,13 +1142,14 @@ void shoot(char *buf, int buff_size, struct sipsak_options *options)
 					handle_usrloc(options->regex, &counters,
                         options->rand_rem, msg_data.username,
                         options->nagios_warn, &timers, msg_data.mes_body,
-                        options->mode, &connection, &delays);
+                        options->mode, &connection, &delays, &msg_data);
 				}
 				else if (options->mode == SM_RANDTRASH) {
-					handle_randtrash(options->warning_ext, &counters);
+					handle_randtrash(options->warning_ext, &counters, &msg_data);
 				}
 				else {
-					handle_default(options->regex, &counters, &timers, &connection, &delays);
+					handle_default(options->regex, &counters, &timers, &connection, &delays,
+              &msg_data);
 				} /* redirect, auth, and modes */
 			} /* ret > 0 */
 			else if (ret == -1) { // we did not got anything back, send again
