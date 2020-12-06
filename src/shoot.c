@@ -66,7 +66,6 @@ char fqdn[FQDN_SIZE];
 
 enum usteps usrlocstep;
 
-struct sipsak_regexp regexps;
 
 
 /* if a reply was received successfully, return success, unless
@@ -115,61 +114,52 @@ void handle_3xx(struct sipsak_con_data *con, struct sipsak_msg_data *message,
 	}
 	else
 		printf("\n");
-	/* we'll try to handle 301 and 302 here, other 3xx are to complex */
-	regcomp(&(regexps.redexp), "^SIP/[0-9]\\.[0-9] 30[125] ", 
-			REG_EXTENDED|REG_NOSUB|REG_ICASE);
-	if (regexec(&(regexps.redexp), received, 0, 0, 0) == REG_NOERROR) {
-		/* try to find the contact in the redirect */
-		contact = uri_from_contact(received);
-		if (contact==NULL) {
-			fprintf(stderr, "error: cannot find Contact in this "
-				"redirect:\n%s\n", received);
-			exit_code(3, __PRETTY_FUNCTION__, "missing Contact header in reply");
-		}
-		/* correct our request */
-		uri_replace(request, contact);
-		message->cseq_counter = new_transaction(request, response);
-		/* extract the needed information*/
-		con->rport = 0;
-		con->address = 0;
-		parse_uri(contact, &uscheme, &uuser, &uhost, &con->rport);
-		if (!con->rport)
-			con->address = getsrvadr(uhost, &con->rport, &con->transport);
-		if (!con->address)
-			con->address = getaddress(uhost);
-		if (!con->address){
-			fprintf(stderr, "error: cannot determine host "
-					"address from Contact of redirect:"
-					"\n%s\n", received);
-			exit_code(2, __PRETTY_FUNCTION__, "missing host in Contact header");
-		}
-		if (!con->rport) {
-			con->rport = 5060;
-		}
-		free(contact);
-		if (!outbound_proxy)
-			con->connected = set_target(&(con->adr), con->address, con->rport,
-          con->csock, con->connected, con->transport, domainname
+
+  /* try to find the contact in the redirect */
+  contact = uri_from_contact(received);
+  if (contact==NULL) {
+    fprintf(stderr, "error: cannot find Contact in this "
+      "redirect:\n%s\n", received);
+    exit_code(3, __PRETTY_FUNCTION__, "missing Contact header in reply");
+  }
+  /* correct our request */
+  uri_replace(request, contact);
+  message->cseq_counter = new_transaction(request, response);
+  /* extract the needed information*/
+  con->rport = 0;
+  con->address = 0;
+  parse_uri(contact, &uscheme, &uuser, &uhost, &con->rport);
+  if (!con->rport)
+    con->address = getsrvadr(uhost, &con->rport, &con->transport);
+  if (!con->address)
+    con->address = getaddress(uhost);
+  if (!con->address){
+    fprintf(stderr, "error: cannot determine host "
+        "address from Contact of redirect:"
+        "\n%s\n", received);
+    exit_code(2, __PRETTY_FUNCTION__, "missing host in Contact header");
+  }
+  if (!con->rport) {
+    con->rport = 5060;
+  }
+  free(contact);
+  if (!outbound_proxy)
+    con->connected = set_target(&(con->adr), con->address, con->rport,
+        con->csock, con->connected, con->transport, domainname
 #ifdef WITH_TLS_TRANSP
-          , ignore_ca_fail
+        , ignore_ca_fail
 #endif
-          );
-	}
-	else {
-		fprintf(stderr, "error: cannot handle this redirect:"
-				"\n%s\n", received);
-		exit_code(2, __PRETTY_FUNCTION__, "unsupported redirect reply");
-	}
+        );
 }
 
 /* takes care of replies in the trace route mode */
-void trace_reply(regex_t *regex, struct sipsak_counter *counter,
+void trace_reply(struct sipsak_regexp *regexp, struct sipsak_counter *counter,
     struct sipsak_sr_time *timer, struct sipsak_con_data *con,
     struct sipsak_delay *delay, struct sipsak_msg_data *message)
 {
 	char *contact;
 
-	if (regexec(&(regexps.tmhexp), received, 0, 0, 0) == REG_NOERROR) {
+	if (regexec(&(regexp->tmhexp), received, 0, 0, 0) == REG_NOERROR) {
 		/* we received 483 to many hops */
 		printf("%i: ", counter->namebeg);
 		if (verbose > 2) {
@@ -187,7 +177,7 @@ void trace_reply(regex_t *regex, struct sipsak_counter *counter,
 		set_maxforw(request, counter->namebeg);
 		return;
 	}
-	else if (regexec(&(regexps.proexp), received, 0, 0, 0) == REG_NOERROR) {
+	else if (regexec(&(regexp->proexp), received, 0, 0, 0) == REG_NOERROR) {
 		/* we received a provisional response */
 		printf("%i: ", counter->namebeg);
 		if (verbose > 2) {
@@ -221,8 +211,8 @@ void trace_reply(regex_t *regex, struct sipsak_counter *counter,
 		else {
 			printf("\twithout Contact header\n");
 		}
-		if (regexec(&(regexps.okexp), received, 0, 0, 0) == REG_NOERROR) {
-			on_success(received, regex);
+		if (regexec(&(regexp->okexp), received, 0, 0, 0) == REG_NOERROR) {
+			on_success(received, regexp->optionsexp);
 		} else {
 			log_message(request);
 			exit_code(1, __PRETTY_FUNCTION__, "received final non-2xx reply");
@@ -231,13 +221,13 @@ void trace_reply(regex_t *regex, struct sipsak_counter *counter,
 }
 
 /* takes care of replies in the default mode */
-void handle_default(regex_t *regex, struct sipsak_counter *counter,
+void handle_default(struct sipsak_regexp *regexp, struct sipsak_counter *counter,
     struct sipsak_sr_time *timers, struct sipsak_con_data *con,
     struct sipsak_delay *delay, struct sipsak_msg_data *message)
 {
 	/* in the normal send and reply case anything other 
 	   then 1xx will be treated as final response*/
-	if (regexec(&(regexps.proexp), received, 0, 0, 0) == REG_NOERROR) {
+	if (regexec(&(regexp->proexp), received, 0, 0, 0) == REG_NOERROR) {
 		if (verbose > 1) {
 			printf("%s\n\n", received);
 			printf("** reply received ");
@@ -298,8 +288,8 @@ void handle_default(regex_t *regex, struct sipsak_counter *counter,
 			}
 		}
 		if (timers->timing == 0) {
-			if (regexec(&(regexps.okexp), received, 0, 0, 0) == REG_NOERROR) {
-				on_success(received, regex);
+			if (regexec(&(regexp->okexp), received, 0, 0, 0) == REG_NOERROR) {
+				on_success(received, regexp->optionsexp);
 			}
 			else {
 				log_message(request);
@@ -311,11 +301,11 @@ void handle_default(regex_t *regex, struct sipsak_counter *counter,
 
 /* takes care of replies in the readntrash mode */
 void handle_randtrash(int warning_ext, struct sipsak_counter *counter,
-    struct sipsak_msg_data *message)
+    struct sipsak_msg_data *message, struct sipsak_regexp *regexp)
 {
 	/* in randomzing trash we are expexting 4?? error codes
 	   everything else should not be normal */
-	if (regexec(&(regexps.errexp), received, 0, 0, 0) == REG_NOERROR) {
+	if (regexec(&(regexp->errexp), received, 0, 0, 0) == REG_NOERROR) {
 		if (verbose > 2)
 			printf("received:\n%s\n", received);
 		if (verbose > 1) {
@@ -353,15 +343,15 @@ void handle_randtrash(int warning_ext, struct sipsak_counter *counter,
 }
 
 /* takes care of replies in the usrloc mode */
-void handle_usrloc(regex_t *regex, struct sipsak_counter *counter, int rand_rem,
-    char *username, int nagios_warn, struct sipsak_sr_time *timers,
+void handle_usrloc(struct sipsak_regexp *regexp, struct sipsak_counter *counter,
+    int rand_rem, char *username, int nagios_warn, struct sipsak_sr_time *timers,
     char *mes_body, enum sipsak_modes mode, struct sipsak_con_data *con,
     struct sipsak_delay *delay, struct sipsak_msg_data *message)
 {
 	char *crlf;
 	char ruri[11+12+20]; //FIXME: username length 20 should be dynamic
 
-	if (regexec(&(regexps.proexp), received, 0, 0, 0) == REG_NOERROR) {
+	if (regexec(&(regexp->proexp), received, 0, 0, 0) == REG_NOERROR) {
 		if (verbose > 2) {
 			print_message_line(received);
 			printf("ignoring provisional response\n\n");
@@ -379,7 +369,7 @@ void handle_usrloc(regex_t *regex, struct sipsak_counter *counter, int rand_rem,
 			case REG_REP:
 				/* we have sent a register and look 
 				   at the response now */
-				if (regexec(&(regexps.okexp), received, 0, 0, 0) == REG_NOERROR) {
+				if (regexec(&(regexp->okexp), received, 0, 0, 0) == REG_NOERROR) {
 					if (verbose > 1) {
 						printf ("\tOK\n");
 					}
@@ -426,7 +416,7 @@ void handle_usrloc(regex_t *regex, struct sipsak_counter *counter, int rand_rem,
 							printf("%.3f ms\n",
 										deltaT(&(timers->firstsendt), &(timers->recvtime)));
 						}
-						on_success(received, regex);
+						on_success(received, regexp->optionsexp);
 					} /* namebeg == nameend */
 					/* lets see if we deceid to remove a 
 					   binding (case 6)*/
@@ -492,7 +482,7 @@ void handle_usrloc(regex_t *regex, struct sipsak_counter *counter, int rand_rem,
 					con->dontsend=1;
 					return;
 				}
-				if (regexec(&(regexps.okexp), received, 0, 0, 0) == REG_NOERROR) {
+				if (regexec(&(regexp->okexp), received, 0, 0, 0) == REG_NOERROR) {
 					if (verbose > 1) {
 						printf("\t200 OK received\n");
 					}
@@ -564,7 +554,7 @@ void handle_usrloc(regex_t *regex, struct sipsak_counter *counter, int rand_rem,
 								exit_code(4, __PRETTY_FUNCTION__, "#retransmissions above nagios warn level");
 							}
 						}
-						on_success(received, regex);
+						on_success(received, regexp->optionsexp);
 					} /* namebeg == nameend */
 					if (mode == SM_USRLOC_INVITE) {
 						/* lets see if we deceid to remove a 
@@ -639,7 +629,7 @@ void handle_usrloc(regex_t *regex, struct sipsak_counter *counter, int rand_rem,
 					con->dontsend=1;
 					return;
 				}
-				if (regexec(&(regexps.okexp), received, 0, 0, 0) == REG_NOERROR) {
+				if (regexec(&(regexp->okexp), received, 0, 0, 0) == REG_NOERROR) {
 					if (verbose > 1) {
 						printf("  reply received\n\n");
 					}
@@ -678,7 +668,7 @@ void handle_usrloc(regex_t *regex, struct sipsak_counter *counter, int rand_rem,
 								exit_code(4, __PRETTY_FUNCTION__, "#retransmissions above nagios warn level");
 							}
 						}
-						on_success(received, regex);
+						on_success(received, regexp->optionsexp);
 					} /* namebeg == nameend */
 					if (mode == SM_USRLOC_MESSAGE) {
 						/* lets see if we deceid to remove a 
@@ -736,7 +726,7 @@ void handle_usrloc(regex_t *regex, struct sipsak_counter *counter, int rand_rem,
 					con->dontsend=1;
 					return;
 				}
-				if (regexec(&(regexps.okexp), received, 0, 0, 0) == REG_NOERROR) {
+				if (regexec(&(regexp->okexp), received, 0, 0, 0) == REG_NOERROR) {
 					if (verbose > 1) {
 						printf("   OK\n\n");
 					}
@@ -845,6 +835,7 @@ void shoot(char *buf, int buff_size, struct sipsak_options *options)
   struct sipsak_con_data connection;
   struct sipsak_delay delays;
   struct sipsak_msg_data msg_data;
+  struct sipsak_regexp regexps;
 
 	inv_trans = 0;
 	usrlocstep = REG_REP;
@@ -940,7 +931,7 @@ void shoot(char *buf, int buff_size, struct sipsak_options *options)
 		REG_EXTENDED|REG_NOSUB|REG_ICASE); 
 	regcomp(&(regexps.okexp), "^SIP/[0-9]\\.[0-9] 2[0-9][0-9] ", 
 		REG_EXTENDED|REG_NOSUB|REG_ICASE); 
-	regcomp(&(regexps.redexp), "^SIP/[0-9]\\.[0-9] 3[0-9][0-9] ", 
+	regcomp(&(regexps.redexp), "^SIP/[0-9]\\.[0-9] 30[125] ", 
 		REG_EXTENDED|REG_NOSUB|REG_ICASE);
 	regcomp(&(regexps.authexp), "^SIP/[0-9]\\.[0-9] 40[17] ", 
 		REG_EXTENDED|REG_NOSUB|REG_ICASE);
@@ -948,6 +939,7 @@ void shoot(char *buf, int buff_size, struct sipsak_options *options)
 		REG_EXTENDED|REG_NOSUB|REG_ICASE); 
 	regcomp(&(regexps.tmhexp), "^SIP/[0-9]\\.[0-9] 483 ", 
 		REG_EXTENDED|REG_NOSUB|REG_ICASE); 
+  regexps.optionsexp = options->regex;
 
 	if (msg_data.username) {
 		if (counters.nameend > 0) {
@@ -1131,7 +1123,7 @@ void shoot(char *buf, int buff_size, struct sipsak_options *options)
                      );
 				} /* if redircts... */
 				else if (options->mode == SM_TRACE) {
-					trace_reply(options->regex, &counters, &timers, &connection, &delays,
+					trace_reply(&regexps, &counters, &timers, &connection, &delays,
               &msg_data);
 				} /* if trace ... */
 				else if (options->mode == SM_USRLOC ||
@@ -1139,16 +1131,16 @@ void shoot(char *buf, int buff_size, struct sipsak_options *options)
                  options->mode == SM_USRLOC_MESSAGE ||
                  options->mode == SM_INVITE ||
                  options->mode == SM_MESSAGE) {
-					handle_usrloc(options->regex, &counters,
+					handle_usrloc(&regexps, &counters,
                         options->rand_rem, msg_data.username,
                         options->nagios_warn, &timers, msg_data.mes_body,
                         options->mode, &connection, &delays, &msg_data);
 				}
 				else if (options->mode == SM_RANDTRASH) {
-					handle_randtrash(options->warning_ext, &counters, &msg_data);
+					handle_randtrash(options->warning_ext, &counters, &msg_data, &regexps);
 				}
 				else {
-					handle_default(options->regex, &counters, &timers, &connection, &delays,
+					handle_default(&regexps, &counters, &timers, &connection, &delays,
               &msg_data);
 				} /* redirect, auth, and modes */
 			} /* ret > 0 */
