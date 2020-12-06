@@ -62,7 +62,6 @@ char *usern;
 
 int inv_trans;
 
-char fqdn[FQDN_SIZE];
 
 enum usteps usrlocstep;
 
@@ -829,6 +828,7 @@ void shoot(char *buf, int buff_size, struct sipsak_options *options)
 	struct timespec sleep_ms_s, sleep_rem;
 	int ret, cseqtmp, rand_tmp;
 	char buf2[BUFSIZE], buf3[BUFSIZE], lport_str[LPORT_STR_LEN];
+  char fqdn[FQDN_SIZE];
 
   struct sipsak_counter counters;
   struct sipsak_sr_time timers;
