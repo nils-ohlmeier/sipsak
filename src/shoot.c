@@ -58,8 +58,6 @@ char *request;
 char *response;
 char *received;
 
-char *usern;
-
 int inv_trans;
 
 enum usteps usrlocstep;
@@ -419,14 +417,14 @@ void handle_usrloc(struct sipsak_regexp *regexp, struct sipsak_counter *counter,
 					if ( ((float)rand()/RAND_MAX)*100 > rand_rem) {
 						counter->namebeg++;
 						message->cseq_counter++;
-						create_usern(usern, username, counter->namebeg);
+						create_usern(message->usern, username, counter->namebeg);
 						create_msg(REQ_REG, message);
 					}
 					else {
 						/* to prevent only removing of low
 						   user numbers new random number*/
 						message->cseq_counter++;
-						create_usern(usern, username, ((float)rand()/RAND_MAX) * counter->namebeg);
+						create_usern(message->usern, username, ((float)rand()/RAND_MAX) * counter->namebeg);
 						create_msg(REQ_REM, message);
 						usrlocstep=UNREG_REP;
 					}
@@ -446,7 +444,7 @@ void handle_usrloc(struct sipsak_regexp *regexp, struct sipsak_counter *counter,
 				break;
 			case INV_RECV:
 				/* see if we received our invite */
-				sprintf(ruri, "%s sip:%s", INV_STR, usern);
+				sprintf(ruri, "%s sip:%s", INV_STR, message->usern);
 				if (!STRNCASECMP(received, ruri, strlen(ruri))) {
 					if (verbose > 1) {
 						printf("\t\treceived invite\n");
@@ -558,7 +556,7 @@ void handle_usrloc(struct sipsak_regexp *regexp, struct sipsak_counter *counter,
 						if (((float)rand()/RAND_MAX) * 100 > rand_rem) {
 							counter->namebeg++;
 							message->cseq_counter++;
-							create_usern(usern, username, counter->namebeg);
+							create_usern(message->usern, username, counter->namebeg);
 							create_msg(REQ_REG, message);
 							usrlocstep=REG_REP;
 						}
@@ -566,7 +564,7 @@ void handle_usrloc(struct sipsak_regexp *regexp, struct sipsak_counter *counter,
 							/* to prevent only removing of low
 							   user numbers new random number*/
 							message->cseq_counter++;
-							create_usern(usern, username, ((float)rand()/RAND_MAX) * counter->namebeg);
+							create_usern(message->usern, username, ((float)rand()/RAND_MAX) * counter->namebeg);
 							create_msg(REQ_REM, message);
 							usrlocstep=UNREG_REP;
 						}
@@ -574,7 +572,7 @@ void handle_usrloc(struct sipsak_regexp *regexp, struct sipsak_counter *counter,
 					else {
 						counter->namebeg++;
 						message->cseq_counter++;
-						create_usern(usern, username, counter->namebeg);
+						create_usern(message->usern, username, counter->namebeg);
 						create_msg(REQ_INV, message);
 						inv_trans = 1;
 						usrlocstep=INV_RECV;
@@ -592,7 +590,7 @@ void handle_usrloc(struct sipsak_regexp *regexp, struct sipsak_counter *counter,
 			case MES_RECV:
 				/* we sent the message and look if its 
 				   forwarded to us */
-				sprintf(ruri, "%s sip:%s", MES_STR, usern);
+				sprintf(ruri, "%s sip:%s", MES_STR, message->usern);
 				if (!STRNCASECMP(received, ruri, strlen(ruri))) {
 					if (verbose > 1) {
 						crlf=STRCASESTR(received, "\r\n\r\n");
@@ -672,7 +670,7 @@ void handle_usrloc(struct sipsak_regexp *regexp, struct sipsak_counter *counter,
 						if (((float)rand()/RAND_MAX) * 100 > rand_rem) {
 							counter->namebeg++;
 							message->cseq_counter++;
-							create_usern(usern, username, counter->namebeg);
+							create_usern(message->usern, username, counter->namebeg);
 							create_msg(REQ_REG, message);
 							usrlocstep=REG_REP;
 						}
@@ -680,7 +678,7 @@ void handle_usrloc(struct sipsak_regexp *regexp, struct sipsak_counter *counter,
 							/* to prevent only removing of low
 							   user numbers new random number*/
 							message->cseq_counter++;
-							create_usern(usern, username, ((float)rand()/RAND_MAX) * counter->namebeg);
+							create_usern(message->usern, username, ((float)rand()/RAND_MAX) * counter->namebeg);
 							create_msg(REQ_REM, message);
 							usrlocstep=UNREG_REP;
 						}
@@ -688,7 +686,7 @@ void handle_usrloc(struct sipsak_regexp *regexp, struct sipsak_counter *counter,
 					else {
 						counter->namebeg++;
 						message->cseq_counter++;
-						create_usern(usern, username, counter->namebeg);
+						create_usern(message->usern, username, counter->namebeg);
 						create_msg(REQ_MES, message);
 						usrlocstep=MES_RECV;
 					}
@@ -735,7 +733,7 @@ void handle_usrloc(struct sipsak_regexp *regexp, struct sipsak_counter *counter,
 					}
 					counter->namebeg++;
 					message->cseq_counter++;
-					create_usern(usern, username, counter->namebeg);
+					create_usern(message->usern, username, counter->namebeg);
 					create_msg(REQ_REG, message);
 					usrlocstep=REG_REP;
 				}
@@ -840,7 +838,6 @@ void shoot(char *buf, int buff_size, struct sipsak_options *options)
 	/* initalize local vars */
 	connection.dontsend=connection.dontrecv=counters.retrans_r_c=counters.retrans_s_c= 0;
 	delays.big_delay=counters.send_counter=counters.run= 0;
-	usern = NULL;
 	/* initialize local arrays */
 	memset(buf2, 0, BUFSIZE);
 	memset(buf3, 0, BUFSIZE);
@@ -893,6 +890,7 @@ void shoot(char *buf, int buff_size, struct sipsak_options *options)
 	msg_data.req_buff = request;
 	msg_data.repl_buff = NULL;
 	msg_data.username = options->username;
+	msg_data.usern = NULL;
 	msg_data.domainname = options->domainname;
 	msg_data.contact_uri = options->contact_uri;
 	msg_data.con_dis = options->con_dis;
@@ -940,18 +938,18 @@ void shoot(char *buf, int buff_size, struct sipsak_options *options)
 
 	if (msg_data.username) {
 		if (counters.nameend > 0) {
-			usern = str_alloc(strlen(msg_data.username) + 12);
-			create_usern(usern, msg_data.username, counters.namebeg);
-      msg_data.username = usern;
+			msg_data.usern = str_alloc(strlen(msg_data.username) + 12);
+			create_usern(msg_data.usern, msg_data.username, counters.namebeg);
+      msg_data.username = msg_data.usern;
 		}
 		else {
 			if (*(msg_data.username + strlen(msg_data.username) - 1) != '@') {
-				usern = str_alloc(strlen(msg_data.username) + 2);
-				create_usern(usern, msg_data.username, -1);
-        msg_data.username = usern;
+				msg_data.usern = str_alloc(strlen(msg_data.username) + 2);
+				create_usern(msg_data.usern, msg_data.username, -1);
+        msg_data.username = msg_data.usern;
 			}
 			else {
-				usern = msg_data.username;
+				msg_data.usern = msg_data.username;
 			}
 		}
 	}
