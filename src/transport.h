@@ -48,6 +48,8 @@ struct sipsak_sr_time {
 
 struct sipsak_con_data {
 	struct sockaddr_in adr;
+	unsigned int transport;
+	unsigned long address;
 	int csock;
 	int usock;
 	int dontsend;
@@ -56,7 +58,6 @@ struct sipsak_con_data {
 	int symmetric;
 	int lport;
 	int rport;
-	unsigned int transport;
 	char *buf_tmp;
 	int buf_tmp_size;
 };

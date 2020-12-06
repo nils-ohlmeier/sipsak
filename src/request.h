@@ -27,6 +27,7 @@ struct sipsak_msg_data {
   char *req_buff;
   char *repl_buff;
   char *username;
+  char *usern;
   char *domainname;
   char *contact_uri;
   char *con_dis;

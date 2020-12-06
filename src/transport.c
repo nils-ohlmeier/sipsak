@@ -389,6 +389,7 @@ static const char *bin2hex(const void *bin, size_t bin_size) {
 void print_x509_certificate_info(gnutls_session_t session) {
 	char serial[40];
 	char dn[128];
+	char ctime_buf[27] = {0};
 	size_t size;
 	unsigned int algo, bits;
 	time_t expiration_time, activation_time;
@@ -411,9 +412,9 @@ void print_x509_certificate_info(gnutls_session_t session) {
 		gnutls_x509_crt_import(cert, &cert_list[0], GNUTLS_X509_FMT_DER);
 		printf("Certificate info:\n");
 		activation_time = gnutls_x509_crt_get_activation_time(cert);
-		printf("\tCertificate is valid since: %s", ctime(&activation_time));
+		printf("\tCertificate is valid since: %s", ctime_r(&activation_time, ctime_buf));
 		expiration_time = gnutls_x509_crt_get_expiration_time(cert);
-		printf("\tCertificate expires: %s", ctime(&expiration_time));
+		printf("\tCertificate expires: %s", ctime_r(&expiration_time, ctime_buf));
 		// print the serial number of the certificate
 		size = sizeof(serial);
 		gnutls_x509_crt_get_serial(cert, serial, &size);

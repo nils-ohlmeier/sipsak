@@ -32,7 +32,7 @@ unsigned int nonce_count;
 
 /* converts a hash into hex output
    taken from the RFC 2617 */
-void cvt_hex(unsigned char *_b, unsigned char *_h, int length)
+void cvt_hex(unsigned char *_b, unsigned char *_h, unsigned short length)
 {
         unsigned short i;
 

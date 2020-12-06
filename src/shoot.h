@@ -32,6 +32,7 @@ struct sipsak_regexp {
 	regex_t errexp;
 	regex_t authexp;
 	regex_t replyexp;
+	regex_t *optionsexp;
 };
 
 enum usteps {
