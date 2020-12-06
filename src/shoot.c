@@ -62,10 +62,7 @@ char *usern;
 
 int inv_trans;
 
-
 enum usteps usrlocstep;
-
-
 
 /* if a reply was received successfully, return success, unless
  * reply matching is enabled and no match occurred
