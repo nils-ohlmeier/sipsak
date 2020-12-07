@@ -1,5 +1,6 @@
-* version 0.9.8-pre
+* version 0.9.8
   - removed support for ruli
+  - lots of internal refactoring to make sipsak compile with -fno-common (>= gcc-10)
 * version 0.9.7
   - added new option -E which overrules SRV result
   - added new option -J to take ha1 instead of password
