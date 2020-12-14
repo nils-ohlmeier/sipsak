@@ -2,9 +2,19 @@ language: c
 os:
   - linux
   - osx
+arch:
+  - amd64
+  - ppc64le
 compiler:
   - clang
   - gcc
+matrix:
+   exclude:
+     - os: osx
+       arch: ppc64le
+     - os: linux
+       compiler: clang
+       arch: ppc64le
 sudo: false
 addons:
   apt:
