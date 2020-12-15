@@ -2,7 +2,7 @@
 # Process this file with autoconf to produce a configure script.
 
 AC_PREREQ(2.59)
-AC_INIT([sipsak],[0.9.8],[github@ohlmeier.org])
+AC_INIT([sipsak],[0.9.9-pre],[github@ohlmeier.org])
 AM_INIT_AUTOMAKE([subdir-objects])
 AM_MAINTAINER_MODE
 AC_CONFIG_SRCDIR([src/sipsak.c])
