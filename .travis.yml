@@ -5,18 +5,25 @@ os:
 arch:
   - amd64
   - ppc64le
+  - arm64
 compiler:
   - clang
   - gcc
 matrix:
-   exclude:
-     - os: osx
-       arch: ppc64le
-     - os: linux
-       compiler: clang
-       arch: ppc64le
-     - os: osx
-       compiler: gcc
+  exclude:
+    - os: osx
+      arch: ppc64le
+    - os: osx
+      compiler: gcc
+    - os: linux
+      compiler: clang
+      arch: ppc64le
+    - os: linux
+      compiler: clang
+      arch: arm64
+  include:
+    - os: osx
+      osx_image: xcode12.2
 sudo: false
 addons:
   apt:
