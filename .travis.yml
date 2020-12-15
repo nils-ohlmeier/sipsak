@@ -11,11 +11,12 @@ compiler:
 matrix:
    exclude:
      - os: osx
-       compiler: gcc
        arch: ppc64le
      - os: linux
        compiler: clang
        arch: ppc64le
+     - os: osx
+       compiler: gcc
 sudo: false
 addons:
   apt:
