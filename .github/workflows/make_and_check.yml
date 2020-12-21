@@ -13,6 +13,8 @@ jobs:
 
     steps:
     - uses: actions/checkout@v2
+    - name: install check
+      run: sudo apt-get install check
     - name: autoreconf
       run: autoreconf --install
     - name: configure
