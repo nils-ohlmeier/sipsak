@@ -13,8 +13,8 @@ jobs:
 
     steps:
     - uses: actions/checkout@v2
-    - name: install check
-      run: sudo apt-get install check
+    - name: install dependencies
+      run: sudo apt-get install check libc-ares-dev
     - name: autoreconf
       run: autoreconf --install
     - name: configure
