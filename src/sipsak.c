@@ -27,7 +27,6 @@
    a server is alive; 1xx messages are now ignored; windows support
    dropped
 */
-
 #include "sipsak.h"
 
 #ifdef HAVE_UNISTD_H
