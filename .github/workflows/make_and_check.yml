@@ -14,7 +14,7 @@ jobs:
     steps:
     - uses: actions/checkout@v2
     - name: install dependencies
-      run: sudo apt-get install check libc-ares-dev libgnutls
+      run: sudo apt-get install check libc-ares-dev libgnutls30
     - name: autoreconf
       run: autoreconf --install
     - name: configure
