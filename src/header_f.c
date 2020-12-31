@@ -272,7 +272,7 @@ void set_cl(char* mes, int contentlen) {
 }
 
 /* returns the content length from the message; in case of error it
- * return -1 */
+ * returns -1 */
 int get_cl(char* mes) {
 	char *cl;
 
