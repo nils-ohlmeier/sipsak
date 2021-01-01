@@ -412,7 +412,7 @@ void warning_extract(char *message)
 }
 
 /* tries to find and return the number in the CSeq header */
-int cseq(char *message)
+int get_cseq(char *message)
 {
 	char *cseq;
 	int num;
@@ -439,7 +439,7 @@ int increase_cseq(char *message, char *reply)
 	int cs = 0;
 	char *cs_s, *eol, *backup;
 
-	cs = cseq(message);
+	cs = get_cseq(message);
 	if ((cs < 1) && (verbose > 1)) {
 		printf("CSeq increase failed because unable to extract CSeq number\n");
 		return 0;

@@ -1068,7 +1068,7 @@ void shoot(char *buf, int buff_size, struct sipsak_options *options)
 					inv_trans = 1;
 				}
 				/* check for old CSeq => ignore retransmission */
-				cseqtmp = cseq(received);
+				cseqtmp = get_cseq(received);
 				if ((0 < cseqtmp) && (cseqtmp < msg_data.cseq_counter)) {
 					if (verbose>0) {
 						printf("ignoring retransmission\n");
