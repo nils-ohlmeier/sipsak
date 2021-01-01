@@ -31,15 +31,34 @@ START_TEST (test_get_cl) {
 }
 END_TEST
 
+START_TEST (test_find_lr_parameter) {
+	/* failure cases */
+	ck_assert_msg(find_lr_parameter("") == 0, "find_lr_parameter(\"\") returned %d, instead of 0", find_lr_parameter(""));
+	ck_assert_msg(find_lr_parameter("a") == 0, "find_lr_parameter(\"a\") returned %d, instead of 0", find_lr_parameter("a"));
+	ck_assert_msg(find_lr_parameter(";lr") == 0, "find_lr_parameter(\";lr\") returned %d, instead of 0", find_lr_parameter(";lr"));
+	ck_assert_msg(find_lr_parameter("\n") == 0, "find_lr_parameter(\"\\n\") returned %d, instead of 0", find_lr_parameter("\n"));
+	ck_assert_msg(find_lr_parameter("aaa\nbbb") == 0, "find_lr_parameter(\"aaa\\nbbb\") returned %d, instead of 0", find_lr_parameter("aaa\nbbb"));
+	ck_assert_msg(find_lr_parameter("a\n;lr") == 0, "find_lr_parameter(\"a\n;lr\") returned %d, instead of 0", find_lr_parameter("a\n;lr"));
+
+	/* success cases */
+	ck_assert_msg(find_lr_parameter(";lr\n") == 1, "find_lr_parameter(\";lr\n\") returned %d, instead of 1", find_lr_parameter(";lr\n"));
+	ck_assert_msg(find_lr_parameter("Record-Route: foo;lr\n") == 1, "find_lr_parameter(\"Record-Route: foo;lr\n\") returned %d, instead of 1", find_lr_parameter(";lr\n"));
+}
+END_TEST
+
 Suite *header_f_suite(void) {
 	Suite *s = suite_create("Header_f");
 
 	/* get_cl test case */
 	TCase *tc_get_cl = tcase_create("get_cl");
 	tcase_add_test(tc_get_cl, test_get_cl);
+	/* find_lr_parameter test case */
+	TCase *tc_find_lr_parameter = tcase_create("find_lr_parameter");
+	tcase_add_test(tc_find_lr_parameter, test_find_lr_parameter);
 
 	/* add test cases to suite */
 	suite_add_tcase(s, tc_get_cl);
+	suite_add_tcase(s, tc_find_lr_parameter);
 
 	return s;
 }
