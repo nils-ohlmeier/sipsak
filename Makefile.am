@@ -4,7 +4,7 @@ CC = ${DISTCC} @CC@
 
 bin_PROGRAMS = sipsak
 
-sipsak_SOURCES = src/transport.c src/transport.h src/auth.c src/auth.h src/header_f.c src/header_f.h src/helper.c src/helper.h src/md5.c src/md5.h src/md5global.h src/request.c src/request.h src/shoot.c src/shoot.h src/sipsak.c src/sipsak.h src/exit_code.h src/exit_code.c
+sipsak_SOURCES = src/transport.c src/transport.h src/auth.c src/auth.h src/header_f.c src/header_f.h src/helper.c src/helper.h src/md5.c src/md5.h src/md5global.h src/request.c src/request.h src/shoot.c src/shoot.h src/sipsak.c src/sipsak.h src/exit_code.h src/exit_code.c src/sip_strings.h
 
 dist_man1_MANS=sipsak.1
 

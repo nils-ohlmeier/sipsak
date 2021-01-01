@@ -45,6 +45,7 @@
 #include "helper.h"
 #include "exit_code.h"
 #include "transport.h"
+#include "sip_strings.h"
 
 #ifndef DEFAULT_RETRYS
 #define DEFAULT_RETRYS 5

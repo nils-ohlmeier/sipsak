@@ -22,6 +22,7 @@
 #include "helper.h"
 #include "shoot.h"
 #include "transport.h"
+#include "sip_strings.h"
 
 
 /* add the given header(s) below the request line */

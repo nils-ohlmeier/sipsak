@@ -19,6 +19,7 @@
 #include "exit_code.h"
 #include "helper.h"
 #include "md5.h"
+#include "sip_strings.h"
 
 #ifdef HAVE_OPENSSL_SHA1
 # include <openssl/sha.h>
