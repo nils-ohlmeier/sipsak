@@ -419,7 +419,7 @@ int get_cseq(char *message)
 
 	cseq=STRCASESTR(message, CSEQ_STR);
 	if (cseq) {
-		cseq+=6;
+		cseq+=CSEQ_STR_LEN;
 		num=str_to_int(1, cseq);
 		if (num < 1) {
 			if (verbose > 2)

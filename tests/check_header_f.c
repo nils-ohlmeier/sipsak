@@ -46,6 +46,20 @@ START_TEST (test_find_lr_parameter) {
 }
 END_TEST
 
+START_TEST (test_get_cseq) {
+	/* failure cases */
+	ck_assert_msg(get_cseq("") == 0, "get_cseq(\"\") returned %d, instead of 0", find_lr_parameter(""));
+	ck_assert_msg(get_cseq("foo") == 0, "get_cseq(\"foo\") returned %d, instead of 0", find_lr_parameter("foo"));
+	ck_assert_msg(get_cseq("Cseq: ") == 0, "get_cseq(\"Cseq: \") returned %d, instead of 0", find_lr_parameter("Cseq: "));
+	ck_assert_msg(get_cseq("Cseq: -5") == 0, "get_cseq(\"Cseq: -5\") returned %d, instead of 0", find_lr_parameter("Cseq: -5"));
+	ck_assert_msg(get_cseq("Cseq: a") == 0, "get_cseq(\"Cseq: a\") returned %d, instead of 0", find_lr_parameter("Cseq: a"));
+
+	/* success cases */
+	ck_assert_msg(get_cseq("Cseq: 1") == 1, "get_cseq(\"Cseq: 1\") returned %d, instead of 1", find_lr_parameter("Cseq: 1"));
+	ck_assert_msg(get_cseq("Cseq: 123456") == 123456, "get_cseq(\"Cseq: 123456\") returned %d, instead of 123456", find_lr_parameter("Cseq: 123456"));
+}
+END_TEST
+
 Suite *header_f_suite(void) {
 	Suite *s = suite_create("Header_f");
 
@@ -55,10 +69,14 @@ Suite *header_f_suite(void) {
 	/* find_lr_parameter test case */
 	TCase *tc_find_lr_parameter = tcase_create("find_lr_parameter");
 	tcase_add_test(tc_find_lr_parameter, test_find_lr_parameter);
+	/* get_cseq test case */
+	TCase *tc_get_cseq = tcase_create("get_cseq");
+	tcase_add_test(tc_get_cseq, test_get_cseq);
 
 	/* add test cases to suite */
 	suite_add_tcase(s, tc_get_cl);
 	suite_add_tcase(s, tc_find_lr_parameter);
+	suite_add_tcase(s, tc_get_cseq);
 
 	return s;
 }
