@@ -26,8 +26,8 @@ START_TEST (test_get_cl) {
 	/* success cases */
 	ck_assert_msg(get_cl("Content-Length: 123") == 123, "get_cl(\"123\") returned %d, instead of 123", get_cl("Content_Length: 123"));
 	ck_assert_msg(get_cl("Content-Length: 321\r\n") == 321, "get_cl(\"321\") returned %d, instead of 321", get_cl("Content_Length: 321\r\n"));
-	ck_assert_msg(get_cl("l: 456") == 456, "get_cl(\"456\") returned %d, instead of 456", get_cl("l: 456"));
-	ck_assert_msg(get_cl("l: 789\r\n") == 789, "get_cl(\"789\") returned %d, instead of 789", get_cl("l: 789\r\n"));
+	ck_assert_msg(get_cl("\nl: 456") == 456, "get_cl(\"456\") returned %d, instead of 456", get_cl("\nl: 456"));
+	ck_assert_msg(get_cl("\nl: 789\r\n") == 789, "get_cl(\"789\") returned %d, instead of 789", get_cl("\nl: 789\r\n"));
 }
 END_TEST
 
