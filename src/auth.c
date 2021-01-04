@@ -25,6 +25,10 @@
 # include <openssl/sha.h>
 #endif
 
+#if defined(RUNNING_CHECK) && !defined(HAVE_CHECK_H)
+  #error Missing check unit test framework!
+#endif
+
 #define SIPSAK_ALGO_MD5 1
 #define SIPSAK_ALGO_SHA1 2
 #define SIPSAK_ALGO_SHA256 3

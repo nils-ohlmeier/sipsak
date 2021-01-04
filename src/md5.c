@@ -36,6 +36,10 @@ documentation and/or software.
 # include <string.h>
 #endif
 
+#if defined(RUNNING_CHECK) && !defined(HAVE_CHECK_H)
+  #error Missing check unit test framework!
+#endif
+
 #define USE_MEM
 
 /* Constants for MD5Transform routine.
