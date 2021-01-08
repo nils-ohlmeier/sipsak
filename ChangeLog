@@ -1,4 +1,6 @@
 * version 0.9.8
+  - fixed issue #71 "local port is always zero"
+* version 0.9.8
   - removed support for ruli
   - lots of internal refactoring to make sipsak compile with -fno-common (>= gcc-10)
 * version 0.9.7
