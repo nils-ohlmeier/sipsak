@@ -918,6 +918,9 @@ void shoot(char *buf, int buff_size, struct sipsak_options *options)
       , options->ca_file
 #endif
       );
+  if (msg_data.lport == 0) {
+    msg_data.lport = cdata.lport;
+  }
 
 	/* determine our hostname */
 	get_fqdn(&fqdn[0], options->numeric, options->hostname);
