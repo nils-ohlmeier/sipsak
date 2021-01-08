@@ -905,7 +905,7 @@ void shoot(char *buf, int buff_size, struct sipsak_options *options)
 #endif
       );
   if (msg_data.lport == 0) {
-    msg_data.lport = cdata.lport;
+    msg_data.lport = connection.lport;
   }
 
 	/* determine our hostname */
