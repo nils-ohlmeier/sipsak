@@ -26,6 +26,7 @@
 #include "helper.h"
 #include "header_f.h"
 #include "transport.h"
+#include "sip_strings.h"
 
 /* create a valid sip header for the different modes */
 void create_msg(int action, struct sipsak_msg_data *msg_data){

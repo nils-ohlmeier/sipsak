@@ -21,6 +21,9 @@
 #ifdef HAVE_CONFIG_H
 # include "config.h"
 #endif
+#ifdef HAVE_REGEX_H
+# include <regex.h>
+#endif
 
 #define LPORT_STR_LEN 6
 

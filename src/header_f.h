@@ -45,7 +45,7 @@ void build_ack(char *invite, char *reply, char *dest,
 
 void warning_extract(char *message);
 
-int cseq(char *message);
+int get_cseq(char *message);
 
 int increase_cseq(char *message, char *reply);
 

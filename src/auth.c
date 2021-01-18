@@ -19,9 +19,14 @@
 #include "exit_code.h"
 #include "helper.h"
 #include "md5.h"
+#include "sip_strings.h"
 
 #ifdef HAVE_OPENSSL_SHA1
 # include <openssl/sha.h>
+#endif
+
+#if defined(RUNNING_CHECK) && !defined(HAVE_CHECK_H)
+  #error Missing check unit test framework!
 #endif
 
 #define SIPSAK_ALGO_MD5 1
