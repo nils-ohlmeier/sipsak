@@ -888,7 +888,7 @@ void shoot(char *buf, int buff_size, struct sipsak_options *options)
 	msg_data.empty_contact = options->empty_contact;
 	msg_data.transport = options->transport;
 	msg_data.req_buff = request;
-	msg_data.repl_buff = NULL;
+	msg_data.repl_buff = response;
 	msg_data.username = options->username;
 	msg_data.usern = NULL;
 	msg_data.domainname = options->domainname;
