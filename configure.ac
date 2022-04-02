@@ -1,12 +1,12 @@
 #                                               -*- Autoconf -*-
 # Process this file with autoconf to produce a configure script.
 
-AC_PREREQ(2.59)
+AC_PREREQ([2.69])
 AC_INIT([sipsak],[0.9.9-pre],[github@ohlmeier.org])
 AM_INIT_AUTOMAKE([subdir-objects])
 AM_MAINTAINER_MODE
 AC_CONFIG_SRCDIR([src/sipsak.c])
-AC_CONFIG_HEADER([config.h])
+AC_CONFIG_HEADERS([config.h])
 
 # Checks for programs.
 AC_PROG_CC
@@ -33,11 +33,11 @@ esac
 AC_SUBST([LIBS])
 
 # Checks for header files.
-AC_HEADER_STDC
 AC_CHECK_HEADERS([ctype.h errno.h arpa/inet.h netdb.h netinet/in.h netinet/in_systm.h limits.h sys/poll.h regex.h signal.h stdarg.h stdlib.h stdio.h string.h sys/param.h sys/socket.h sys/time.h unistd.h sys/utsname.h],,[AC_MSG_ERROR([missing required header (see above)])],)
 AC_CHECK_HEADERS([getopt.h syslog.h])
 AC_HEADER_SYS_WAIT
-AC_HEADER_TIME
+AC_CHECK_HEADERS_ONCE([sys/time.h])
+
 
 SIPSAK_IP_UDP
 SIPSAK_ICMP
