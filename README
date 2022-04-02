@@ -19,7 +19,11 @@
     INSTALLATION
     ============
 
- The usual
+ Prerequisites (installed):
+   - autoconf >= 2.69
+   - automake
+
+ The usual:
 
    autoreconf --install
    ./configure
