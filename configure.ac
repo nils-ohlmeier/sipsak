@@ -1,7 +1,7 @@
 #                                               -*- Autoconf -*-
 # Process this file with autoconf to produce a configure script.
 
-AC_PREREQ([2.71])
+AC_PREREQ([2.69])
 AC_INIT([sipsak],[0.9.9-pre],[github@ohlmeier.org])
 AM_INIT_AUTOMAKE([subdir-objects])
 AM_MAINTAINER_MODE
