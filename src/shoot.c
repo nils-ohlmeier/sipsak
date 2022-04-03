@@ -1,6 +1,6 @@
 /*
  * Copyright (C) 2002-2004 Fhg Fokus
- * Copyright (C) 2004-2005 Nils Ohlmeier
+ * Copyright (C) 2004-2022 Nils Ohlmeier
  *
  * This file belongs to sipsak, a free sip testing tool.
  *
