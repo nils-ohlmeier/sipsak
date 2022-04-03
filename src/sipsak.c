@@ -1,6 +1,6 @@
 /*
  * Copyright (C) 2002-2004 Fhg Fokus
- * Copyright (C) 2004-2005 Nils Ohlmeier
+ * Copyright (C) 2004-2022 Nils Ohlmeier
  *
  * This file belongs to sipsak, a free SIP testing tool.
  *
@@ -68,7 +68,7 @@ static void sigchld_handler(int signo)
 void print_version() {
 	printf("%s %s by Nils Ohlmeier\n", PACKAGE_NAME, PACKAGE_VERSION);
 	printf(" Copyright (C) 2002-2004 FhG Fokus\n");
-	printf(" Copyright (C) 2004-2005 Nils Ohlmeier\n");
+	printf(" Copyright (C) 2004-2022 Nils Ohlmeier\n");
 	printf(" report bugs to %s\n\n", PACKAGE_BUGREPORT);
 	printf(
 		" shoot  : sipsak [-f FILE] [-L] -s SIPURI\n"

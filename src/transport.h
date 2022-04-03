@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2005 Nils Ohlmeier
+ * Copyright (C) 2005-2022 Nils Ohlmeier
  *
  * This file belongs to sipsak, a free sip testing tool.
  *
