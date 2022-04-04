@@ -2,9 +2,9 @@ name: Make and Check with GnuTLS and C-ARES
 
 on:
   push:
-    branches: [ master ]
+    branches: [ main ]
   pull_request:
-    branches: [ master ]
+    branches: [ main ]
 
 jobs:
   build:

@@ -2,9 +2,9 @@ name: Make and Check without 3rd party libs
 
 on:
   push:
-    branches: [ master ]
+    branches: [ main ]
   pull_request:
-    branches: [ master ]
+    branches: [ main ]
 
 jobs:
   build:
