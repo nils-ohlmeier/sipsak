@@ -17,8 +17,10 @@ jobs:
 
     steps:
     - uses: actions/checkout@v2
+    - name: echo runner OS
+      run: echo "The OS is $env:RUNNER_OS or $RUNNER_OS"
     - name: check runner OS
-      if: ${{ env.RUNNER_OS == 'macOS' }}
+      if: runner.os == 'macOS'
       run: echo "Yeaha this is MAC"
     - name: install
       run: brew install automake check
