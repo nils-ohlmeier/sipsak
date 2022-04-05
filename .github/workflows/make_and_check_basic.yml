@@ -18,13 +18,13 @@ jobs:
     steps:
     - uses: actions/checkout@v2
     - name: echo runner OS
-      run: echo "The OS is $env:RUNNER_OS or $RUNNER_OS"
-    - name: check runner OS
-      if: runner.os == 'Linux'
-      run: echo "Yeaha this is LINUX"
+      run: echo "The OS is $RUNNER_OS"
     - name: install Linux dependencies
       if: runner.os == 'Linux'
       run: sudo apt-get install check
+    - name: install macOS dependencies
+      if: runner.os == 'macOS'
+      run: brew install automake check
     - name: autoreconf
       run: autoreconf --install
     - name: configure
