@@ -1,4 +1,4 @@
-name: Make and Check without 3rd party libs
+name: Make/Check w/o 3rd party libs
 
 on:
   push:
