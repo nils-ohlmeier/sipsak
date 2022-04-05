@@ -1,4 +1,4 @@
-name: Make and Check without 3rd party libs
+name: Make/Check w/o 3rd party libs
 
 on:
   push:
@@ -9,12 +9,22 @@ on:
 jobs:
   build:
 
-    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        os: [ ubuntu-latest, ubuntu-18.04, macos-latest, macos-10.15 ]
+
+    runs-on: ${{ matrix.os }}
 
     steps:
     - uses: actions/checkout@v2
-    - name: install dependencies
+    - name: echo runner OS
+      run: echo "The OS is $RUNNER_OS"
+    - name: install Linux dependencies
+      if: runner.os == 'Linux'
       run: sudo apt-get install check
+    - name: install macOS dependencies
+      if: runner.os == 'macOS'
+      run: brew install automake check
     - name: autoreconf
       run: autoreconf --install
     - name: configure
