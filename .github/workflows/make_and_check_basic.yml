@@ -18,7 +18,7 @@ jobs:
     steps:
     - uses: actions/checkout@v2
     - name: check runner OS
-      if: ${{ env.RUNNER_OS == "Linux" }}
+      if: ${{ env.RUNNER_OS == 'Linux' }}
       run: echo "Yeaha this is LINUX"
     - name: install dependencies
       run: sudo apt-get install check
