@@ -17,6 +17,8 @@ jobs:
 
     steps:
     - uses: actions/checkout@v2
+    - name: install
+      run: brew install autoconf
     - name: autoreconf
       run: autoreconf --install
     - name: configure
