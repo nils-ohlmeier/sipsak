@@ -22,7 +22,8 @@ jobs:
     - name: check runner OS
       if: runner.os == 'macOS'
       run: echo "Yeaha this is MAC"
-    - name: install
+    - name: install macOS dependencies
+      if: runner.os == 'macOS'
       run: brew install automake check
     - name: autoreconf
       run: autoreconf --install

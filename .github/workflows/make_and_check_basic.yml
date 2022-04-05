@@ -22,7 +22,8 @@ jobs:
     - name: check runner OS
       if: runner.os == 'Linux'
       run: echo "Yeaha this is LINUX"
-    - name: install dependencies
+    - name: install Linux dependencies
+      if: runner.os == 'Linux'
       run: sudo apt-get install check
     - name: autoreconf
       run: autoreconf --install
