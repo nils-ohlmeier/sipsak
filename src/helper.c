@@ -63,6 +63,10 @@
 #include "helper.h"
 #include "exit_code.h"
 
+#if defined(RUNNING_CHECK) && !defined(HAVE_CHECK_H)
+  #error Missing check unit test framework!
+#endif
+
 /* returns 1 if the string an IP address otherwise zero */
 int is_ip(char *str) {
 	int i = 0;

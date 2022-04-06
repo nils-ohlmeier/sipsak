@@ -22,6 +22,7 @@
 #include "helper.h"
 #include "shoot.h"
 #include "transport.h"
+#include "sip_strings.h"
 
 
 /* add the given header(s) below the request line */
@@ -272,7 +273,7 @@ void set_cl(char* mes, int contentlen) {
 }
 
 /* returns the content length from the message; in case of error it
- * return -1 */
+ * returns -1 */
 int get_cl(char* mes) {
 	char *cl;
 
@@ -411,14 +412,14 @@ void warning_extract(char *message)
 }
 
 /* tries to find and return the number in the CSeq header */
-int cseq(char *message)
+int get_cseq(char *message)
 {
 	char *cseq;
 	int num;
 
 	cseq=STRCASESTR(message, CSEQ_STR);
 	if (cseq) {
-		cseq+=6;
+		cseq+=CSEQ_STR_LEN;
 		num=str_to_int(1, cseq);
 		if (num < 1) {
 			if (verbose > 2)
@@ -438,7 +439,7 @@ int increase_cseq(char *message, char *reply)
 	int cs = 0;
 	char *cs_s, *eol, *backup;
 
-	cs = cseq(message);
+	cs = get_cseq(message);
 	if ((cs < 1) && (verbose > 1)) {
 		printf("CSeq increase failed because unable to extract CSeq number\n");
 		return 0;
