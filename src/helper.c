@@ -55,6 +55,7 @@
 # endif
  int caport;
  unsigned long caadr;
+ int capriority;
  char *ca_tmpname;
  ares_channel channel;
 
@@ -181,20 +182,25 @@ static const unsigned char *parse_rr(const unsigned char *aptr, const unsigned c
 	}
 	if (type == CARES_TYPE_SRV) {
 		free(name);
-		caport = DNS__16BIT(aptr + 4);
-		dbg("caport: %i\n", caport);
-		status = ares_expand_name(aptr + 6, abuf, alen, &name, &len);
-		if (status != ARES_SUCCESS) {
-			printf("error: failed to expand SRV name\n");
-			return NULL;
-		}
-		dbg("SRV name: %s\n", name);
-		if (is_ip(name)) {
-			caadr = inet_addr(name);
-			free(name);
-		}
-		else {
-			ca_tmpname = name;
+		int priority = DNS__16BIT(aptr);
+		dbg("Processing SRV record with priority %d\n", priority);
+		if (capriority == -1 || priority < capriority) {
+			capriority = priority;
+			caport = DNS__16BIT(aptr + 4);
+			dbg("caport: %i\n", caport);
+			status = ares_expand_name(aptr + 6, abuf, alen, &name, &len);
+			if (status != ARES_SUCCESS) {
+				printf("error: failed to expand SRV name\n");
+				return NULL;
+			}
+			dbg("SRV name: %s\n", name);
+			if (is_ip(name)) {
+				caadr = inet_addr(name);
+				free(name);
+			}
+			else {
+				ca_tmpname = name;
+			}
 		}
 	}
 	else if (type == CARES_TYPE_CNAME) {
@@ -303,17 +309,14 @@ static void cares_callback(void *arg, int status, int timeouts, unsigned char *a
 		return;
 	}
 
-	for (i = 0; i < ancount && caadr == 0 && aptr != NULL; i++) {
-		if (ca_tmpname == NULL)
-			aptr = parse_rr(aptr, abuf, alen);
-		else
-			aptr = skip_rr(aptr, abuf, alen);
+	for (i = 0; i < ancount && aptr != NULL; i++) {
+		aptr = parse_rr(aptr, abuf, alen);
 	}
 	if (caadr == 0 && aptr != NULL) {
 		for (i = 0; i < nscount && aptr != NULL; i++) {
 			aptr = skip_rr(aptr, abuf, alen);
 		}
-		for (i = 0; i < arcount && caadr == 0; i++) {
+		for (i = 0; i < arcount && aptr != NULL; i++) {
 			aptr = parse_rr(aptr, abuf, alen);
 		}
 	}
@@ -327,6 +330,7 @@ static inline unsigned long srv_ares(char *host, int *port, char *srv) {
 
 	caport = 0;
 	caadr = 0;
+	capriority = -1;
 	ca_tmpname = NULL;
 	dbg("starting ARES query\n");
 
