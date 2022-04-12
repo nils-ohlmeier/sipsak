@@ -68,30 +68,26 @@
   #error Missing check unit test framework!
 #endif
 
-/* returns 1 if the string an IP address otherwise zero */
+/* returns 1 if the string is an IP address, otherwise zero */
 int is_ip(char *str) {
-	int i = 0;
-	int dotcount = 0;
+	int octet = 0;
 
-	/*try understanding if this is a valid ip address
-	we are skipping the values of the octets specified here.
-	for instance, this code will allow 952.0.320.567 through*/
-	while (*str != '\0')
-	{
-		for (i = 0; i < 3; i++, str++)
-			if (isdigit((int)*str) == 0)
-				break;
+	while (*str) {
+		int digits = 0, value = 0;
+		while (isdigit(*str) && digits <= 3) {
+			value = (value * 10) + (*str - '0');
+			digits++;
+			str++;
+		}
+		if (digits < 1 || digits > 3 || value > 255)
+			return 0;
+		octet++;
 		if (*str != '.')
 			break;
 		str++;
-		dotcount++;
 	}
 
-	/* three dots with up to three digits in before, between and after ? */
-	if (*str == '\0' && dotcount == 3 && i > 0 && i <= 3)
-		return 1;
-	else
-		return 0;
+	return (*str == '\0' && octet == 4) ? 1 : 0;
 }
 
 /* take either a dot.decimal string of ip address or a 
