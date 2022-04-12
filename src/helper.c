@@ -621,7 +621,7 @@ void insert_cr(char *mes) {
 	}
 }
 
-/* sipmly swappes the content of the two buffers */
+/* swap the content of two buffers */
 void swap_buffers(char *fst, char *snd) {
 	char *tmp;
 
