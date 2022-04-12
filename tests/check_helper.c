@@ -109,13 +109,16 @@ START_TEST (test_is_ip) {
 	ck_assert_msg(is_ip("0.1000.0.0") == 0, "is_ip(\"0.1000.0.0\") returned %d, instead of 0", is_ip("0.1000.0.0"));
 	ck_assert_msg(is_ip("0.0.1000.0") == 0, "is_ip(\"0.0.1000.0\") returned %d, instead of 0", is_ip("0.0.1000.0"));
 	ck_assert_msg(is_ip("0.0.0.1000") == 0, "is_ip(\"0.0.0.1000\") returned %d, instead of 0", is_ip("0.0.0.1000"));
+	ck_assert_msg(is_ip("1.2.3.") == 0, "is_ip(\"1.2.3.\") returned %d, instead of 0", is_ip("1.2.3."));
+	ck_assert_msg(is_ip(".1.2.3") == 0, "is_ip(\".1.2.3\") returned %d, instead of 0", is_ip(".1.2.3"));
+	ck_assert_msg(is_ip("1..2.3.4") == 0, "is_ip(\"1..2.3.4\") returned %d, instead of 0", is_ip("1..2.3.4"));
+	ck_assert_msg(is_ip("999.999.999.999") == 0, "is_ip(\"999.999.999.999\") returned %d, instead of 0", is_ip("999.999.999.999"));
 
 	/* success cases */
 	ck_assert_msg(is_ip("0.0.0.0") == 1, "is_ip(\"0.0.0.0\") returned %d, instead of 1", is_ip("0.0.0.0"));
 	ck_assert_msg(is_ip("1.2.3.4") == 1, "is_ip(\"1.2.3.4\") returned %d, instead of 1", is_ip("1.2.3.4"));
 	ck_assert_msg(is_ip("192.168.1.1") == 1, "is_ip(\"192.168.1.1\") returned %d, instead of 1", is_ip("192.168.1.1"));
-	/* this is a known limitation ;) */
-	ck_assert_msg(is_ip("999.999.999.999") == 1, "is_ip(\"999.999.999.999\") returned %d, instead of 1", is_ip("999.999.999.999"));
+	ck_assert_msg(is_ip("255.255.255.255") == 1, "is_ip(\"255.255.255.255\") returned %d, instead of 1", is_ip("255.255.255.255"));
 }
 END_TEST
 
