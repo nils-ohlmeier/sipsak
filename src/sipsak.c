@@ -789,10 +789,6 @@ int main(int argc, char *argv[])
 #endif
 #ifdef HAVE_CARES_H
 				printf(", SRV_SUPPORT(ARES)");
-#else
-# ifdef HAVE_RULI_H
-				printf(", SRV_SUPPORT(RULI)");
-# endif
 #endif
 #ifdef HAVE_STRCASESTR
 				printf(", STR_CASE_INSENSITIVE");
