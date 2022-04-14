@@ -195,6 +195,9 @@ static const unsigned char *parse_rr(const unsigned char *aptr, const unsigned c
 				free(name);
 			}
 			else {
+				if (ca_tmpname) {
+					free(ca_tmpname);
+				}
 				ca_tmpname = name;
 			}
 		}
@@ -202,6 +205,9 @@ static const unsigned char *parse_rr(const unsigned char *aptr, const unsigned c
 	else if (type == CARES_TYPE_CNAME) {
 		if ((ca_tmpname != NULL) &&
 				(STRNCASECMP(ca_tmpname, name, strlen(ca_tmpname)) == 0)) {
+			if (ca_tmpname) {
+				free(ca_tmpname);
+			}
 			ca_tmpname = malloc(strlen(name) + 1);
 			if (ca_tmpname == NULL) {
 				printf("error: failed to allocate memory\n");
@@ -223,6 +229,9 @@ static const unsigned char *parse_rr(const unsigned char *aptr, const unsigned c
 				free(name);
 			}
 			else {
+				if (ca_tmpname) {
+					free(ca_tmpname);
+				}
 				ca_tmpname = name;
 			}
 		}
