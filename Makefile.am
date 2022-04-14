@@ -10,7 +10,7 @@ dist_man1_MANS=sipsak.1
 
 # Tests
 
-TESTS = tests/check_md5 tests/check_auth tests/check_helper tests/check_header_f
+TESTS = tests/check_md5 tests/check_auth tests/check_helper tests/check_header_f tests/check_dns
 
 check_PROGRAMS = $(TESTS)
 
@@ -29,3 +29,7 @@ tests_check_helper_LDADD = @CHECK_LIBS@
 tests_check_header_f_SOURCES = tests/check_header_f.c src/header_f.h src/header_f.c src/helper.h src/helper.c
 tests_check_header_f_CFLAGS = @CHECK_CFLAGS@ -DRUNNING_CHECK
 tests_check_header_f_LDADD = @CHECK_LIBS@
+
+tests_check_dns_SOURCES = tests/check_dns.c src/helper.h src/helper.c src/sipsak.h
+tests_check_dns_CFLAGS = @CHECK_CFLAGS@ -DRUNNING_CHECK
+tests_check_dns_LDADD = @CHECK_LIBS@
