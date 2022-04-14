@@ -1,3 +1,5 @@
+* version 0.9.9
+  - DNS SRV priority is now supported
 * version 0.9.8
   - removed support for ruli
   - lots of internal refactoring to make sipsak compile with -fno-common (>= gcc-10)
