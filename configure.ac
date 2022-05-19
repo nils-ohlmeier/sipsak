@@ -22,15 +22,8 @@ AC_PROG_INSTALL
 # Checks for libraries.
 AC_CANONICAL_HOST
 
-case "$host" in
-  *-*-solaris*)
-    LIBS="$LIBS -lposix4 -lsocket -lnsl"
-    ;;
-  *)
-    LIBS="$LIBS"
-    ;;
-esac
-AC_SUBST([LIBS])
+# For backwards compatibility with automake < 1.14
+AM_PROG_CC_C_O
 
 # Checks for header files.
 AC_CHECK_HEADERS([ctype.h errno.h arpa/inet.h netdb.h netinet/in.h netinet/in_systm.h limits.h sys/poll.h regex.h signal.h stdarg.h stdlib.h stdio.h string.h sys/param.h sys/socket.h sys/time.h unistd.h sys/utsname.h],,[AC_MSG_ERROR([missing required header (see above)])],)
