@@ -441,9 +441,14 @@ void print_x509_certificate_info(gnutls_session_t session) {
 		}
 		// print the fingerprint of the cert
 		size = sizeof(dn);
-		// FIXME
 		if (gnutls_x509_crt_get_fingerprint(cert, GNUTLS_DIG_SHA1, dn, &size) == 0) {
-			printf("\tFingerprint of the certificate: %s\n", dn);
+			gnutls_datum_t dnraw = {.data = dn, .size = size};
+			char dnhex[128];
+			size = sizeof(dnhex);
+			// "Note that the size of the result includes the null terminator."
+			if (gnutls_hex_encode(&dnraw, dnhex, &size) == 0) {
+				printf("\tFingerprint of the certificate: %s\n", dnhex);
+			}
 		}
 
 
