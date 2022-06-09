@@ -263,15 +263,12 @@ void handle_default(struct sipsak_regexp *regexp, struct sipsak_counter *counter
 		}
 		if (timers->timing > 0) {
 			timers->timing--;
+			counter->run++;
 			if (timers->timing == 0) {
-				if (counter->run == 0) {
-					counter->run++;
-				}
 				printf("%.3f/%.3f/%.3f ms\n", delay->small_delay, delay->all_delay / 
             counter->run, delay->big_delay);
 			}
 			else {
-				counter->run++;
 				message->cseq_counter = new_transaction(request, response);
 				delay->retryAfter = timers->timer_t1;
 			}
@@ -832,7 +829,7 @@ void shoot(char *buf, int buff_size, struct sipsak_options *options)
 
 	/* initalize local vars */
 	connection.dontsend=connection.dontrecv=counters.retrans_r_c=counters.retrans_s_c= 0;
-	delays.big_delay=counters.send_counter=counters.run= 0;
+	delays.big_delay=delays.small_delay=delays.all_delay=counters.send_counter=counters.run= 0;
 	/* initialize local arrays */
 	memset(buf2, 0, BUFSIZE);
 	memset(buf3, 0, BUFSIZE);
@@ -1078,14 +1075,11 @@ void shoot(char *buf, int buff_size, struct sipsak_options *options)
 					if (!msg_data.username && !options->auth_username) {
 						if (timers.timing > 0) {
 							timers.timing--;
+							counters.run++;
 							if (timers.timing == 0) {
-								if (counters.run == 0) {
-									counters.run++;
-								}
 								printf("%.3f/%.3f/%.3f ms\n", delays.small_delay, delays.all_delay / counters.run, delays.big_delay);
 								exit_code(0, __PRETTY_FUNCTION__, NULL);
 							}
-							counters.run++;
 							msg_data.cseq_counter = new_transaction(request, response);
 							delays.retryAfter = timers.timer_t1;
 							continue;
