@@ -1161,10 +1161,12 @@ int recv_message(char *buf, int size, int inv_trans,
 		}
 		if (srt->timing > 0) {
 			tmp_delay = deltaT(&(srt->sendtime), &(srt->recvtime));
-			if (tmp_delay > sd->big_delay)
+			if (tmp_delay > sd->big_delay) {
 				sd->big_delay = tmp_delay;
-			if ((sd->small_delay == 0) || (tmp_delay < sd->small_delay))
+			}
+			if ((sd->small_delay == 0) || (tmp_delay < sd->small_delay)) {
 				sd->small_delay = tmp_delay;
+			}
 			sd->all_delay += tmp_delay;
 		}
 #ifdef HAVE_INET_NTOP
