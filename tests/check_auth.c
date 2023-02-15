@@ -33,7 +33,7 @@ int expected_exit_code = -1;
 char *expected_exit_reason = NULL;
 int expected_exit_code_called = 0;
 
-void set_expected_exit_code(int code, const char *reason) {
+void set_expected_exit_code(int code, char *reason) {
   expected_exit_code = code;
   expected_exit_reason = reason;
   expected_exit_code_called = 0;
