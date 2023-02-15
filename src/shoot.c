@@ -827,8 +827,9 @@ void shoot(char *buf, int buff_size, struct sipsak_options *options)
 	inv_trans = 0;
 	usrlocstep = REG_REP;
 
+	memset(&connection, 0, sizeof(connection)); 
 	/* initalize local vars */
-	connection.dontsend=connection.dontrecv=counters.retrans_r_c=counters.retrans_s_c= 0;
+	counters.retrans_r_c=counters.retrans_s_c= 0;
 	delays.big_delay=delays.small_delay=delays.all_delay=counters.send_counter=counters.run= 0;
 	/* initialize local arrays */
 	memset(buf2, 0, BUFSIZE);
@@ -843,14 +844,12 @@ void shoot(char *buf, int buff_size, struct sipsak_options *options)
 	counters.nameend = options->nameend;
 
 	connection.csock = connection.usock = -1;
-	connection.connected = 0;
 	connection.transport = options->transport;
 	connection.address = options->address;
 	connection.symmetric = options->symmetric;
 	connection.lport = options->lport;
 	connection.rport = options->rport;
 	connection.buf_tmp = NULL;
-	connection.buf_tmp_size = 0;
 
 	memset(&(timers.sendtime), 0, sizeof(timers.sendtime));
 	memset(&(timers.recvtime), 0, sizeof(timers.recvtime));
