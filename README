@@ -22,6 +22,7 @@
  Prerequisites (installed):
    - autoconf >= 2.69
    - automake
+   - pkg-config
 
  The usual:
 
@@ -46,6 +47,7 @@
 
    apt-get install check
    yum install check
+   brew install check
 
     USAGE
     =====
@@ -54,4 +56,4 @@
  examples at the end.
 
  Have fun
-   Nils
+   Nils Ohlmeier
