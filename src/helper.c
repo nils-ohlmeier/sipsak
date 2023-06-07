@@ -43,6 +43,7 @@
 #ifdef HAVE_ERRNO_H
 # include <errno.h>
 #endif
+
 #ifdef HAVE_CARES_H
 # ifdef HAVE_ARPA_NAMESER_H
 #  include <arpa/nameser.h>
@@ -53,12 +54,7 @@
 #  define NS_QFIXEDSZ  4
 #  define NS_HFIXEDSZ  12
 # endif
- int caport;
- unsigned long caadr;
- int capriority;
- char *ca_tmpname;
  ares_channel channel;
-
 #endif // HAVE_CARES_H
 
 #include "helper.h"
@@ -135,17 +131,129 @@ unsigned long getaddress(char *host) {
 	return addr;
 }
 
+/* We look up SRV DNS records to find the IP address and port number
+ * for our SIP server.
+ * There may be multiple SRV records, perhaps with differing 'priority'
+ * and 'weight' values. Before examining them and choosing which one
+ * to use, we parse them into a linked list of these structs: */
+
+typedef struct srv_details srv_details;
+
+struct srv_details {
+	char *name;
+	unsigned long ipaddr;
+	int port;
+	int priority;
+	int weight;
+	srv_details *next;
+};
+
+static srv_details *alloc_srv_details(srv_details *others) {
+	srv_details *new_record = malloc(sizeof(srv_details));
+	if (new_record == NULL) {
+		printf("error: failed to allocate memory\n");
+		exit_code(2, __PRETTY_FUNCTION__, "memory allocation failure");
+	}
+	memset(new_record, 0, sizeof(srv_details));
+	new_record->next = others;
+	return new_record;
+}
+
+static srv_details *dealloc_srv_details(srv_details *record) {
+	srv_details *remaining = record->next;
+	if (record->name) {
+		free(record->name);
+	}
+	free(record);
+	return remaining;
+}
+
+static void dealloc_srv_details_list(srv_details *list) {
+	while (list) {
+		list = dealloc_srv_details(list);
+	}
+}
+
+static unsigned long ipaddr_from_srv_details(srv_details *record) {
+	if (record->ipaddr) {
+		return record->ipaddr;
+	} else if (record->name) {
+		return getaddress(record->name);
+	} else {
+		return 0;
+	}
+}
+
+/* Pick which SRV record to use and return IP address (and port)
+ * Deallocate the entire list of srv_details structs before returning */
+unsigned long process_srv_details(srv_details *list, int *port) {
+	/* If there were no SRV records, return default values */
+	if (list == NULL) {
+		*port = 5060;
+		return 0;
+	}
+
+	/* A lower priority value means the SRV record has 'higher priority';
+	 * find the lowest (i.e. 'highest') priority value in the list */
+	int max_priority = list->priority;
+	for (srv_details *record = list->next; record; record = record->next) {
+		max_priority = MIN(max_priority, record->priority);
+	}
+
+	/* Discard all records which don't have minimum ('maximum') priority */
+	while (list->priority != max_priority) {
+		list = dealloc_srv_details(list);
+	}
+	for (srv_details *record = list; record; record = record->next) {
+		while (record->next && record->next->priority != max_priority) {
+			record->next = dealloc_srv_details(record->next);
+		}
+	}
+
+	/* If there is only one record with max priority, use it */
+	if (list->next == NULL) {
+		*port = list->port;
+		unsigned long addr = ipaddr_from_srv_details(list);
+		dealloc_srv_details(list);
+		return addr;
+	}
+
+	/* Process weights according to RFC 2782
+	 * (Except we don't bother re-ordering the records before picking one
+	 * using weighted random choice; I don't see how it would make any difference!) */
+	long total_weight = 0;
+	for (srv_details *record = list; record; record = record->next) {
+		total_weight += record->weight;
+	}
+
+	long rand_weight = rand() % total_weight, cumulative_weight = 0;
+	for (srv_details *record = list; record; record = record->next) {
+		cumulative_weight += record->weight;
+		if (cumulative_weight > rand_weight) {
+			*port = record->port;
+			unsigned long addr = ipaddr_from_srv_details(record);
+			dealloc_srv_details_list(list);
+			return addr;
+		}
+	}
+
+	/* We should never reach here */
+	printf("error: bug in processing SRV records\n");
+	exit_code(2, __PRETTY_FUNCTION__, "failed assertion when processing SRV records");
+	return 0;
+}
+
 #ifdef HAVE_CARES_H
-static const unsigned char *parse_rr(const unsigned char *aptr, const unsigned char *abuf, int alen) {
+static const unsigned char *parse_rr(const unsigned char *aptr, const unsigned char *abuf, int alen, void *arg) {
 	char *name;
 	long len;
 	int status, type, dnsclass, dlen;
 	struct in_addr addr;
+	srv_details **list = (srv_details**)arg;
 
 	if (aptr == NULL) {
 		return NULL;
 	}
-	dbg("ca_tmpname: %s\n", ca_tmpname);
 	status = ares_expand_name(aptr, abuf, alen, &name, &len);
 	if (status != ARES_SUCCESS) {
 		printf("error: failed to expand query name\n");
@@ -176,73 +284,66 @@ static const unsigned char *parse_rr(const unsigned char *aptr, const unsigned c
 		free(name);
 		return NULL;
 	}
+
 	if (type == CARES_TYPE_SRV) {
+		free(name); /* We don't need the name which we queried for */
+
+		srv_details *record = *list = alloc_srv_details(*list);
+		record->priority = DNS__16BIT(aptr);
+		record->weight = DNS__16BIT(aptr + 2);
+		record->port = DNS__16BIT(aptr + 4);
+
+		status = ares_expand_name(aptr + 6, abuf, alen, &name, &len);
+		if (status != ARES_SUCCESS) {
+			printf("error: failed to expand SRV name\n");
+			return NULL;
+		}
+		dbg("Got SRV record with name=%s, port=%i, priority=%i, weight=%i\n", name, record->port, record->priority, record->weight);
+		if (is_ip(name)) {
+			record->ipaddr = inet_addr(name);
+			free(name);
+		} else {
+			record->name = name;
+		}
+	} else if (type == CARES_TYPE_CNAME) {
+		char *cname_value;
+		status = ares_expand_name(aptr, abuf, alen, &cname_value, &len);
+		if (status != ARES_SUCCESS) {
+			printf("error: failed to expand CNAME\n");
+			return NULL;
+		}
+		aptr += len;
+		dbg("Got CNAME record with name=%s, value=%s\n", name, cname_value);
+
+		for (srv_details *record = *list; record; record = record->next) {
+			if (record->name && STRNCASECMP(record->name, name, strlen(record->name)) == 0) {
+				free(record->name);
+				record->name = malloc(strlen(cname_value) + 1);
+				if (record->name == NULL) {
+					printf("error: failed to allocate memory\n");
+					exit_code(2, __PRETTY_FUNCTION__, "memory allocation failure");
+				}
+				strcpy(record->name, cname_value);
+			}
+		}
+
 		free(name);
-		int priority = DNS__16BIT(aptr);
-		dbg("Processing SRV record with priority %d\n", priority);
-		if (capriority == -1 || priority < capriority) {
-			capriority = priority;
-			caport = DNS__16BIT(aptr + 4);
-			dbg("caport: %i\n", caport);
-			status = ares_expand_name(aptr + 6, abuf, alen, &name, &len);
-			if (status != ARES_SUCCESS) {
-				printf("error: failed to expand SRV name\n");
-				return NULL;
-			}
-			dbg("SRV name: %s\n", name);
-			if (is_ip(name)) {
-				caadr = inet_addr(name);
-				free(name);
-			}
-			else {
-				if (ca_tmpname) {
-					free(ca_tmpname);
-				}
-				ca_tmpname = name;
-			}
-		}
-	}
-	else if (type == CARES_TYPE_CNAME) {
-		if ((ca_tmpname != NULL) &&
-				(STRNCASECMP(ca_tmpname, name, strlen(ca_tmpname)) == 0)) {
-			if (ca_tmpname) {
-				free(ca_tmpname);
-			}
-			ca_tmpname = malloc(strlen(name) + 1);
-			if (ca_tmpname == NULL) {
-				printf("error: failed to allocate memory\n");
-				exit_code(2, __PRETTY_FUNCTION__, "memory allocation failure");
-			}
-			strcpy(ca_tmpname, name);
-			free(name);
-		}
-		else {
-			free(name);
-			status = ares_expand_name(aptr, abuf, alen, &name, &len);
-			if (status != ARES_SUCCESS) {
-				printf("error: failed to expand CNAME\n");
-				return NULL;
-			}
-			dbg("CNAME: %s\n", name);
-			if (is_ip(name)) {
-				caadr = inet_addr(name);
-				free(name);
-			}
-			else {
-				if (ca_tmpname) {
-					free(ca_tmpname);
-				}
-				ca_tmpname = name;
-			}
-		}
-	}
-	else if (type == CARES_TYPE_A) {
-		if (dlen == 4 && STRNCASECMP(ca_tmpname, name, strlen(ca_tmpname)) == 0) {
+		free(cname_value);
+	} else if (type == CARES_TYPE_A) {
+		if (dlen == 4) {
 			memcpy(&addr, aptr, sizeof(struct in_addr));
-			caadr = addr.s_addr;
+			dbg("Got A record with name=%s, value=%lx\n", name, addr);
+			for (srv_details *record = *list; record; record = record->next) {
+				if (record->name && STRNCASECMP(record->name, name, strlen(record->name)) == 0) {
+					record->ipaddr = addr.s_addr;
+				}
+			}
+		} else {
+			dbg("Got A record with unexpected DNS data length %i\n", dlen);
 		}
 		free(name);
 	}
+
 	return aptr + dlen;
 }
 
@@ -286,44 +387,34 @@ static const unsigned char *skip_query(const unsigned char *aptr, const unsigned
 	return aptr;
 }
 
-static void cares_callback(void *arg, int status, int timeouts, unsigned char *abuf, int alen) {
-	int i;
-	unsigned int ancount, nscount, arcount;
-	const unsigned char *aptr;
-
-	dbg("cares_callback: status=%i, alen=%i\n", status, alen);
+void got_dns_reply(void *arg, int status, int timeouts, unsigned char *abuf, int alen) {
+	dbg("got_dns_reply: status=%i, alen=%i\n", status, alen);
 	if (status != ARES_SUCCESS) {
 		if (verbose > 1)
-			printf("ares failed: %s\n", ares_strerror(status));
+			printf("DNS lookup failed: %s\n", ares_strerror(status));
 		return;
 	}
 
-	ancount = DNS_HEADER_ANCOUNT(abuf);
-	nscount = DNS_HEADER_NSCOUNT(abuf);
-	arcount = DNS_HEADER_ARCOUNT(abuf);
+	unsigned int ancount = DNS_HEADER_ANCOUNT(abuf);
+	unsigned int nscount = DNS_HEADER_NSCOUNT(abuf);
+	unsigned int arcount = DNS_HEADER_ARCOUNT(abuf);
 
 	dbg("ancount: %i, nscount: %i, arcount: %i\n", ancount, nscount, arcount);
 
 	/* safety check */
 	if (alen < NS_HFIXEDSZ)
 		return;
-	aptr = abuf + NS_HFIXEDSZ;
-
+	const unsigned char *aptr = abuf + NS_HFIXEDSZ;
 	aptr = skip_query(aptr, abuf, alen);
-	if (aptr == NULL) {
-		return;
-	}
 
-	for (i = 0; i < ancount && aptr != NULL; i++) {
-		aptr = parse_rr(aptr, abuf, alen);
+	for (int i = 0; i < ancount && aptr != NULL; i++) {
+		aptr = parse_rr(aptr, abuf, alen, arg);
 	}
-	if (caadr == 0 && aptr != NULL) {
-		for (i = 0; i < nscount && aptr != NULL; i++) {
-			aptr = skip_rr(aptr, abuf, alen);
-		}
-		for (i = 0; i < arcount && aptr != NULL; i++) {
-			aptr = parse_rr(aptr, abuf, alen);
-		}
+	for (int i = 0; i < nscount && aptr != NULL; i++) {
+		aptr = skip_rr(aptr, abuf, alen);
+	}
+	for (int i = 0; i < arcount && aptr != NULL; i++) {
+		aptr = parse_rr(aptr, abuf, alen, arg);
 	}
 }
 
@@ -332,11 +423,8 @@ static inline unsigned long srv_ares(char *host, int *port, char *srv) {
 	char *srvh;
 	fd_set read_fds, write_fds;
 	struct timeval *tvp, tv;
+	srv_details *details = NULL;
 
-	caport = 0;
-	caadr = 0;
-	capriority = -1;
-	ca_tmpname = NULL;
 	dbg("starting ARES query\n");
 
 	srvh_len = strlen(host) + strlen(srv) + 2;
@@ -351,7 +439,7 @@ static inline unsigned long srv_ares(char *host, int *port, char *srv) {
 	strcpy(srvh + strlen(srv) + 1, host);
 	dbg("hostname: '%s', len: %i\n", srvh, srvh_len);
 
-	ares_query(channel, srvh, CARES_CLASS_C_IN, CARES_TYPE_SRV, cares_callback, (char *) NULL);
+	ares_query(channel, srvh, CARES_CLASS_C_IN, CARES_TYPE_SRV, got_dns_reply, &details);
 	dbg("ares_query finished, waiting for result...\n");
 	/* wait for query to complete */
 	while (1) {
@@ -369,18 +457,12 @@ static inline unsigned long srv_ares(char *host, int *port, char *srv) {
 		ares_process(channel, &read_fds, &write_fds);
 	}
 	dbg("ARES answer processed\n");
-	*port = caport;
-	if (caadr == 0 && ca_tmpname != NULL) {
-		caadr = getaddress(ca_tmpname);
-	}
-	if (ca_tmpname != NULL)
-		free(ca_tmpname);
 	free(srvh);
-	return caadr;
+	return process_srv_details(details, port);
 }
 #endif // HAVE_CARES_H
 
-unsigned long getsrvaddress(char *host, int *port, char *srv) {
+static unsigned long getsrvaddress(char *host, int *port, char *srv) {
 #ifdef HAVE_CARES_H
 	return srv_ares(host, port, srv);
 #else // HAVE_CARES_H
@@ -621,7 +703,7 @@ void insert_cr(char *mes) {
 	}
 }
 
-/* sipmly swappes the content of the two buffers */
+/* swap the content of two buffers */
 void swap_buffers(char *fst, char *snd) {
 	char *tmp;
 

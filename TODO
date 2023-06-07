@@ -8,7 +8,6 @@ ToDo List (no order):
  - add support for spoofed IPs
  - parse the complete DNS resonses in util
  - increase hostname detection for the Via line
- - add support for priority and weigth in SRV responses
  - endless randtrash mode with logfile
  - support for IPv6
  - strict RR support
