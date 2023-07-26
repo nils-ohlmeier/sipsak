@@ -1,4 +1,4 @@
-name: Make/Check w/o 3rd party libs
+name: Make/Check bare bone
 
 on:
   push:
@@ -12,11 +12,12 @@ jobs:
     strategy:
       matrix:
         os: [ ubuntu-latest, ubuntu-18.04, macos-latest, macos-10.15 ]
+        arch: [ adm64, i386, arm, arm64, ppc64el ]
 
     runs-on: ${{ matrix.os }}
 
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
     - name: echo runner OS
       run: echo "The OS is $RUNNER_OS"
     - name: install Linux dependencies
