@@ -1029,7 +1029,7 @@ void shoot(char *buf, int buff_size, struct sipsak_options *options)
 			sleep_ms_s.tv_sec = rand_tmp / 1000;
 			sleep_ms_s.tv_nsec = (rand_tmp % 1000) * 1000;
 		} else if (options->sleep_ms != 0) {
-			sleep_ms_s.tv_sec = options->sleep_ms;
+			sleep_ms_s.tv_sec = options->sleep_ms / 1000;
 			sleep_ms_s.tv_nsec = (options->sleep_ms % 1000) * 1000000;
 		}
 		if (options->sleep_ms != 0) {
