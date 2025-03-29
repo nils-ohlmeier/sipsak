@@ -619,7 +619,7 @@ int main(int argc, char *argv[])
 						options.transport = SIP_UDP_TRANSPORT;
 				}
 				else {
-					if (!port) {
+					if (!port && !options.rport) {
 						options.address = getsrvadr(host, &options.rport, &tsp);
 						if (tsp != 0)
 							options.transport = tsp;
