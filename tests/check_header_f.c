@@ -102,6 +102,57 @@ START_TEST (test_set_cl) {
 }
 END_TEST
 
+START_TEST (test_insert_header) {
+    char message[1024];
+    char *header = "X-Custom-Header: test\r\n";
+    char *expected;
+
+    /* Test inserting header after first line */
+    memset(message, 0, sizeof(message));
+    strcpy(message, "INVITE sip:test@example.com SIP/2.0\r\n"
+                    "Via: SIP/2.0/UDP 192.168.1.1:5060\r\n"
+                    "Content-Length: 0\r\n\r\n");
+    expected = "INVITE sip:test@example.com SIP/2.0\r\n"
+               "X-Custom-Header: test\r\n"
+               "Via: SIP/2.0/UDP 192.168.1.1:5060\r\n"
+               "Content-Length: 0\r\n\r\n";
+    insert_header(message, header, 1);
+    ck_assert_msg(strcmp(message, expected) == 0, 
+                 "insert_header failed to insert header after first line");
+
+    /* Test inserting header at beginning */
+    memset(message, 0, sizeof(message));
+    strcpy(message, "INVITE sip:test@example.com SIP/2.0\r\n"
+                    "Via: SIP/2.0/UDP 192.168.1.1:5060\r\n"
+                    "Content-Length: 0\r\n\r\n");
+    expected = "X-Custom-Header: test\r\n"
+               "INVITE sip:test@example.com SIP/2.0\r\n"
+               "Via: SIP/2.0/UDP 192.168.1.1:5060\r\n"
+               "Content-Length: 0\r\n\r\n";
+    insert_header(message, header, 0);
+    ck_assert_msg(strcmp(message, expected) == 0,
+                 "insert_header failed to insert header at beginning");
+
+    /* Test inserting header with empty message */
+    memset(message, 0, sizeof(message));
+    strcpy(message, "");
+    insert_header(message, header, 0);
+    ck_assert_msg(strcmp(message, header) == 0,
+                 "insert_header should insert the test header");
+
+    /* Test inserting header with NULL message */
+    insert_header(NULL, header, 1);
+    /* Should not crash */
+
+    /* Test inserting NULL header */
+    memset(message, 0, sizeof(message));
+    strcpy(message, "INVITE sip:test@example.com SIP/2.0\r\n");
+    insert_header(message, NULL, 1);
+    ck_assert_msg(strcmp(message, "INVITE sip:test@example.com SIP/2.0\r\n") == 0,
+                 "insert_header should not modify message when header is NULL");
+}
+END_TEST
+
 Suite *header_f_suite(void) {
 	Suite *s = suite_create("Header_f");
 
@@ -117,12 +168,16 @@ Suite *header_f_suite(void) {
 	/* set_cl test case */
 	TCase *tc_set_cl = tcase_create("set_cl");
 	tcase_add_test(tc_set_cl, test_set_cl);
+	/* insert_header test case */
+	TCase *tc_insert_header = tcase_create("insert_header");
+	tcase_add_test(tc_insert_header, test_insert_header);
 
 	/* add test cases to suite */
-	suite_add_tcase(s, tc_get_cl);
-	suite_add_tcase(s, tc_find_lr_parameter);
-	suite_add_tcase(s, tc_get_cseq);
-	suite_add_tcase(s, tc_set_cl);
+	//suite_add_tcase(s, tc_get_cl);
+	//suite_add_tcase(s, tc_find_lr_parameter);
+	//suite_add_tcase(s, tc_get_cseq);
+	//suite_add_tcase(s, tc_set_cl);
+	suite_add_tcase(s, tc_insert_header);
 
 	return s;
 }

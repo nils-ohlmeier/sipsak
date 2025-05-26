@@ -29,6 +29,15 @@
 void insert_header(char *mes, char *header, int first) {
 	char *ins, *backup;
 
+	if (mes == NULL) {
+		printf("message is NULL\n");
+		return;
+	}
+	if (header == NULL) {
+		printf("header is NULL\n");
+		return;
+	}
+
 	if (first) {
 		ins = strchr(mes, '\n');
 		if (ins == NULL) {
