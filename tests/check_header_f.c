@@ -5,6 +5,7 @@
 #ifdef HAVE_CHECK_H
 
 #include <check.h>
+#include <stdio.h>
 #include "../src/header_f.h"
 
 #define RUNNING_CHECK 1
@@ -60,6 +61,47 @@ START_TEST (test_get_cseq) {
 }
 END_TEST
 
+START_TEST (test_set_cl) {
+    char message[1024];
+    int result;
+
+    /* Test setting Content-Length with full header name */
+	memset(message, 0, sizeof(message));
+    strcpy(message, "\r\nContent-Length: 123\r\n\r\n");
+    set_cl(message, 456);
+    result = get_cl(message);
+    ck_assert_msg(result == 456, "set_cl failed to set Content-Length to 456, got %d", result);
+
+    /* Test setting Content-Length with short header name */
+	memset(message, 0, sizeof(message));
+    strcpy(message, "\r\nl: 123\r\n\r\n");
+    set_cl(message, 789);
+    result = get_cl(message);
+    ck_assert_msg(result == 789, "set_cl failed to set Content-Length to 789, got %d", result);
+
+    /* Test setting Content-Length to zero */
+	memset(message, 0, sizeof(message));
+    strcpy(message, "\r\nContent-Length: 123\r\n\r\n");
+    set_cl(message, 0);
+    result = get_cl(message);
+	ck_assert_msg(result == 0, "set_cl failed to set Content-Length to 0, got %d", result);
+
+    /* Test setting Content-Length to a large number */
+	memset(message, 0, sizeof(message));
+    strcpy(message, "\r\nContent-Length: 123\r\n\r\n\r\n\r\n");
+    set_cl(message, 999999);
+    result = get_cl(message);
+    ck_assert_msg(result == 999999, "set_cl failed to set Content-Length to 999999, got %d", result);
+
+    /* Test with missing Content-Length header */
+	memset(message, 0, sizeof(message));
+    strcpy(message, "SIP/2.0 200 OK\r\n\r\n");
+    set_cl(message, 123);
+    result = get_cl(message);
+    ck_assert_msg(result == -1, "set_cl should not modify message without Content-Length header");
+}
+END_TEST
+
 Suite *header_f_suite(void) {
 	Suite *s = suite_create("Header_f");
 
@@ -72,11 +114,15 @@ Suite *header_f_suite(void) {
 	/* get_cseq test case */
 	TCase *tc_get_cseq = tcase_create("get_cseq");
 	tcase_add_test(tc_get_cseq, test_get_cseq);
+	/* set_cl test case */
+	TCase *tc_set_cl = tcase_create("set_cl");
+	tcase_add_test(tc_set_cl, test_set_cl);
 
 	/* add test cases to suite */
 	suite_add_tcase(s, tc_get_cl);
 	suite_add_tcase(s, tc_find_lr_parameter);
 	suite_add_tcase(s, tc_get_cseq);
+	suite_add_tcase(s, tc_set_cl);
 
 	return s;
 }

@@ -207,7 +207,8 @@ void set_maxforw(char *mes, int value){
 		else {
 			maxforward = value;
 		}
-		snprintf(crlfi, 6, "%i\r\n", maxforward);
+		int required_size = snprintf(NULL, 0, "%i\r\n", maxforward) + 1;
+		snprintf(crlfi, required_size, "%i\r\n", maxforward);
 		crlfi=strchr(max,'\n');
 		crlfi++;
 		strncpy(crlfi, backup, strlen(backup)+1);
@@ -245,6 +246,10 @@ void uri_replace(char *mes, char *uri)
 void set_cl(char* mes, int contentlen) {
 	char *cl, *cr, *backup;
 
+	if (mes == NULL) {
+		printf("message is NULL\n");
+		return;
+	}
 	if ((cl=STRCASESTR(mes, CON_LEN_STR)) == NULL &&
 		(cl=STRCASESTR(mes, CON_LEN_SHORT_STR)) == NULL) {
 		printf("missing Content-Length in message\n");
@@ -254,6 +259,10 @@ void set_cl(char* mes, int contentlen) {
 		cl++;
 	}
 	cr = strchr(cl, '\n');
+	if (cr == NULL) {
+		printf("failed to find newline in message\n");
+		return;
+	}
 	cr++;
 	backup=str_alloc(strlen(cr)+1);
 	strncpy(backup, cr, strlen(cr));
@@ -261,7 +270,8 @@ void set_cl(char* mes, int contentlen) {
 		cr=cl + CON_LEN_STR_LEN;
 	else
 		cr=cl + 3;
-	snprintf(cr, 6, "%i\r\n", contentlen);
+	int required_size = snprintf(NULL, 0, "%i\r\n", contentlen) + 1;
+	snprintf(cr, required_size, "%i\r\n", contentlen);
 	cr=strchr(cr, '\n');
 	cr++;
 	strncpy(cr, backup, strlen(backup)+1);

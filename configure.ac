@@ -10,10 +10,7 @@ AC_CONFIG_HEADERS([config.h])
 
 # Checks for programs.
 AC_PROG_CC
-# Add -Wall if we are using GCC
-if test "x$GCC" = "xyes"; then
-  CFLAGS="$CFLAGS -Wall"
-fi
+CFLAGS="$CFLAGS -Wall"
 SIPSAK_GCC_STACK_PROTECT_CC
 CHECK_PROG_DISTCC
 
