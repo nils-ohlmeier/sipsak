@@ -153,6 +153,47 @@ START_TEST (test_insert_header) {
 }
 END_TEST
 
+START_TEST (test_add_via) {
+    char message[1024];
+    char *fqdn = "test.example.com";
+    int lport = 5060;
+
+    /* Test adding Via when none exists */
+    memset(message, 0, sizeof(message));
+    strcpy(message, "INVITE sip:test@example.com SIP/2.0\r\n"
+                    "Content-Length: 0\r\n\r\n");
+    add_via(message, fqdn, lport);
+    ck_assert_msg(strstr(message, "Via: SIP/2.0/UDP test.example.com:5060") != NULL,
+                 "add_via failed to add Via header when none exists");
+    ck_assert_msg(strstr(message, "branch=z9hG4bK.") != NULL,
+                 "add_via failed to add branch parameter");
+
+    /* Test adding Via when one already exists */
+    memset(message, 0, sizeof(message));
+    strcpy(message, "INVITE sip:test@example.com SIP/2.0\r\n"
+                    "Via: SIP/2.0/UDP existing.example.com:5060\r\n"
+                    "Content-Length: 0\r\n\r\n");
+    add_via(message, fqdn, lport);
+    ck_assert_msg(strstr(message, "Via: SIP/2.0/UDP test.example.com:5060") != NULL,
+                 "add_via failed to add Via header when one exists");
+    ck_assert_msg(strstr(message, "Via: SIP/2.0/UDP existing.example.com:5060") != NULL,
+                 "add_via removed existing Via header");
+
+ 
+    /* Test with NULL message */
+    add_via(NULL, fqdn, lport);
+    /* Should not crash */
+
+    /* Test with NULL fqdn */
+    memset(message, 0, sizeof(message));
+    strcpy(message, "INVITE sip:test@example.com SIP/2.0\r\n");
+    add_via(message, NULL, lport);
+    ck_assert_msg(strcmp(message, "INVITE sip:test@example.com SIP/2.0\r\n") == 0,
+                 "add_via should handle NULL fqdn");
+
+}
+END_TEST
+
 Suite *header_f_suite(void) {
 	Suite *s = suite_create("Header_f");
 
@@ -171,13 +212,17 @@ Suite *header_f_suite(void) {
 	/* insert_header test case */
 	TCase *tc_insert_header = tcase_create("insert_header");
 	tcase_add_test(tc_insert_header, test_insert_header);
+	/* add_via test case */
+	TCase *tc_add_via = tcase_create("add_via");
+	tcase_add_test(tc_add_via, test_add_via);
 
 	/* add test cases to suite */
-	//suite_add_tcase(s, tc_get_cl);
-	//suite_add_tcase(s, tc_find_lr_parameter);
-	//suite_add_tcase(s, tc_get_cseq);
-	//suite_add_tcase(s, tc_set_cl);
+	suite_add_tcase(s, tc_get_cl);
+	suite_add_tcase(s, tc_find_lr_parameter);
+	suite_add_tcase(s, tc_get_cseq);
+	suite_add_tcase(s, tc_set_cl);
 	suite_add_tcase(s, tc_insert_header);
+	suite_add_tcase(s, tc_add_via);
 
 	return s;
 }

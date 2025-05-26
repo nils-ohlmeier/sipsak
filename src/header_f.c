@@ -17,6 +17,7 @@
 
 #include "sipsak.h"
 
+#include <stdio.h>
 #include "header_f.h"
 #include "exit_code.h"
 #include "helper.h"
@@ -30,11 +31,11 @@ void insert_header(char *mes, char *header, int first) {
 	char *ins, *backup;
 
 	if (mes == NULL) {
-		printf("message is NULL\n");
+		fprintf(stderr, "message is NULL\n");
 		return;
 	}
 	if (header == NULL) {
-		printf("header is NULL\n");
+		fprintf(stderr, "header is NULL\n");
 		return;
 	}
 
@@ -60,6 +61,15 @@ void insert_header(char *mes, char *header, int first) {
 void add_via(char *mes, char *fqdn, int lport)
 {
 	char *via_line, *via, *backup;
+
+	if (mes == NULL) {
+		fprintf(stderr, "message is NULL\n");
+		return;
+	}
+	if (fqdn == NULL) {
+		fprintf(stderr, "fqdn is NULL\n");
+		return;
+	}
 
 	if ((via=STRCASESTR(mes, VIA_STR)) == NULL &&
 			(via=STRCASESTR(mes, VIA_SHORT_STR)) == NULL) {
