@@ -75,6 +75,9 @@
 #  define WITH_TLS_TRANSP 1
 # endif
 # include <gnutls/gnutls.h>
+# ifdef HAVE_EXTERNAL_MD5
+#  include <gnutls/openssl.h>
+# endif
 #else
 # ifdef HAVE_OPENSSL_MD5_H
 #  ifdef HAVE_CRYPTO_WITH_MD5

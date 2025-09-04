@@ -57,6 +57,12 @@ PKG_CHECK_MODULES([GNUTLS], [gnutls >= 1.0.0], [
     HAVE_GNUTLS=1
     LIBS="${LIBS} ${GNUTLS_LIBS}"
     CFLAGS="${CFLAGS} ${GNUTLS_CFLAGS}"
+    AC_CHECK_HEADERS([gnutls/openssl.h], [
+      AC_SEARCH_LIBS([MD5_Init], [crypto], [
+        AC_DEFINE([HAVE_EXTERNAL_MD5], [1], [The crypto lib has MD5 functions])
+	LIBS="${LIBS} -lgnutls-openssl"
+      ])
+    ])
   ], [
     AC_CHECK_HEADERS([openssl/md5.h], [
       AC_SEARCH_LIBS([MD5_Init], [crypto], [
