@@ -245,8 +245,8 @@ void uri_replace(char *mes, char *uri)
 void set_cl(char* mes, int contentlen) {
 	char *cl, *cr, *backup;
 
-	if ((cl=STRCASESTR(mes, CON_LEN_STR)) == NULL &&
-		(cl=STRCASESTR(mes, CON_LEN_SHORT_STR)) == NULL) {
+	if ((cl=STRCASESTR(mes, CON_LEN_STR_SEARCH)) == NULL &&
+		(cl=STRCASESTR(mes, CON_LEN_SHORT_STR_SEARCH)) == NULL) {
 		printf("missing Content-Length in message\n");
 		return;
 	}
@@ -258,9 +258,12 @@ void set_cl(char* mes, int contentlen) {
 	backup=str_alloc(strlen(cr)+1);
 	strncpy(backup, cr, strlen(cr));
 	if (*cl == 'C')
-		cr=cl + CON_LEN_STR_LEN;
+		cr=cl + CON_LEN_STR_SEARCH_LEN;
 	else
-		cr=cl + 3;
+		cr=cl + CON_LEN_SHORT_STR_SEARCH_LEN;
+	/* skip optional whitespace after colon */
+	while (*cr == ' ')
+		cr++;
 	snprintf(cr, 6, "%i\r\n", contentlen);
 	cr=strchr(cr, '\n');
 	cr++;
@@ -277,18 +280,21 @@ void set_cl(char* mes, int contentlen) {
 int get_cl(char* mes) {
 	char *cl;
 
-	if ((cl=STRCASESTR(mes, CON_LEN_STR)) == NULL &&
-		(cl=STRCASESTR(mes, CON_LEN_SHORT_STR)) == NULL) {
+	if ((cl=STRCASESTR(mes, CON_LEN_STR_SEARCH)) == NULL &&
+		(cl=STRCASESTR(mes, CON_LEN_SHORT_STR_SEARCH)) == NULL) {
 		if (verbose > 1)
 			printf("missing Content-Length in message\n");
 		return -1;
 	}
 	if (*cl == '\n') {
-		cl+=3;
+		cl+=CON_LEN_SHORT_STR_SEARCH_LEN;
 	}
 	else {
-		cl+=15;
+		cl+=CON_LEN_STR_SEARCH_LEN;
 	}
+	/* skip optional whitespace after colon */
+	while (*cl == ' ')
+		cl++;
 	return str_to_int(1, cl);
 }
 

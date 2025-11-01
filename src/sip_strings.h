@@ -91,6 +91,10 @@
 #define CON_LEN_STR_LEN (sizeof(CON_LEN_STR) - 1)
 #define CON_LEN_SHORT_STR "\nl: "
 #define CON_LEN_SHORT_STR_LEN (sizeof(CON_LEN_SHORT_STR) - 1)
+#define CON_LEN_STR_SEARCH "Content-Length:"
+#define CON_LEN_STR_SEARCH_LEN (sizeof(CON_LEN_STR_SEARCH) - 1)
+#define CON_LEN_SHORT_STR_SEARCH "\nl:"
+#define CON_LEN_SHORT_STR_SEARCH_LEN (sizeof(CON_LEN_SHORT_STR_SEARCH) - 1)
 
 #define RR_STR "Record-Route: "
 #define RR_STR_LEN (sizeof(RR_STR) -  1)
